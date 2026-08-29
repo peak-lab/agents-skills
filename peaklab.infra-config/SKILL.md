@@ -114,9 +114,9 @@ else:
 Auto-discovered:
   ✅ COOLIFY_URL       https://coolify.example.com/api/v1   (.zshrc)
   ✅ COOLIFY_TOKEN     ••••••c0233                        (.zshrc)
-  ✅ COOLIFY_APP_UUID  example-app-uuid          (Coolify API → pushrank-lp)
+  ✅ COOLIFY_APP_UUID  example-app-uuid          (Coolify API → example-app-lp)
   ✅ APP_URL_PROD      https://app.example.com                (Coolify FQDN, first of 2)
-  ✅ PLANE_TOKEN       ••••••c915                         (sibling: pushrank)
+  ✅ PLANE_TOKEN       ••••••c915                         (sibling: example-app)
   ❌ PLANE_PROJECT     not found
   ❌ GLITCHTIP_DSN     not found
 ```
@@ -235,7 +235,7 @@ grep -q "^\\.env$" .gitignore 2>/dev/null || echo ".env" >> .gitignore
   .env                    — 10 vars (Claude/Codex/app ready)
   .codex/rules/infra.md   — context written (auto-loaded by Codex)
 
-  coolify-api / deploy-check   ✅  pushrank-lp → https://app.example.com
+  coolify-api / deploy-check   ✅  example-app-lp → https://app.example.com
   plane-api / peaklab.ship-pr  ✅ / ❌
   glitchtip-api                ✅ / ❌
 

@@ -230,7 +230,7 @@ If `--all` was passed, return to Phase 3 with the next independent cluster. Othe
 ## Output format
 
 ```
-Project: pushrank-back (production)
+Project: example-app-back (production)
 Clusters:
   - authenticate-InvalidToken: #188, #204 fatal → apex -a -x -s -pr → PR #123 merged → resolved
   - publish-TimeoutError: #118 error → apex -a -s -pr → blocked in validation → unresolved
