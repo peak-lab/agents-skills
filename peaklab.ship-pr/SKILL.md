@@ -26,7 +26,7 @@ Orchestrate the full PR lifecycle: create, review, fix, merge. Composes existing
 | `--plane`         | Sync Plane after merge: move matched tickets → Done, create tickets for untracked changes | `false` |
 </arguments>
 <env>
-Required when using --plane (same vars as plane:do-issue):
+Required when using --plane (same vars as `peaklab.plane-do-issue`):
 - PLANE_TOKEN   : Plane API key
 - PLANE_PROJECT : Full project URL (https://{host}/{workspace}/projects/{id}/issues/)
 </env>
@@ -382,10 +382,10 @@ For each change (commit, file, or functional block) **without a matching Plane t
 
 - Infer a label: `fix:`, `feat:`, `refactor:`, `chore:` based on the nature of the change
 - Ask: `"No ticket found for: <description> — Create? [y/N]"`
-- If yes, invoke `plane:create-issue` once for that change. Pass the inferred title, `priority=medium`, and the dynamically resolved `DONE_STATE_ID` as the requested state:
+- If yes, invoke `peaklab.plane-create-issue` once for that change. Pass the inferred title, `priority=medium`, and the dynamically resolved `DONE_STATE_ID` as the requested state:
 
 ```text
-Skill("plane:create-issue", args="TITLE; priority=medium; state=DONE_STATE_ID; work already completed")
+Skill("peaklab.plane-create-issue", args="TITLE; priority=medium; state=DONE_STATE_ID; work already completed")
 ```
 
 Tickets created here are placed directly in **Done** (not Backlog) — the work is already done.

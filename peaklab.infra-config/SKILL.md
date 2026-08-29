@@ -20,9 +20,9 @@ Auto-discover deployment and integration credentials from all available sources,
 
 | Instance | Token Var | URL | Notes |
 |----------|-----------|-----|-------|
-| Coolify PeakLab (pro) | `COOLIFY_TOKEN` | `https://coolify.example.com/api/v1` | Main — most PeakLab projects |
-| Coolify Fahari (clf) | `COOLIFY_TOKEN_CLF` | `https://coolify-secondary.example.com/api/v1` | Personal instance |
-| Coolify Monitoring | `COOLIFY_MONITORING_TOKEN` | `https://coolify-monitoring.example.com/api/v1` | Monitoring only |
+| Coolify main | `COOLIFY_TOKEN` | `https://coolify.example.com/api/v1` | Main instance |
+| Coolify secondary | `COOLIFY_TOKEN_SECONDARY` | `https://coolify-secondary.example.com/api/v1` | Optional second instance |
+| Coolify monitoring | `COOLIFY_TOKEN_MONITORING` | `https://coolify-monitoring.example.com/api/v1` | Monitoring only |
 | Glitchtip | — | `https://glitchtip.example.com` | Error tracking |
 | Uptime Kuma | — | `http://uptime-kuma.internal:3001` (SSH: `ubuntu@monitoring.example.com`) | Uptime monitoring |
 | Umami | — | `https://analytics.example.com` | Analytics |
@@ -131,13 +131,13 @@ Auto-discovered:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `COOLIFY_URL` | API base URL | `https://coolify.example.com/api/v1` for PeakLab |
-| `COOLIFY_TOKEN` | Bearer token | From `.zshrc` |
+| `COOLIFY_URL` | API base URL | `https://coolify.example.com/api/v1` |
+| `COOLIFY_TOKEN` | Bearer token | From gitignored environment source |
 | `COOLIFY_PROJECT` | Project UUID | Auto-detected |
 | `COOLIFY_APP_UUID` | App UUID | Auto-detected via API |
 
 If `COOLIFY_URL` is unknown, offer:
-> "[1] coolify.example.com (PeakLab main) [2] coolify-secondary.example.com (Fahari) [3] Other"
+> "[1] coolify.example.com (main) [2] coolify-secondary.example.com (secondary) [3] Other"
 
 ### Theme 2: Plane
 

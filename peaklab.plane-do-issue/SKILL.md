@@ -23,7 +23,7 @@ owned by the selected agent definition rather than hardcoded in this shared skil
 </task_spec>
 
 <tooling_rationale>
-This skill keeps broad repo mutation tools because it selects one Plane issue, prepares an isolated worktree, and delegates implementation/PR creation to a subagent. Plane API access must still go through `plane-api`, and slow CI/merge follow-up should be delegated to `plane:ship-watch`.
+This skill keeps broad repo mutation tools because it selects one Plane issue, prepares an isolated worktree, and delegates implementation/PR creation to a subagent. Plane API access must still go through `plane-api`, and slow CI/merge follow-up should be delegated to `peaklab.plane-ship-watch`.
 </tooling_rationale>
 
 <arguments>
@@ -34,7 +34,7 @@ This skill keeps broad repo mutation tools because it selects one Plane issue, p
 - `--no-auto`: opt out of default automatic execution and retain the urgent/high priority pause.
 - `--tdd`: explicitly retain the default APEX `-d` mode.
 - `--no-tdd`: opt out of default RED → GREEN → REFACTOR only for a ticket that cannot use it meaningfully.
-- `--async-merge`: default. Create/update the PR, then delegate CI/rebase/conflict/merge follow-up to `plane:ship-watch` and continue.
+- `--async-merge`: default. Create/update the PR, then delegate CI/rebase/conflict/merge follow-up to `peaklab.plane-ship-watch` and continue.
 - `--wait-merge`: keep the old blocking behavior: wait for CI and merge before returning.
 - `--no-merge`: create/update the PR and stop without launching the watcher.
 - `--no-subagent`: fallback mode. Run the issue locally in the current worktree only when subagents/worktrees are unavailable or the user explicitly asks for direct execution.
@@ -45,7 +45,7 @@ This skill keeps broad repo mutation tools because it selects one Plane issue, p
 - Load `plane-api` before any Plane API interaction.
 - Use `apex -d` by default for Analyze -> Plan -> Execute -> eXamine; omit `-d` only for `--no-tdd`.
 - Use `peaklab.ship-pr --auto-fix --no-merge` for PR creation/review/preflight.
-- Use `plane:ship-watch` for the slow CI/rebase/conflict/merge/Plane-sync phase unless `--wait-merge` or `--no-merge` changes the flow.
+- Use `peaklab.plane-ship-watch` for the slow CI/rebase/conflict/merge/Plane-sync phase unless `--wait-merge` or `--no-merge` changes the flow.
 </required_skills>
 
 <quick_reference>
@@ -67,11 +67,11 @@ Default execution is **subagent + isolated worktree**.
 
 - Parent orchestrator owns only issue selection, worktree preparation, worker launch, the post-PR QA review gate, and final summary.
 - The implementation worker subagent owns branch checkout, analysis files, code edits, validation, commit, push, and PR creation/review/preflight.
-- The parent orchestrator owns launching or recording `plane:ship-watch` after the worker returns a reviewed PR.
+- The parent orchestrator owns launching or recording `peaklab.plane-ship-watch` after the worker returns a reviewed PR.
 - `next` must skip EPIC tickets such as titles beginning with `[EPIC ...]`. EPICs are planning containers, not implementation units. A specific EPIC ID may still be opened explicitly for planning/story split.
 - The worker must run every git/package command from its assigned worktree path.
 - The parent must not edit product files, commit, push, or switch branches for the issue unless running explicit `--no-subagent` fallback.
-- Only one Plane issue implementation may run per `peaklab.plane-do-issue` invocation. `plane:do-queue` may call this skill repeatedly, but it should not make the parent worktree dirty.
+- Only one Plane issue implementation may run per `peaklab.plane-do-issue` invocation. `peaklab.plane-do-queue` may call this skill repeatedly, but it should not make the parent worktree dirty.
 - The worker receives its ownership and model constraints from the selected agent
   definition. The parent passes only issue-specific context and the applicable analysis
   contract; it does not override the agent model.
@@ -240,7 +240,7 @@ acceptance criteria.
    - PR creation: default is `gh pr create` + local checks + explicit self-review
      (subagent workers usually have no Skill tool). Use peaklab.ship-pr --auto-fix
      --no-merge instead when the Skill tool is available. Never merge.
-   - Do not launch plane:ship-watch; the parent orchestrator owns watcher launch after you return.
+   - Do not launch `peaklab.plane-ship-watch`; the parent orchestrator owns watcher launch after you return.
    - Do not wait on GitHub Actions.
    - Do not merge.
    - For --no-merge, leave Plane in progress and report the PR.
@@ -338,8 +338,8 @@ acceptance criteria.
 
 7. Parent handles post-PR merge mode after the QA gate:
    - `--no-merge`: stop after reporting the PR URL. Leave Plane in progress.
-   - `--wait-merge`: run `plane:ship-watch <PR_NUMBER> --issue <PREFIX-N>` in the current turn and wait for completion.
-   - default / `--async-merge`: delegate `plane:ship-watch <PR_NUMBER> --issue <PREFIX-N>`
+   - `--wait-merge`: run `peaklab.plane-ship-watch <PR_NUMBER> --issue <PREFIX-N>` in the current turn and wait for completion.
+   - default / `--async-merge`: delegate `peaklab.plane-ship-watch <PR_NUMBER> --issue <PREFIX-N>`
      to the `plane-ship-watcher` background agent. Its agent definition owns the model
      and effort tier; do not override them at spawn. Then immediately continue or report
      the next actionable step.
@@ -347,7 +347,7 @@ acceptance criteria.
    ```text
    .agents/tasks/plane-ship/PR-<number>/status.md
    ```
-   Then report the command/skill to resume: `plane:ship-watch <PR_NUMBER> --issue <PREFIX-N>`.
+   Then report the command/skill to resume: `peaklab.plane-ship-watch <PR_NUMBER> --issue <PREFIX-N>`.
 
 </step>
 
@@ -389,7 +389,7 @@ acceptance criteria.
 
 <step name="sync-plane">
 
-10. Plane sync is owned by `plane:ship-watch` after merge or permanent blocker. `peaklab.plane-do-issue` should only call `finish_issue.py` directly when running with `--wait-merge` and the watcher completes synchronously.
+10. Plane sync is owned by `peaklab.plane-ship-watch` after merge or permanent blocker. `peaklab.plane-do-issue` should only call `finish_issue.py` directly when running with `--wait-merge` and the watcher completes synchronously.
 
     Terminal states default to the project's `Done` on merge and `In Review` on blocked. Override either
     by exact state name in the Plane config source:
@@ -422,7 +422,7 @@ acceptance criteria.
 - If there are no Todo issues, stop cleanly and report that.
 - Do not block the main orchestrator on GitHub Actions unless `--wait-merge` is explicit.
 - All implementation, validation, commit, push, and PR creation should happen in the worker `.worktrees/...` worktree when subagents are available.
-- All CI/rebase/conflict/merge work after PR creation belongs to `plane:ship-watch` in an isolated worktree.
+- All CI/rebase/conflict/merge work after PR creation belongs to `peaklab.plane-ship-watch` in an isolated worktree.
 </constraints>
 
 <hermes_runtime>

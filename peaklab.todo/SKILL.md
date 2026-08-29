@@ -1,12 +1,12 @@
 ---
 name: "peaklab.todo"
-description: Use when managing tasks on the Notion Planning Fahari page, including adding, modifying, deleting, or listing planning tasks.
+description: Use when managing tasks on a configured Notion planning page, including adding, modifying, deleting, or listing planning tasks.
 effort: fast
 allowed-tools: Bash(curl :*), Bash(python3 :*)
 argument-hint: "[ajouter|modifier|supprimer] [description]"
 ---
 
-**Page Notion :** `30a2572cfd37803d80d4f3f85ee7e0a6`
+**Page Notion :** configure `NOTION_PLANNING_PAGE_ID` in a gitignored environment source before use.
 
 ## Détecter l'intention
 
