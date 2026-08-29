@@ -1,5 +1,5 @@
 ---
-name: "peaklab.plane:do-issue"
+name: "peaklab.plane-do-issue"
 description: "Use when the user says \"plane do issue\", \"do next Plane issue\", \"work the next ticket\", or references a Plane issue to implement through PR creation with async CI/rebase/conflict/merge follow-up."
 effort: deep
 argument-hint: "[PREFIX-N | UUID | URL | next] [--no-auto] [--no-tdd] [--async-merge | --wait-merge | --no-merge] [--no-subagent]"
@@ -18,7 +18,7 @@ owned by the selected agent definition rather than hardcoded in this shared skil
   and never silently downgrade a high-risk route.
 - Acceptance criteria: an evidence-backed terminal status, or a reviewed PR with the
   correct asynchronous shipping owner.
-- Relevant locations: `~/.agents/skills/peaklab.plane:do-issue/`, `.agents/agents/`, and the
+- Relevant locations: `~/.agents/skills/peaklab.plane-do-issue/`, `.agents/agents/`, and the
   generated `.agents/tasks/<issue>/` directory.
 </task_spec>
 
@@ -71,7 +71,7 @@ Default execution is **subagent + isolated worktree**.
 - `next` must skip EPIC tickets such as titles beginning with `[EPIC ...]`. EPICs are planning containers, not implementation units. A specific EPIC ID may still be opened explicitly for planning/story split.
 - The worker must run every git/package command from its assigned worktree path.
 - The parent must not edit product files, commit, push, or switch branches for the issue unless running explicit `--no-subagent` fallback.
-- Only one Plane issue implementation may run per `peaklab.plane:do-issue` invocation. `plane:do-queue` may call this skill repeatedly, but it should not make the parent worktree dirty.
+- Only one Plane issue implementation may run per `peaklab.plane-do-issue` invocation. `plane:do-queue` may call this skill repeatedly, but it should not make the parent worktree dirty.
 - The worker receives its ownership and model constraints from the selected agent
   definition. The parent passes only issue-specific context and the applicable analysis
   contract; it does not override the agent model.
@@ -117,7 +117,7 @@ acceptance criteria.
 
 1. Run issue selection:
    ```bash
-   python3 ~/.agents/skills/peaklab.plane:do-issue/scripts/select_issue.py $ARGUMENTS
+   python3 ~/.agents/skills/peaklab.plane-do-issue/scripts/select_issue.py $ARGUMENTS
    ```
    The script moves the issue to `In Progress`, preserves assignees, sets `start_date` if missing, and writes state to the system temporary directory as `plane-do-issue-state.json`.
    If it returns `{"found": false, ...}`, stop immediately and report the message. Do not read or reuse any existing state file; the selector clears stale state on misses.
@@ -389,7 +389,7 @@ acceptance criteria.
 
 <step name="sync-plane">
 
-10. Plane sync is owned by `plane:ship-watch` after merge or permanent blocker. `peaklab.plane:do-issue` should only call `finish_issue.py` directly when running with `--wait-merge` and the watcher completes synchronously.
+10. Plane sync is owned by `plane:ship-watch` after merge or permanent blocker. `peaklab.plane-do-issue` should only call `finish_issue.py` directly when running with `--wait-merge` and the watcher completes synchronously.
 
     Terminal states default to the project's `Done` on merge and `In Review` on blocked. Override either
     by exact state name in the Plane config source:
@@ -453,7 +453,7 @@ evidence to the task artifact, and return `blocked` with the exact decision need
 
 <naming>
 
-Use the canonical skill name `peaklab.plane:do-issue` in queue/orchestration skills.
+Use the canonical skill name `peaklab.plane-do-issue` in queue/orchestration skills.
 </naming>
 
 <gotchas>

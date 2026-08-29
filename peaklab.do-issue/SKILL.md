@@ -11,7 +11,7 @@ Resolve GitHub issues from selection to PR lifecycle. This skill owns issue sele
 preparation, resolver launch, the QA review gate, and the merge phase. Implementation is delegated
 to `issue-resolver` subagents (which run `apex`), and queue chaining to `do-queue`.
 
-Execution model (mirrors `peaklab.plane:do-issue`):
+Execution model (mirrors `peaklab.plane-do-issue`):
 - Default: each issue runs in its own isolated git worktree under `.worktrees/`, handled by one
   `issue-resolver` subagent. When invoked from an existing linked worktree, that worktree is reused
   for one selected issue and no child worktree is created.

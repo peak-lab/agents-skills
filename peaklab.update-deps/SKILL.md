@@ -1,5 +1,5 @@
 ---
-name: peaklab:update-deps
+name: "peaklab.update-deps"
 description: Use when handling dependency updates, merging green Dependabot PRs, running package updates, opening update PRs, or monitoring update CI.
 effort: standard
 argument-hint: "[--create] [--auto]"

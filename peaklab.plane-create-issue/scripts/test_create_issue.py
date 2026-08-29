@@ -246,7 +246,7 @@ class SkillStructureTests(unittest.TestCase):
         skill_text = Path(skill_root, "SKILL.md").read_text(encoding="utf-8")
         _, frontmatter, body = skill_text.split("---", 2)
 
-        self.assertIn('name: "peaklab.plane:create-issue"', frontmatter)
+        self.assertIn('name: "peaklab.plane-create-issue"', frontmatter)
         self.assertIn('Bash(rtk :*)', frontmatter)
         self.assertFalse(any(line.startswith("#") for line in body.splitlines()))
         for tag in ("objective", "quick_start", "success_criteria"):
@@ -255,14 +255,14 @@ class SkillStructureTests(unittest.TestCase):
 
         plane_api_root = skill_root.parent / "plane-api"
         plane_api_skill = Path(plane_api_root, "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("peaklab.plane:create-issue", plane_api_skill)
+        self.assertIn("peaklab.plane-create-issue", plane_api_skill)
         self.assertFalse(Path(plane_api_root, "create_issue.py").exists())
 
         commands_root = skill_root.parents[1] / "commands"
         wrappers = [
             path
             for path in commands_root.glob("*.md")
-            if "peaklab.plane:create-issue" in path.read_text(encoding="utf-8")
+            if "peaklab.plane-create-issue" in path.read_text(encoding="utf-8")
         ]
         self.assertEqual(wrappers, [])
 

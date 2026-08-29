@@ -1,5 +1,5 @@
 ---
-name: "peaklab.plane:create-issue"
+name: "peaklab.plane-create-issue"
 description: "Use when the user asks to create, file, draft, or open a Plane issue, ticket, task, bug report, or feature request. Creates or drafts one validated work item with duplicate-safe API execution."
 effort: standard
 argument-hint: "[title or request] [--priority=none|low|medium|high|urgent]"
@@ -19,20 +19,20 @@ Keep issue creation focused and safe: reuse `plane-api` for configuration and au
 4. Validate without contacting Plane:
 
 ```bash
-rtk python3 ~/.agents/skills/peaklab.plane:create-issue/scripts/create_issue.py --dry-run /private/tmp/plane-create-issue/SESSION_ID/payload.json
+rtk python3 ~/.agents/skills/peaklab.plane-create-issue/scripts/create_issue.py --dry-run /private/tmp/plane-create-issue/SESSION_ID/payload.json
 ```
 
 5. When the user explicitly requested creation, execute exactly once:
 
 ```bash
-rtk python3 ~/.agents/skills/peaklab.plane:create-issue/scripts/create_issue.py --request-id SESSION_ID /private/tmp/plane-create-issue/SESSION_ID/payload.json
+rtk python3 ~/.agents/skills/peaklab.plane-create-issue/scripts/create_issue.py --request-id SESSION_ID /private/tmp/plane-create-issue/SESSION_ID/payload.json
 ```
 
 6. Return `PREFIX-SEQ_ID`, the title, priority, and `URL`, then run `rtk rm -f` on the temporary payload and `rtk rmdir` on its now-empty session directory.
 </quick_start>
 
 <scope>
-This skill owns creation of one Plane work item. Use `plane-api` for metadata lookups or later updates, and `peaklab.plane:do-issue` when the user wants the ticket implemented through PR delivery.
+This skill owns creation of one Plane work item. Use `plane-api` for metadata lookups or later updates, and `peaklab.plane-do-issue` when the user wants the ticket implemented through PR delivery.
 
 Attachments, comments, and cycle assignment are follow-up operations on the returned `ISSUE_ID`; they must never trigger another work-item creation. The current Plane create-work-item schema has no cycle field, so do not invent one.
 </scope>
@@ -164,7 +164,7 @@ Remove only the temporary payload created for this request. Do not delete user f
 For skill maintenance, run:
 
 ```bash
-rtk python3 -m unittest discover -s ~/.agents/skills/peaklab.plane:create-issue/scripts -p 'test_*.py'
+rtk python3 -m unittest discover -s ~/.agents/skills/peaklab.plane-create-issue/scripts -p 'test_*.py'
 ```
 
 The unit tests cover helper behavior, atomic configuration loading, replay protection, skill structure, canonical creation routing, and RTK compliance. They and the helper dry run must not load Plane credentials or make network calls.
