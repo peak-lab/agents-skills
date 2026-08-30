@@ -17,7 +17,7 @@ import tempfile
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(SKILL_ROOT / "plane-api"))
+sys.path.insert(0, str(SKILL_ROOT / "peaklab.plane-api"))
 
 from plane_client import load_plane_client  # noqa: E402
 

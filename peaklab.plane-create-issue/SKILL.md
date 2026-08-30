@@ -9,11 +9,11 @@ allowed-tools: "Bash(rtk :*), Read, Write, Edit, Skill"
 <objective>
 Create one clear, actionable Plane work item from the current request and return its human-readable identifier and URL.
 
-Keep issue creation focused and safe: reuse `plane-api` for configuration and authentication, resolve project-specific metadata dynamically, validate the payload before mutation, and never create a duplicate while recovering from an uncertain API response.
+Keep issue creation focused and safe: reuse `peaklab.plane-api` for configuration and authentication, resolve project-specific metadata dynamically, validate the payload before mutation, and never create a duplicate while recovering from an uncertain API response.
 </objective>
 
 <quick_start>
-1. Load `plane-api` only for its shared configuration, client, and metadata lookup facilities. Creation remains owned by this skill.
+1. Load `peaklab.plane-api` only for its shared configuration, client, and metadata lookup facilities. Creation remains owned by this skill.
 2. Build a fresh JSON payload from the current request. At minimum it needs `name`; use `description_html` and `priority` when known.
 3. Choose a unique `SESSION_ID`, run `rtk mkdir -p /private/tmp/plane-create-issue/SESSION_ID`, then write the payload with the file-editing tool. Never reuse a payload from an earlier request.
 4. Validate without contacting Plane:
@@ -32,7 +32,7 @@ rtk python3 ~/.agents/skills/peaklab.plane-create-issue/scripts/create_issue.py 
 </quick_start>
 
 <scope>
-This skill owns creation of one Plane work item. Use `plane-api` for metadata lookups or later updates, and `peaklab.plane-do-issue` when the user wants the ticket implemented through PR delivery.
+This skill owns creation of one Plane work item. Use `peaklab.plane-api` for metadata lookups or later updates, and `peaklab.plane-do-issue` when the user wants the ticket implemented through PR delivery.
 
 Attachments, comments, and cycle assignment are follow-up operations on the returned `ISSUE_ID`; they must never trigger another work-item creation. The current Plane create-work-item schema has no cycle field, so do not invent one.
 </scope>
@@ -98,7 +98,7 @@ The helper accepts the current Plane work-item fields:
 
 Fields that refer to Plane resources must contain IDs, not guessed names. When the user supplies a name:
 
-1. Use the shared `plane-api` client to list the relevant project resources.
+1. Use the shared `peaklab.plane-api` client to list the relevant project resources.
 2. Match case-insensitively by exact name or exact readable identifier.
 3. If no match or multiple matches exist, report the available candidates and ask the user instead of silently dropping or guessing.
 
@@ -138,13 +138,13 @@ Remove only the temporary payload created for this request. Do not delete user f
 - Validation may be repeated; creation may not.
 - Every creation must pass the same unique `SESSION_ID` through `--request-id`; never generate a new ID merely to bypass a pending or uncertain receipt.
 - Never retry a POST after a timeout, connection drop, invalid response, or server error because Plane may already have created the work item.
-- For an uncertain outcome, stop and use `plane-api` to search by the exact title and recent creation time. Resume only after proving no item was created.
+- For an uncertain outcome, stop and use `peaklab.plane-api` to search by the exact title and recent creation time. Resume only after proving no item was created.
 - A failed attachment, comment, label update, or cycle assignment must be retried against the existing `ISSUE_ID`, never by creating a replacement issue.
 </duplicate_safety>
 
 <error_recovery>
 - **Payload validation fails:** fix the payload and rerun `--dry-run`; this is non-mutating.
-- **Configuration is missing:** report that `PLANE_TOKEN` and `PLANE_PROJECT` must be configured through `plane-api`; do not expose values.
+- **Configuration is missing:** report that `PLANE_TOKEN` and `PLANE_PROJECT` must be configured through `peaklab.plane-api`; do not expose values.
 - **Metadata cannot be resolved:** show exact candidates and request the missing choice.
 - **No supported collection is available:** discovery checks `/work-items/` and then `/issues/` without posting; if neither exists, report the error and stop.
 - **Plane rejects the POST with a 4xx response:** correct the payload, then use a new request ID because the rejected receipt is intentionally immutable.

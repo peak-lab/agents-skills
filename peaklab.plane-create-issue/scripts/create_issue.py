@@ -17,7 +17,7 @@ from typing import Any
 from uuid import UUID
 
 
-PLANE_API_DIR = Path(__file__).resolve().parents[2] / "plane-api"
+PLANE_API_DIR = Path(__file__).resolve().parents[2] / "peaklab.plane-api"
 sys.path.insert(0, str(PLANE_API_DIR))
 
 from plane_client import PlaneConfigError, load_plane_client  # noqa: E402

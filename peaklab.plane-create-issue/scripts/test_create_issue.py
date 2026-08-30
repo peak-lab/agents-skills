@@ -253,7 +253,7 @@ class SkillStructureTests(unittest.TestCase):
             self.assertIn(f"<{tag}>", body)
         ET.fromstring(f"<root>{body}</root>")
 
-        plane_api_root = skill_root.parent / "plane-api"
+        plane_api_root = skill_root.parent / "peaklab.plane-api"
         plane_api_skill = Path(plane_api_root, "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("peaklab.plane-create-issue", plane_api_skill)
         self.assertFalse(Path(plane_api_root, "create_issue.py").exists())

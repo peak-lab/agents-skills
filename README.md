@@ -13,8 +13,8 @@ npx skills add peak-lab/agents-skills@peaklab.ship-pr -y
 Examples:
 
 ```bash
-npx skills add peak-lab/agents-skills@coolify-api -y
-npx skills add peak-lab/agents-skills@plane-api -y
+npx skills add peak-lab/agents-skills@peaklab.coolify-api -y
+npx skills add peak-lab/agents-skills@peaklab.plane-api -y
 npx skills add peak-lab/agents-skills@peaklab.plane-do-issue -y
 npx skills add peak-lab/agents-skills@peaklab.plane-ship-watch -y
 npx skills add peak-lab/agents-skills@peaklab.sync-ai-docs -y
@@ -30,8 +30,8 @@ npx skills add peak-lab/agents-skills
 
 | Skill | Use when |
 |---|---|
-| `coolify-api` | Managing Coolify deployments, applications, databases, services, servers, logs, env keys, and lifecycle operations. |
-| `plane-api` | Reading Plane configuration, metadata, issue lists, state transitions, and shared Plane API helpers. |
+| `peaklab.coolify-api` | Managing Coolify deployments, applications, databases, services, servers, logs, env keys, and lifecycle operations. |
+| `peaklab.plane-api` | Reading Plane configuration, metadata, issue lists, state transitions, and shared Plane API helpers. |
 | `peaklab.client-audit` | Auditing a client project before quoting or starting work. |
 | `peaklab.create-issue` | Creating comprehensive GitHub issues from descriptions, bug reports, feature requests, code context, or images. |
 | `peaklab.do-issue` | Resolving a GitHub issue end to end through implementation and PR shipping. |
@@ -86,8 +86,8 @@ UPTIME_KUMA_TOKEN=...
 Validate Python helper scripts:
 
 ```bash
-python3 -m py_compile coolify-api/scripts/coolify.py plane-api/*.py
-cd plane-api && python3 -m unittest test_plane_client.py
+python3 -m py_compile peaklab.coolify-api/scripts/coolify.py peaklab.plane-api/*.py
+cd peaklab.plane-api && python3 -m unittest test_plane_client.py
 ```
 
 Check for accidental private references before publishing:

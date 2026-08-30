@@ -213,7 +213,7 @@ Create directory first: `mkdir -p .codex/rules/`
 ## Vérifier un déploiement
 
 1. CI : `gh run list --branch main --limit 5`
-2. Coolify : skill `/coolify-api` → app UUID example-app-uuid
+2. Coolify : skill `/peaklab.coolify-api` → app UUID example-app-uuid
 3. Site : `curl -I https://app.example.com`
 
 ## Credentials
@@ -235,8 +235,8 @@ grep -q "^\\.env$" .gitignore 2>/dev/null || echo ".env" >> .gitignore
   .env                    — 10 vars (Claude/Codex/app ready)
   .codex/rules/infra.md   — context written (auto-loaded by Codex)
 
-  coolify-api / deploy-check   ✅  example-app-lp → https://app.example.com
-  plane-api / peaklab.ship-pr  ✅ / ❌
+  peaklab.coolify-api / deploy-check   ✅  example-app-lp → https://app.example.com
+  peaklab.plane-api / peaklab.ship-pr  ✅ / ❌
   glitchtip-api                ✅ / ❌
 
 Re-run /peaklab.infra-config to update any value.

@@ -23,7 +23,7 @@ owned by the selected agent definition rather than hardcoded in this shared skil
 </task_spec>
 
 <tooling_rationale>
-This skill keeps broad repo mutation tools because it selects one Plane issue, prepares an isolated worktree, and delegates implementation/PR creation to a subagent. Plane API access must still go through `plane-api`, and slow CI/merge follow-up should be delegated to `peaklab.plane-ship-watch`.
+This skill keeps broad repo mutation tools because it selects one Plane issue, prepares an isolated worktree, and delegates implementation/PR creation to a subagent. Plane API access must still go through `peaklab.plane-api`, and slow CI/merge follow-up should be delegated to `peaklab.plane-ship-watch`.
 </tooling_rationale>
 
 <arguments>
@@ -42,7 +42,7 @@ This skill keeps broad repo mutation tools because it selects one Plane issue, p
 
 <required_skills>
 
-- Load `plane-api` before any Plane API interaction.
+- Load `peaklab.plane-api` before any Plane API interaction.
 - Use `apex -d` by default for Analyze -> Plan -> Execute -> eXamine; omit `-d` only for `--no-tdd`.
 - Use `peaklab.ship-pr --auto-fix --no-merge` for PR creation/review/preflight.
 - Use `peaklab.plane-ship-watch` for the slow CI/rebase/conflict/merge/Plane-sync phase unless `--wait-merge` or `--no-merge` changes the flow.
@@ -291,13 +291,13 @@ acceptance criteria.
      any scope arbitration, the ordered next steps (implement → validate → commit →
      push → PR → RESULT), and the sentence "Do not stop again before the RESULT block
      unless genuinely blocked." A bare "confirmed" message lets the worker idle.
-   - `needs_clarification`: post the worker's questions as a Plane comment via `plane-api`,
+   - `needs_clarification`: post the worker's questions as a Plane comment via `peaklab.plane-api`,
      move the issue back to `Todo` (resolve state IDs dynamically), remove the worktree,
      and report the questions to the user.
-   - `already_done`: post the evidence as a Plane comment via `plane-api`, report the
+   - `already_done`: post the evidence as a Plane comment via `peaklab.plane-api`, report the
      commits/PRs to the user, and recommend closing the issue. Do not move it to Done
      without user confirmation. Remove the worktree.
-   - `obsolete`: post the evidence as a Plane comment via `plane-api`, move the issue
+   - `obsolete`: post the evidence as a Plane comment via `peaklab.plane-api`, move the issue
      back to `Todo` (resolve state IDs dynamically), report why the ticket is no longer
      relevant, and recommend cancelling or rewriting it. Do not close or cancel it
      without user confirmation. Remove the worktree.

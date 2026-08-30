@@ -1,5 +1,5 @@
 ---
-name: plane-api
+name: peaklab.plane-api
 description: Use when Plane API configuration, metadata lookup, issue listing, updates, status transitions, or issue-ID resolution are needed. Delegates new issue creation to peaklab.plane-create-issue.
 effort: fast
 allowed-tools: Bash(rtk :*), Read, Write, Skill
@@ -12,7 +12,7 @@ New issue creation is owned by `peaklab.plane-create-issue`. For creation reques
 </overview>
 
 <shared-scripts>
-Reusable script helpers live in `~/.agents/skills/plane-api/plane_client.py`.
+Reusable script helpers live in `~/.agents/skills/peaklab.plane-api/plane_client.py`.
 
 - `PlaneConfigLoader` owns config discovery from project settings, `.env`, and global settings.
 - `PlaneProject` owns URL-derived project metadata and issue URLs.
@@ -20,7 +20,7 @@ Reusable script helpers live in `~/.agents/skills/plane-api/plane_client.py`.
 
 Prefer importing these helpers from `init_project.py` or future scripts instead of duplicating config/API code. New creation flows must invoke `peaklab.plane-create-issue`; this shared API skill intentionally exposes no separate creation helper.
 
-Related script: `~/.agents/skills/plane-api/sync_issue_link.py` links a Plane issue with a git branch and GitHub PR by adding a Plane comment, updating a marked PR body block, and saving `.codex/plane/links/<ISSUE>.json`.
+Related script: `~/.agents/skills/peaklab.plane-api/sync_issue_link.py` links a Plane issue with a git branch and GitHub PR by adding a Plane comment, updating a marked PR body block, and saving `.codex/plane/links/<ISSUE>.json`.
 </shared-scripts>
 
 <constraints>
@@ -49,7 +49,7 @@ Run once per session. Defines `api()`, `results()`, `BASE`, `WP`, `WORKSPACE`, `
 import sys
 from pathlib import Path
 
-PLANE_API_DIR = Path.home() / '.agents/skills/plane-api'
+PLANE_API_DIR = Path.home() / '.agents/skills/peaklab.plane-api'
 sys.path.insert(0, str(PLANE_API_DIR))
 
 from plane_client import load_plane_client

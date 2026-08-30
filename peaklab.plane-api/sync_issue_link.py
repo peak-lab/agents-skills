@@ -2,7 +2,7 @@
 """Synchronize links between a Plane issue, the current branch, and a GitHub PR.
 
 Usage:
-    python3 ~/.agents/skills/plane-api/sync_issue_link.py [ISSUE] [options]
+    python3 ~/.agents/skills/peaklab.plane-api/sync_issue_link.py [ISSUE] [options]
 
 ISSUE can be a Plane UUID, a Plane URL, PREFIX-123, or just 123.
 If omitted, the script tries to infer PREFIX-123 from the branch name.
