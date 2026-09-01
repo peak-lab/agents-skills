@@ -64,7 +64,7 @@ Investigate the codebase with `Grep` and `Read` to identify the root cause from 
 
 ## Phase 4: Create GitHub Issue
 
-Use the `create-issue` skill to document the error:
+Use the `peaklab.create-issue` skill to document the error:
 - Title: `fix(scope): <error description>`
 - Include: GlitchTip error ID, permalink, error message, root cause, stack trace context
 - Label: `bug`
@@ -73,9 +73,9 @@ Use the `create-issue` skill to document the error:
 
 ## Phase 5: Do the Issue
 
-Invoke `do-issue` with the captured issue number:
+Invoke `peaklab.do-issue` with the captured issue number:
 ```
-Skill("do-issue"): <issue-number>
+Skill("peaklab.do-issue"): <issue-number>
 ```
 
 This handles investigation, fix, PR creation, review, and merge end-to-end. Wait for it to complete.
@@ -104,9 +104,9 @@ PR: <url> (merged)
 
 ## Rules
 
-- Don't resolve GlitchTip error before `do-issue` completes (PR merged)
+- Don't resolve GlitchTip error before `peaklab.do-issue` completes (PR merged)
 - If multiple errors: ask user which to fix, never guess
 - Use `rtk proxy curl` for API calls
-- Capture GitHub issue number after `create-issue` before calling `do-issue`
+- Capture GitHub issue number after `peaklab.create-issue` before calling `peaklab.do-issue`
 
 User: $ARGUMENTS

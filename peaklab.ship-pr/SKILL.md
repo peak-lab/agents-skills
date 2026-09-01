@@ -8,7 +8,7 @@ argument-hint: "[--base <branch>] [--draft] [--no-merge] [--auto-fix] [--plane]"
 ---
 
 <objective>
-Orchestrate the full PR lifecycle: create, review, fix, merge. Composes existing skills (git:create-pr, workflow:review-code, git:fix-pr-comments, git:merge) into a single automated pipeline. Optionally syncs with Plane after merge.
+Orchestrate the full PR lifecycle: create, review, fix, merge. Uses GitHub commands plus explicit review and issue-tracking steps; optionally syncs with Plane after merge.
 </objective>
 <context>
 - Current branch: !`git branch --show-current`
@@ -48,7 +48,7 @@ Required when using --plane (same vars as `peaklab.plane-do-issue`):
    gh pr list --head $(git branch --show-current) --json number,url,state
    ```
 2. **If PR exists**: capture the number and URL, jump directly to Phase 2.
-3. **If no PR**: invoke the `git:create-pr` skill to create one.
+3. **If no PR**: create one with `gh pr create` following the repository's PR conventions.
    - Pass `--draft` if provided
    - Pass `--base` if provided
 4. Capture the PR number for subsequent phases.
@@ -112,7 +112,7 @@ If no review outcome is set, stop. Do not merge.
    - **In-scope** (directly related to this PR's changes) → fix inline
    - **Out-of-scope** (pre-existing problem, separate concern, or too large) → create a GitHub issue
 
-2. For out-of-scope issues, use the `create-issue` skill:
+2. For out-of-scope issues, use the `peaklab.create-issue` skill:
    - Title: `fix(scope): <description of the problem>`
    - Body: include the file path, line numbers, and why it was flagged
    - Label: `bug` or `enhancement` depending on nature
@@ -189,7 +189,7 @@ For each failing job, decide:
 | `Module not found` / build  | `pnpm build`      | Fix imports/deps                                      |
 | Schema / migration          | —                 | Fix DB schema or create issue                         |
 
-**For out-of-scope CI failures** — use `create-issue` skill:
+**For out-of-scope CI failures** — use `peaklab.create-issue` skill:
 
 - Title: `fix(ci): <describe the root cause>`
 - Include: error message, file/line, run ID (`gh run view $RUN_ID`)

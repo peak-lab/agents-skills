@@ -170,7 +170,7 @@ Skill("apex") with args:
   <task description including: GlitchTip ID, error type, file:line, root cause hypothesis, acceptance criterion: "no new event of this fingerprint in GlitchTip within 30 min of deploy">
 ```
 
-Wait for apex to finish its Execute + eXamine phases. If apex opens a PR itself via `-pr`, still run `peaklab.ship-pr` next to run review + merge.
+Wait for apex to finish its Execute + eXamine phases. If apex opens a PR itself via `-pr`, still complete the PR shipping gate before resolving the GlitchTip issue.
 
 ### 5b. warning → Light fix
 
@@ -185,11 +185,7 @@ git commit -m "fix(<scope>): <short message> (GlitchTip #<id>)"
 
 ## Phase 6 — Ship the PR
 
-Invoke the `peaklab.ship-pr` skill. It creates the PR if missing, reviews, fixes comments, and merges.
-
-```
-Skill("peaklab.ship-pr") with args: --plane
-```
+`peaklab.ship-pr` disables model-initiated Skill calls. Stop here and ask the user to explicitly authorize shipping with `ship --plane` or an equivalent direct instruction, then resume only after the PR is merged.
 
 Add `--draft` if the fix needs human review before merge (auth, payment, migrations).
 

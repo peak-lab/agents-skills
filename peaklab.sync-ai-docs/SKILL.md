@@ -1,7 +1,7 @@
 ---
 name: "peaklab.sync-ai-docs"
 description: Use when syncing or unifying AI documentation across AGENTS.md files, Codex rules, Claude compatibility context, project guides, and shared agent assets after a project has evolved.
-effort: high
+effort: deep
 disable-model-invocation: true
 allowed-tools: "Bash(git:*), Bash(gh:*), Bash(pnpm:*), Bash(mkdir:*), Bash(ln:*), Bash(mv:*), Bash(rmdir:*), Bash(readlink:*), Bash(python3:*), Bash(test:*), Bash(diff:*), Read, Write, Edit, Glob, Grep, Agent"
 argument-hint: "[--commit] [--dirs <dir1,dir2,...>] [--no-rules] [--root-rules-only] [--sync-symlinks]"

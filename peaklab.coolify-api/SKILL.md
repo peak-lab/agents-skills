@@ -102,7 +102,7 @@ for _sl in ['.claude/settings.local.json', '.codex/settings.local.json']:
 URL   = os.environ.get('COOLIFY_URL', '').rstrip('/')
 TOKEN = os.environ.get('COOLIFY_TOKEN', '')
 if not URL or not TOKEN:
-    import sys; print("Missing COOLIFY_URL or COOLIFY_TOKEN — run /peaklab.env-init", file=sys.stderr); sys.exit(1)
+    import sys; print("Missing COOLIFY_URL or COOLIFY_TOKEN — run peaklab.infra-config", file=sys.stderr); sys.exit(1)
 
 def api(method, path, data=None):
     req = urllib.request.Request(f'{URL}{path}', method=method,

@@ -9,7 +9,7 @@ allowed-tools: "Bash(gh :*), Bash(git :*), Bash(rg :*), Bash(python3 :*), Bash(r
 <overview>
 Resolve GitHub issues from selection to PR lifecycle. This skill owns issue selection, worktree
 preparation, resolver launch, the QA review gate, and the merge phase. Implementation is delegated
-to `issue-resolver` subagents (which run `apex`), and queue chaining to `do-queue`.
+to `issue-resolver` subagents, which run `apex`.
 
 Execution model (mirrors `peaklab.plane-do-issue`):
 - Default: each issue runs in its own isolated git worktree under `.worktrees/`, handled by one
@@ -18,8 +18,8 @@ Execution model (mirrors `peaklab.plane-do-issue`):
 - The parent orchestrator never edits product files, commits, pushes, or switches branches for an
   issue — except in explicit `--no-subagent` fallback.
 - Resolvers never merge. The orchestrator owns the merge phase, sequentially, after the QA gate.
-- This skill resolves exactly the selected issue(s) and stops. Working the queue until empty is
-  `do-queue`'s job.
+- This skill resolves only explicitly selected issues, batches provided as arguments, or one
+  priority-selected issue, then stops.
 </overview>
 
 <task_spec>
@@ -395,7 +395,7 @@ criteria explicitly require `issue-resolver-deep`.
 - Never pass `-b` or `-pr` to apex from inside a resolver — the branch is pre-made and the
   orchestrator owns the PR lifecycle end state.
 - Resolvers run apex with `-a -d` by default; omit `-d` only when `--no-tdd` was requested. They cannot answer plan-approval prompts.
-- Queue chaining lives in `do-queue`; this skill never re-invokes itself.
+- Queue chaining is intentionally out of scope; pass multiple issue numbers for bounded batches.
 </gotchas>
 
 <acceptance_criteria>

@@ -71,7 +71,7 @@ Default execution is **subagent + isolated worktree**.
 - `next` must skip EPIC tickets such as titles beginning with `[EPIC ...]`. EPICs are planning containers, not implementation units. A specific EPIC ID may still be opened explicitly for planning/story split.
 - The worker must run every git/package command from its assigned worktree path.
 - The parent must not edit product files, commit, push, or switch branches for the issue unless running explicit `--no-subagent` fallback.
-- Only one Plane issue implementation may run per `peaklab.plane-do-issue` invocation. `peaklab.plane-do-queue` may call this skill repeatedly, but it should not make the parent worktree dirty.
+- Only one Plane issue implementation may run per `peaklab.plane-do-issue` invocation. External queue orchestrators may call this skill repeatedly, but it should not make the parent worktree dirty.
 - The worker receives its ownership and model constraints from the selected agent
   definition. The parent passes only issue-specific context and the applicable analysis
   contract; it does not override the agent model.
