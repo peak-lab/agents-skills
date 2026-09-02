@@ -289,7 +289,9 @@ Per terminal status:
   resume the same resolver to produce them. Then run the QA gate.
 - `needs_escalation`: resume the same worktree with `issue-resolver-deep`, including the existing
   analysis/plan and the escalation evidence. It must reuse valid analysis rather than rediscover
-  the issue. Continue from its RESULT block.
+  the issue. Continue from its RESULT block. If `issue-resolver-deep` is unavailable in the current
+  harness, say so and mark the issue `blocked` with the escalation evidence — never silently fall
+  back to the standard resolver for a high-risk change.
 - `needs_clarification`: post the questions as an issue comment (`gh issue comment`), remove the
   worktree, report to the user.
 - `already_done`: post the evidence as an issue comment, recommend closing; close only with user
@@ -352,8 +354,8 @@ Report the final table:
 Only when `--no-subagent` was passed or subagent/worktree launch is unavailable. One issue only.
 
 - Inspect first: `git status --short`, `git branch --show-current`. Dirty worktree → ask before
-  stashing only with `--no-auto`; default mode uses named stash `do-issue pre-branch #<n>`, pops after branch creation, and stops on
-  pop conflict).
+  stashing only with `--no-auto`. Default mode uses the named stash `do-issue pre-branch #<n>`,
+  pops it after branch creation, and stops on a pop conflict.
 - If already in a linked worktree, retain its current non-base branch; never switch branches or create another worktree. Otherwise branch via `gh issue develop <n> --checkout --base <base>`; fallback
   `git fetch origin <base> && git switch -c <n>-<slug> origin/<base>`.
 - Apply the `<analysis_contract>` directly (task_dir `.agents/tasks/issue-<n>-<slug>/`).

@@ -39,7 +39,7 @@ Never reimplement in REST something MCP already exposes. When the helper lacks a
 | Env var **key names** only | `mcp__coolify__list_env_keys`, `list_shared_env_keys` |
 | Env var **values**, create/update/delete | REST — helper `upsert-env`, or `api('GET'/'POST'/'PATCH'/'DELETE', …/envs)` |
 | Deploy several apps and wait for green | REST — helper `deploy … --wait` (MCP has no polling loop) |
-| Create/delete projects, apps, resources | REST — see `coolify-create-project` |
+| Create/delete projects, apps, resources | REST — `POST /projects`, `/databases/*`, `/applications/public` |
 | Any instance ≠ `coolify.example.com` | REST — MCP is registered for that host only |
 
 `coolify_help` returns the live MCP tool catalog by intent; prefer it over guessing a tool name.
@@ -168,7 +168,10 @@ App aliases come from `COOLIFY_APP_ALIASES`, a JSON object such as `{ "web": "my
 | Destructive without confirm | Always ask user before `stop`, `delete`, or `restart` |
 | MCP tools absent from the session | The server is registered at user scope; a session started before registration must be restarted |
 
-**See also:** `coolify-create-project` skill for creating projects and adding resources.
+**Companion skills:** project bootstrap, registry-driven deploys and server patching live in the
+`coolify-create-project`, `coolify-deploy` and `coolify-server-update` skills. They carry
+instance-specific registries and are **not published** — this skill never depends on them, and
+works standalone when they are absent.
 
 </gotchas>
 

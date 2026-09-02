@@ -50,14 +50,23 @@ This skill keeps broad repo mutation tools because it selects one Plane issue, p
 
 <quick_reference>
 
+Only `plane-issue-worker` and `plane-ship-watcher` are project-agnostic and always available in
+`~/.agents/agents/`. Every ownership route below names an agent the **repository** declares in its
+own `.agents/agents/`; read that directory before routing and never invent a name. When the
+repository declares no ownership agent, route the work to `plane-issue-worker`.
+
 | Work | Agent route | Escalation |
 |---|---|---|
-| Scoped frontend, backend, or AI work | ownership-specific implementation agent | Cross-package or billing route if scope expands |
+| Scoped frontend, backend, or AI work | the repository's ownership agent | Cross-package or billing route if scope expands |
 | Docs, tests, tooling, or configuration | `plane-issue-worker` | Ownership-specific route if identified |
-| Billing or entitlement change | `billing-stripe-dev` | None |
-| Cross-package or contract change | `cross-package-orchestrator` | None |
-| Standard PR review | `qa-code-reviewer` | `qa-code-reviewer-deep` for high-risk changes |
+| Billing or entitlement change | the repository's billing agent | `plane-issue-worker` when none is declared |
+| Cross-package or contract change | the repository's cross-package agent | `plane-issue-worker` when none is declared |
+| Standard PR review | the repository's review agent | its deep variant for high-risk changes |
 | CI, rebase, and merge follow-up | `plane-ship-watcher` | Record an explicit blocker when unsafe |
+
+The names used throughout this skill — `front-next-dev`, `back-python-dev`, `ai-service-dev`,
+`billing-stripe-dev`, `cross-package-orchestrator`, `qa-code-reviewer`, `qa-code-reviewer-deep` —
+are PushRank's. Read the repository's `.agents/agents/` and substitute its equivalents.
 
 </quick_reference>
 
@@ -138,7 +147,8 @@ acceptance criteria.
    - `tdd_mode`: true by default, false only with `--no-tdd`; pass it unchanged to the implementation worker.
 
    If the selected issue is an explicit EPIC, treat the run as planning-first:
-   - load `plane-epic-planner`, `cross-package-orchestrator`, and `plane-story-planner` from `.agents/agents` when available;
+   - load `plane-epic-planner` and `plane-story-planner` from `~/.agents/agents/`, plus the
+     repository's cross-package agent from its own `.agents/agents/` when it declares one;
    - create or update `analyze.md`, `plan.md`, and `implementation.md`;
    - split the EPIC into independently shippable Plane-ready stories;
    - return `status=needs_confirmation` before creating or implementing stories unless the user explicitly asked to create stories.
