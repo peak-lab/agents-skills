@@ -1,6 +1,11 @@
 # PeakLab Agent Skills
 
-Reusable agent skills used by PeakLab workflows. The repository is intentionally public and contains sanitized instructions only: no production tokens, private page IDs, internal hostnames, or customer data.
+Reusable workflows for Codex, Claude Code, and other agents that support the Agent Skills format.
+The repository contains sanitized instructions only: no production credentials, private page IDs,
+internal hostnames, or customer data.
+
+Each top-level directory is an independently installable skill. Skills cover implementation and
+review, GitHub and Plane delivery, GlitchTip incident handling, and PeakLab infrastructure operations.
 
 ## Install
 
@@ -18,6 +23,7 @@ npx skills add peak-lab/agents-skills@peaklab.plane-api -y
 npx skills add peak-lab/agents-skills@peaklab.plane-do-issue -y
 npx skills add peak-lab/agents-skills@peaklab.plane-ship-watch -y
 npx skills add peak-lab/agents-skills@peaklab.sync-ai-docs -y
+npx skills add peak-lab/agents-skills@glitchtip-do-issue -y
 ```
 
 Install every skill by selecting all entries interactively:
@@ -26,12 +32,27 @@ Install every skill by selecting all entries interactively:
 npx skills add peak-lab/agents-skills
 ```
 
+Re-run the same command to update an installed skill. Install the whole repository for orchestrated
+workflows so their called skills are available too.
+
+## Common workflows
+
+| Goal | Recommended skill |
+|---|---|
+| Implement and validate a code change | `apex` |
+| Review a branch or pull request | `review-code` |
+| Resolve one or more GitHub issues in isolated worktrees | `peaklab.do-issue` |
+| Drain a GlitchTip inbox sequentially in the current checkout | `peaklab.fix-glitchtip` |
+| Resolve GlitchTip root-cause clusters using isolated worktrees and QA gates | `glitchtip-do-issue` |
+| Implement a Plane issue and follow its delivery lifecycle | `peaklab.plane-do-issue` |
+
 ## Available Skills
 
 | Skill | Use when |
 |---|---|
 | `apex` | Implementing a feature or fix through the Analyze-Plan-Execute-eXamine workflow with validation. |
 | `review-code` | Reviewing code or a PR through a multi-agent deep review focused on high-impact issues. |
+| `glitchtip-do-issue` | Resolving one or more GlitchTip root-cause clusters through isolated worktrees, QA gates, sequential merge, and post-merge resolution. |
 | `peaklab.coolify-api` | Managing Coolify deployments, applications, databases, services, servers, logs, env keys, and lifecycle operations. |
 | `peaklab.plane-api` | Reading Plane configuration, metadata, issue lists, state transitions, and shared Plane API helpers. |
 | `peaklab.client-audit` | Auditing a client project before quoting or starting work. |
@@ -54,10 +75,18 @@ npx skills add peak-lab/agents-skills
 
 ## Composition
 
-Several skills call others. `peaklab.do-issue` and `peaklab.fix-glitchtip` run `apex` for the
-implementation phase; `peaklab.plane-*` skills read their configuration through `peaklab.plane-api`;
-`peaklab.client-audit` defers code quality to `review-code`. Installing a caller without its callee
-leaves a dangling `Skill(...)` reference, so install the whole set unless you know a caller is unused.
+Several skills call others:
+
+- `peaklab.do-issue`, `peaklab.fix-glitchtip`, and `glitchtip-do-issue` use `apex` during implementation.
+- `peaklab.plane-*` skills read shared configuration through `peaklab.plane-api`.
+- `peaklab.client-audit` delegates code-quality analysis to `review-code`.
+- `glitchtip-do-issue` can use the harness agents `issue-resolver`, `issue-resolver-deep`,
+  `issue-qa-reviewer`, `code-reviewer`, and `issue-ship-watcher` when they are installed. Use its
+  `--no-subagent` mode for a single cluster when those agent definitions are unavailable.
+
+Installing a caller without its called skills leaves dangling references. Install the complete
+repository for unattended workflows, then provision any harness-specific agent definitions described
+by your agent configuration.
 
 ## Naming
 
@@ -86,9 +115,14 @@ PLANE_PROJECT=https://plane.example.com/workspace/projects/project-id/issues/
 PLANE_TOKEN=...
 GLITCHTIP_URL=https://glitchtip.example.com
 GLITCHTIP_TOKEN=...
+GLITCHTIP_ORG=example-org
 UPTIME_KUMA_URL=https://monitoring.example.com
 UPTIME_KUMA_TOKEN=...
 ```
+
+For GlitchTip workflows, set `GLITCHTIP_URL`, `GLITCHTIP_TOKEN`, and `GLITCHTIP_ORG` for the
+organization slug used by your instance. The skills validate access with a read-only API request before retrieving issue data.
+Keep credentials in environment variables or gitignored local configuration.
 
 ## Safety
 
@@ -99,9 +133,10 @@ UPTIME_KUMA_TOKEN=...
 
 ## Development
 
-Validate Python helper scripts:
+Validate skill discovery and Python helper scripts:
 
 ```bash
+npx skills add . --list
 python3 -m py_compile peaklab.coolify-api/scripts/coolify.py peaklab.plane-api/*.py
 cd peaklab.plane-api && python3 -m unittest test_plane_client.py
 ```
