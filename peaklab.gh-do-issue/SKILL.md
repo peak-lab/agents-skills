@@ -1,5 +1,5 @@
 ---
-name: "peaklab.do-issue"
+name: "peaklab.gh-do-issue"
 description: Use when the user asks to resolve a GitHub issue end to end, work the next open GitHub issue, or resolve a batch of GitHub issues with APEX implementation and PeakLab PR shipping.
 effort: deep
 argument-hint: "[issue-number...] [--swarm [N]] [--base BRANCH] [--draft] [--no-auto] [--no-tdd] [--async-merge | --wait-merge | --no-merge] [--no-subagent]"
@@ -29,7 +29,7 @@ Execution model (mirrors `peaklab.plane-do-issue`):
   model selection and callers never override it at spawn.
 - Acceptance criteria: every terminal issue has evidence, while every PR has an
   appropriately routed implementation, review, and merge owner.
-- Relevant locations: `~/.agents/skills/peaklab.do-issue/`, `~/.agents/agents/codex/`, `~/.agents/agents/claude/`, and
+- Relevant locations: `~/.agents/skills/peaklab.gh-do-issue/`, `~/.agents/agents/codex/`, `~/.agents/agents/claude/`, and
   the parent repository's `.agents/tasks/issue-<number>-<slug>/` directory.
 </task_spec>
 

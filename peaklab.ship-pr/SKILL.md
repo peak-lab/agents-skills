@@ -112,7 +112,7 @@ If no review outcome is set, stop. Do not merge.
    - **In-scope** (directly related to this PR's changes) → fix inline
    - **Out-of-scope** (pre-existing problem, separate concern, or too large) → create a GitHub issue
 
-2. For out-of-scope issues, use the `peaklab.create-issue` skill:
+2. For out-of-scope issues, use the `peaklab.gh-create-issue` skill:
    - Title: `fix(scope): <description of the problem>`
    - Body: include the file path, line numbers, and why it was flagged
    - Label: `bug` or `enhancement` depending on nature
@@ -189,7 +189,7 @@ For each failing job, decide:
 | `Module not found` / build  | `pnpm build`      | Fix imports/deps                                      |
 | Schema / migration          | —                 | Fix DB schema or create issue                         |
 
-**For out-of-scope CI failures** — use `peaklab.create-issue` skill:
+**For out-of-scope CI failures** — use `peaklab.gh-create-issue` skill:
 
 - Title: `fix(ci): <describe the root cause>`
 - Include: error message, file/line, run ID (`gh run view $RUN_ID`)

@@ -1,5 +1,5 @@
 ---
-name: "glitchtip-do-issue"
+name: "peaklab.glitchtip-do-issue"
 description: Use when the user asks to resolve GlitchTip errors end to end with the do-issue machinery — isolated worktrees, issue-resolver subagents, QA gate, sequential merge — instead of a GitHub issue queue.
 effort: deep
 argument-hint: "[glitchtip-id|url...] [--project SLUG] [--level fatal|error|warning] [--swarm [N]] [--limit N] [--base BRANCH] [--draft] [--no-auto] [--no-tdd] [--async-merge | --wait-merge | --no-merge] [--no-resolve] [--no-subagent]"
@@ -7,13 +7,13 @@ allowed-tools: "Bash(gh :*), Bash(git :*), Bash(rg :*), Bash(curl :*), Bash(pyth
 ---
 
 <overview>
-`peaklab.do-issue` with GlitchTip as the work-item source. Everything downstream of selection is
+`peaklab.gh-do-issue` with GlitchTip as the work-item source. Everything downstream of selection is
 identical — one isolated worktree per unit of work, one `issue-resolver` subagent running `apex`,
 a QA gate, a sequential merge phase, a `final-recap` — but the unit of work is a **root-cause
 cluster of GlitchTip issues**, not a GitHub issue, and the run ends by resolving the covered
 GlitchTip IDs.
 
-Three deliberate differences from `peaklab.do-issue`:
+Three deliberate differences from `peaklab.gh-do-issue`:
 1. **Source and selection**: GlitchTip REST API, ranked by level then event count, not `gh issue list`.
 2. **Unit of work**: a cluster (1..N GlitchTip IDs sharing one demonstrated root cause) → one
    worktree, one branch, one PR. A stack trace is not a specification: the resolver must prove the
@@ -25,7 +25,7 @@ Three deliberate differences from `peaklab.do-issue`:
 
 <routing>
 Three skills enter through GlitchTip. Pick on scope, not on wording:
-- **`glitchtip-do-issue` (this one)** — several root-cause clusters at once, each in its own
+- **`peaklab.glitchtip-do-issue` (this one)** — several root-cause clusters at once, each in its own
   worktree with an `issue-resolver` subagent, QA gate and sequential merge. No GitHub issue.
 - **`peaklab.fix-glitchtip`** — inbox drain, inline, one cluster after another in the current
   checkout. No worktree, no parallelism.
@@ -40,7 +40,7 @@ Three skills enter through GlitchTip. Pick on scope, not on wording:
   selection; GlitchTip mutation happens only after merge.
 - Acceptance criteria: every cluster is evidence-backed, every PR has an implementation and review
   owner, every resolved GlitchTip ID is covered by a merged diff.
-- Relevant locations: `~/.agents/skills/glitchtip-do-issue/`, `~/.agents/agents/`, and the parent
+- Relevant locations: `~/.agents/skills/peaklab.glitchtip-do-issue/`, `~/.agents/agents/`, and the parent
   repository's `.agents/tasks/glitchtip-<cluster-key>/` directory.
 </task_spec>
 
@@ -207,7 +207,7 @@ message (IDs, UUIDs, URLs and timestamps removed), culprit, top in-app frame, re
 and the non-personal `context` keys. Never copy request bodies, user identities, headers, or
 breadcrumbs into task files.
 
-Then cluster (this is the step `peaklab.do-issue` does not have):
+Then cluster (this is the step `peaklab.gh-do-issue` does not have):
 
 | Evidence | Decision |
 |---|---|
@@ -396,7 +396,7 @@ inbox remaining: 8
 Only with `--no-subagent`, or when subagents/worktrees are unavailable. One cluster.
 
 - Inspect first: `git status --short`, `git branch --show-current`. Dirty → stash under
-  `glitchtip-do-issue pre-branch <key>` in auto mode (ask with `--no-auto`), pop after branching,
+  `peaklab.glitchtip-do-issue pre-branch <key>` in auto mode (ask with `--no-auto`), pop after branching,
   stop on conflict.
 - Already in a linked worktree on a non-base branch → keep it. Otherwise
   `git fetch origin <base> && git switch -c glitchtip-<key> origin/<base>`.
