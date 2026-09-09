@@ -1,5 +1,5 @@
 ---
-name: "peaklab.create-issue"
+name: "peaklab.gh-create-issue"
 description: Use when creating comprehensive GitHub issues from descriptions, bug reports, feature requests, code context, or images.
 effort: standard
 disable-model-invocation: true
@@ -22,29 +22,29 @@ gh auth login
 Optional: Configure defaults in `.env`:
 ```bash
 GH_ISSUE_REMOTE=origin
-GH_ISSUE_ASSIGNEE=mkldevops
+GH_ISSUE_ASSIGNEE=team-lead
 ```
 </setup>
 
 <basic_usage>
 ```bash
 # Simple issue creation
-/peaklab.create-issue "Add user authentication feature"
+/peaklab.gh-create-issue "Add user authentication feature"
 
 # With attached image (screenshot/mockup) — image is auto-uploaded to GitHub
-/peaklab.create-issue "Login page is broken" [attach screenshot.png]
+/peaklab.gh-create-issue "Login page is broken" [attach screenshot.png]
 
 # With custom assignee
-/peaklab.create-issue "Fix login redirect bug" --assignee alice
+/peaklab.gh-create-issue "Fix login redirect bug" --assignee alice
 
 # With custom remote and assignee
-/peaklab.create-issue "Refactor database layer" --remote upstream --assignee bob
+/peaklab.gh-create-issue "Refactor database layer" --remote upstream --assignee bob
 
 # With code examples in description
-/peaklab.create-issue "Add dark mode toggle" --code
+/peaklab.gh-create-issue "Add dark mode toggle" --code
 
 # All options combined
-/peaklab.create-issue "Add caching layer" --remote upstream --assignee alice --code
+/peaklab.gh-create-issue "Add caching layer" --remote upstream --assignee alice --code
 ```
 </basic_usage>
 </quick_start>
@@ -59,7 +59,7 @@ GH_ISSUE_ASSIGNEE=mkldevops
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `GH_ISSUE_REMOTE` | Git remote for issue creation | `origin` |
-| `GH_ISSUE_ASSIGNEE` | Default issue assignee | `mkldevops` |
+| `GH_ISSUE_ASSIGNEE` | Optional default issue assignee | unset |
 | `GH_ISSUE_CODE` | Include code examples in description | `false` |
 
 **Example `.env` file:**
@@ -81,7 +81,7 @@ REPO_URL=$(git remote get-url $REMOTE | sed 's/git@github.com://' | sed 's/.git$
 <argument_parsing>
 **Syntax:**
 ```
-/peaklab.create-issue <description-text> [--remote <remote-name>] [--assignee <username>] [--code]
+/peaklab.gh-create-issue <description-text> [--remote <remote-name>] [--assignee <username>] [--code]
 ```
 
 **Parsing rules:**
@@ -92,31 +92,31 @@ REPO_URL=$(git remote get-url $REMOTE | sed 's/git@github.com://' | sed 's/.git$
 
 **Examples:**
 ```
-/peaklab.create-issue "Add user authentication"
+/peaklab.gh-create-issue "Add user authentication"
 → description: "Add user authentication"
 → remote: from .env or "origin"
-→ assignee: from .env or "mkldevops"
+→ assignee: from `.env`, otherwise unset
 → code: from .env or false
 
-/peaklab.create-issue "Fix login bug" --assignee john
+/peaklab.gh-create-issue "Fix login bug" --assignee john
 → description: "Fix login bug"
 → remote: from .env or "origin"
 → assignee: "john"
 → code: from .env or false
 
-/peaklab.create-issue "New feature" --remote upstream --assignee alice
+/peaklab.gh-create-issue "New feature" --remote upstream --assignee alice
 → description: "New feature"
 → remote: "upstream"
 → assignee: "alice"
 → code: from .env or false
 
-/peaklab.create-issue "Add dark mode" --code
+/peaklab.gh-create-issue "Add dark mode" --code
 → description: "Add dark mode"
 → remote: from .env or "origin"
-→ assignee: from .env or "mkldevops"
+→ assignee: from `.env`, otherwise unset
 → code: true (include code examples in description)
 
-/peaklab.create-issue "Refactor auth" --remote upstream --assignee bob --code
+/peaklab.gh-create-issue "Refactor auth" --remote upstream --assignee bob --code
 → description: "Refactor auth"
 → remote: "upstream"
 → assignee: "bob"
@@ -128,7 +128,7 @@ REPO_URL=$(git remote get-url $REMOTE | sed 's/git@github.com://' | sed 's/.git$
 1. **Parse Arguments and Configuration**
    - Extract `--remote` and `--assignee` from arguments
    - Check `.env` file for `GH_ISSUE_REMOTE` and `GH_ISSUE_ASSIGNEE`
-   - Apply defaults: remote=`origin`, assignee=`mkldevops`
+   - Apply defaults: remote=`origin`, assignee unset
    - Extract the description text
 
 2. **Detect Attached Images**
@@ -183,9 +183,14 @@ echo $REPO  # owner/repo format
 
 **Create issue:**
 ```bash
+ASSIGNEE_ARGS=()
+if [ -n "${ASSIGNEE:-}" ]; then
+  ASSIGNEE_ARGS=(--assignee "$ASSIGNEE")
+fi
+
 gh issue create \
   -R "$REPO" \
-  --assignee "$ASSIGNEE" \
+  "${ASSIGNEE_ARGS[@]}" \
   --title "feat(auth): add user authentication" \
   --body "## Description
 Implement user authentication feature.
@@ -386,19 +391,18 @@ Common scopes (optional):
 <simple_feature>
 ```bash
 # Input
-/peaklab.create-issue "Add dark mode toggle to settings"
+/peaklab.gh-create-issue "Add dark mode toggle to settings"
 
 # Parsed
 description="Add dark mode toggle to settings"
 remote="origin"  # from .env or default
-assignee="mkldevops"  # from .env or default
+assignee=""  # from .env when configured
 
 # Get repo
 REPO=$(git remote get-url origin | sed 's/git@github.com://' | sed 's/.git$//')
 
 # Create issue
 gh issue create -R "$REPO" \
-  --assignee "mkldevops" \
   --title "feat(ui): add dark mode toggle to settings" \
   --body "## Description
 Add a dark mode toggle in the application settings.
@@ -417,7 +421,7 @@ Medium" \
 <bug_report>
 ```bash
 # Input
-/peaklab.create-issue "Login redirects to wrong page after authentication" --assignee alice
+/peaklab.gh-create-issue "Login redirects to wrong page after authentication" --assignee alice
 
 # Create issue
 gh issue create -R "$REPO" \
@@ -447,7 +451,7 @@ Low" \
 <custom_remote>
 ```bash
 # Input
-/peaklab.create-issue "Upgrade to PHP 8.3" --remote upstream --assignee team
+/peaklab.gh-create-issue "Upgrade to PHP 8.3" --remote upstream --assignee team
 
 # Get upstream repo
 REPO=$(git remote get-url upstream | sed 's/git@github.com://' | sed 's/.git$//')
@@ -474,11 +478,10 @@ Medium" \
 <with_code_examples>
 ```bash
 # Input
-/peaklab.create-issue "Add dark mode toggle to settings" --code
+/peaklab.gh-create-issue "Add dark mode toggle to settings" --code
 
 # Create issue with code examples
 gh issue create -R "$REPO" \
-  --assignee "mkldevops" \
   --title "feat(ui): add dark mode toggle to settings" \
   --body "## Description
 Add a dark mode toggle in the application settings.
@@ -536,11 +539,11 @@ Medium" \
 # Check if .env exists and read values
 if [ -f .env ]; then
   GH_ISSUE_REMOTE=$(grep -E '^GH_ISSUE_REMOTE=' .env | cut -d '=' -f2 || echo "origin")
-  GH_ISSUE_ASSIGNEE=$(grep -E '^GH_ISSUE_ASSIGNEE=' .env | cut -d '=' -f2 || echo "mkldevops")
+  GH_ISSUE_ASSIGNEE=$(grep -E '^GH_ISSUE_ASSIGNEE=' .env | cut -d '=' -f2 || true)
   GH_ISSUE_CODE=$(grep -E '^GH_ISSUE_CODE=' .env | cut -d '=' -f2 || echo "false")
 else
   GH_ISSUE_REMOTE="origin"
-  GH_ISSUE_ASSIGNEE="mkldevops"
+  GH_ISSUE_ASSIGNEE=""
   GH_ISSUE_CODE="false"
 fi
 ```
@@ -558,7 +561,7 @@ fi
 - Arguments parsed correctly (--remote, --assignee, --code, description)
 - Configuration loaded from .env if present
 - Issue created on correct remote repository
-- Issue assigned to correct user
+- Issue assigned to the requested/configured user when one is provided
 - Issue has clear title following Conventional Commits format: `type(scope): description` or `type: description`
 - Issue body contains all required sections
 - Appropriate labels applied

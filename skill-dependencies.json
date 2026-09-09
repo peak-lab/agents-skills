@@ -1,0 +1,47 @@
+{
+  "peaklab.client-audit": [
+    "review-code"
+  ],
+  "peaklab.fix-glitchtip": [
+    "apex",
+    "peaklab.ship-pr"
+  ],
+  "peaklab.gh-do-issue": [
+    "apex",
+    "peaklab.ship-pr"
+  ],
+  "peaklab.glitchtip-do-issue": [
+    "apex",
+    "peaklab.gh-do-issue",
+    "peaklab.ship-pr"
+  ],
+  "peaklab.plane-api": [
+    "peaklab.plane-create-issue"
+  ],
+  "peaklab.plane-create-issue": [
+    "peaklab.plane-api"
+  ],
+  "peaklab.plane-do-issue": [
+    "peaklab.plane-api",
+    "peaklab.plane-ship-watch",
+    "peaklab.ship-pr"
+  ],
+  "peaklab.plane-init": [
+    "peaklab.plane-api"
+  ],
+  "peaklab.plane-ship-watch": [
+    "peaklab.plane-do-issue",
+    "peaklab.ship-pr"
+  ],
+  "peaklab.plane-status": [
+    "peaklab.plane-api"
+  ],
+  "peaklab.ship-pr": [
+    "peaklab.gh-create-issue",
+    "peaklab.plane-create-issue"
+  ],
+  "peaklab.track-error": [
+    "peaklab.gh-create-issue",
+    "peaklab.gh-do-issue"
+  ]
+}

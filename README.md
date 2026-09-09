@@ -23,13 +23,20 @@ npx skills add peak-lab/agents-skills@peaklab.plane-api -y
 npx skills add peak-lab/agents-skills@peaklab.plane-do-issue -y
 npx skills add peak-lab/agents-skills@peaklab.plane-ship-watch -y
 npx skills add peak-lab/agents-skills@peaklab.sync-ai-docs -y
-npx skills add peak-lab/agents-skills@glitchtip-do-issue -y
+npx skills add peak-lab/agents-skills@peaklab.glitchtip-do-issue -y
 ```
 
 Install every skill by selecting all entries interactively:
 
 ```bash
 npx skills add peak-lab/agents-skills
+```
+
+For a reproducible non-interactive installation, select every skill explicitly for the target
+harness. For example, with Claude Code:
+
+```bash
+npx skills add peak-lab/agents-skills -g --skill '*' --agent claude-code --copy -y
 ```
 
 Re-run the same command to update an installed skill. Install the whole repository for orchestrated
@@ -41,9 +48,10 @@ workflows so their called skills are available too.
 |---|---|
 | Implement and validate a code change | `apex` |
 | Review a branch or pull request | `review-code` |
-| Resolve one or more GitHub issues in isolated worktrees | `peaklab.do-issue` |
+| Create a comprehensive GitHub issue | `peaklab.gh-create-issue` |
+| Resolve one or more GitHub issues in isolated worktrees | `peaklab.gh-do-issue` |
 | Drain a GlitchTip inbox sequentially in the current checkout | `peaklab.fix-glitchtip` |
-| Resolve GlitchTip root-cause clusters using isolated worktrees and QA gates | `glitchtip-do-issue` |
+| Resolve GlitchTip root-cause clusters using isolated worktrees and QA gates | `peaklab.glitchtip-do-issue` |
 | Implement a Plane issue and follow its delivery lifecycle | `peaklab.plane-do-issue` |
 
 ## Available Skills
@@ -52,12 +60,12 @@ workflows so their called skills are available too.
 |---|---|
 | `apex` | Implementing a feature or fix through the Analyze-Plan-Execute-eXamine workflow with validation. |
 | `review-code` | Reviewing code or a PR through a multi-agent deep review focused on high-impact issues. |
-| `glitchtip-do-issue` | Resolving one or more GlitchTip root-cause clusters through isolated worktrees, QA gates, sequential merge, and post-merge resolution. |
+| `peaklab.glitchtip-do-issue` | Resolving one or more GlitchTip root-cause clusters through isolated worktrees, QA gates, sequential merge, and post-merge resolution. |
 | `peaklab.coolify-api` | Managing Coolify deployments, applications, databases, services, servers, logs, env keys, and lifecycle operations. |
 | `peaklab.plane-api` | Reading Plane configuration, metadata, issue lists, state transitions, and shared Plane API helpers. |
 | `peaklab.client-audit` | Auditing a client project before quoting or starting work. |
-| `peaklab.create-issue` | Creating comprehensive GitHub issues from descriptions, bug reports, feature requests, code context, or images. |
-| `peaklab.do-issue` | Resolving a GitHub issue end to end through implementation and PR shipping. |
+| `peaklab.gh-create-issue` | Creating comprehensive GitHub issues from descriptions, bug reports, feature requests, code context, or images. |
+| `peaklab.gh-do-issue` | Resolving a GitHub issue end to end through implementation and PR shipping. |
 | `peaklab.fix-glitchtip` | Fixing GlitchTip errors end to end and shipping the fix. |
 | `peaklab.improve-skill` | Auditing and improving an agent skill or command against the authoring conventions. |
 | `peaklab.infra-config` | Discovering and writing local infrastructure configuration for a project. |
@@ -77,16 +85,25 @@ workflows so their called skills are available too.
 
 Several skills call others:
 
-- `peaklab.do-issue`, `peaklab.fix-glitchtip`, and `glitchtip-do-issue` use `apex` during implementation.
+- `peaklab.gh-do-issue`, `peaklab.fix-glitchtip`, and `peaklab.glitchtip-do-issue` use `apex` during implementation.
 - `peaklab.plane-*` skills read shared configuration through `peaklab.plane-api`.
 - `peaklab.client-audit` delegates code-quality analysis to `review-code`.
-- `glitchtip-do-issue` can use the harness agents `issue-resolver`, `issue-resolver-deep`,
-  `issue-qa-reviewer`, `code-reviewer`, and `issue-ship-watcher` when they are installed. Use its
-  `--no-subagent` mode for a single cluster when those agent definitions are unavailable.
+- `peaklab.glitchtip-do-issue` and `peaklab.gh-do-issue` can use the harness agents `issue-resolver`, `issue-resolver-deep`,
+  `issue-qa-reviewer`, `code-reviewer`, and `issue-ship-watcher` when they are installed. Their
+  documented inline fallback handles one issue or cluster when those agent definitions are unavailable.
 
 Installing a caller without its called skills leaves dangling references. Install the complete
 repository for unattended workflows, then provision any harness-specific agent definitions described
 by your agent configuration.
+
+The repository contains every skill invoked by another bundled skill. Harness agents are optional:
+the GitHub and GlitchTip workflows fall back to their documented inline mode when those definitions
+are unavailable.
+
+[`skill-dependencies.json`](skill-dependencies.json) is the source of truth for composition.
+`python3 scripts/check_portability.py` verifies that every caller and dependency exists, every skill
+name matches its directory, installed-skill paths resolve, legacy names are absent from skill files,
+and no workstation-specific home path was committed.
 
 ## Naming
 
@@ -94,6 +111,9 @@ Public names avoid `:` because `npx skills add owner/repo@skill` treats the valu
 
 | Local style | Public skill |
 |---|---|
+| `glitchtip-do-issue` | `peaklab.glitchtip-do-issue` |
+| `peaklab.do-issue` | `peaklab.gh-do-issue` |
+| `peaklab.create-issue` | `peaklab.gh-create-issue` |
 | `plane:create-issue` | `peaklab.plane-create-issue` |
 | `plane:do-issue` | `peaklab.plane-do-issue` |
 | `plane:ship-watch` | `peaklab.plane-ship-watch` |
@@ -137,6 +157,7 @@ Validate skill discovery and Python helper scripts:
 
 ```bash
 npx skills add . --list
+python3 scripts/check_portability.py
 python3 -m py_compile peaklab.coolify-api/scripts/coolify.py peaklab.plane-api/*.py
 cd peaklab.plane-api && python3 -m unittest test_plane_client.py
 ```
