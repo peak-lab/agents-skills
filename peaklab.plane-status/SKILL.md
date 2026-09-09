@@ -28,7 +28,9 @@ Show a compact Plane board snapshot using the shared `peaklab.plane-api` client 
 <python_template>
 ```python
 import sys
-sys.path.insert(0, "/Users/faharihamadasidi/.agents/skills/peaklab.plane-api")
+from pathlib import Path
+
+sys.path.insert(0, str(Path.home() / ".agents/skills/peaklab.plane-api"))
 from plane_client import load_plane_client
 
 client = load_plane_client()
