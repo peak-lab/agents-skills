@@ -27,6 +27,8 @@ default terminal state is a reviewed, unmerged PR. Merge only for an explicit
   head SHA while the base remains at the reviewed base SHA.
 - Never schedule a future check. `--async-merge` means a live worker in the current agent session,
   not cron, a cloud routine, `/loop`, or another deferred mechanism.
+- Use one shared repair budget of two worker mutation cycles across review fixes, rebases, CI
+  fixes, and conflict resolution. A new pushed head consumes one cycle regardless of its cause.
 </constraints>
 
 <arguments>
@@ -42,6 +44,48 @@ default terminal state is a reviewed, unmerged PR. Merge only for an explicit
 - `--no-subagent`: compatibility fallback; the parent performs implementation in the isolated
   worktree, then uses a separate reviewer for the official gate.
 </arguments>
+
+<headless_runtime>
+The optional Hermes wrapper is active only when the caller explicitly sets
+`PLANE_DO_ISSUE_RUNTIME=hermes`. Never infer this mode from a hostname, filesystem path, or
+installed binary. Normal interactive and delegated runs do not depend on this wrapper.
+
+When enabled, do not enter the generic workflow below. Resolve `SKILL_DIR` from the loaded skill
+and invoke the wrapper directly once. This bounded wrapper supports only an explicit issue in
+auto/adaptive-TDD, PR-only mode. Before selection, reject `--no-auto`, `--tdd`, `--no-tdd`,
+`--wait-merge`, `--async-merge`, `--no-subagent`, or anything other than an exact `PREFIX-N` issue
+with an explanation that the caller must unset `PLANE_DO_ISSUE_RUNTIME` and use the normal workflow
+for those modes. Never silently drop requested flags to enter this wrapper.
+
+Run the wrapper only from a clean, registered external linked worktree whose non-base branch belongs
+to that issue. Before its selector can mutate Plane, the wrapper verifies the checkout, repository,
+branch, and issue association and fails closed; it never creates or repairs isolation itself:
+
+```bash
+python3 "$SKILL_DIR/scripts/run_on_hermes.py" <PREFIX-N> --no-merge
+```
+
+The host must provide `claude`, `corepack`, and `pnpm`, plus an absolute build environment file
+through `PLANE_HERMES_BUILD_ENV_FILE`. It may provide a GlitchTip environment file through
+`PLANE_HERMES_GLITCHTIP_ENV_FILE`. The wrapper performs its own selector call and bounded agent
+run; never invoke this skill recursively, spawn another agent, perform or claim the official
+parent review, merge, deploy, or mutate GlitchTip from that run. A normal self-check is required.
+A created PR is explicitly reported as unreviewed and handed off for an interactive parent review.
+</headless_runtime>
+
+<implementation_routing>
+Before launching the implementation worker, inspect the target repository's declared agent
+definitions and scoped instructions. Prefer its owning implementation specialist for a scoped
+package. Treat billing or entitlements, authorization or tenant boundaries, migrations,
+customer data, and cross-service contracts as high risk and use the deepest appropriate declared
+owner. Use a declared cross-package owner when the change spans ownership boundaries.
+
+Do not invent or require private agent names. If no matching specialist or subagent facility is
+available, the parent performs the implementation role in the isolated worktree after loading the
+same repository/package instructions inline. A project-agnostic Plane worker may be used when it
+is available, but it is an optimization rather than a prerequisite. Pass the chosen ownership
+route, scoped instructions, and escalation boundary to the worker.
+</implementation_routing>
 
 <workflow>
 <step name="select">
@@ -94,8 +138,10 @@ and run `chmod 600 "$WORKTREE/.env"`; never overwrite an existing target.
 </step>
 
 <step name="analyze">
-The parent gives one implementation worker the selector JSON, absolute worktree path, and this
-analysis contract. With `use_subagent=false`, the parent takes that implementation role locally.
+The parent selects the implementation worker using `<implementation_routing>`, then gives it the
+selector JSON, absolute worktree path, ownership boundary, and this analysis contract. With
+`use_subagent=false` or no callable specialist, the parent takes that implementation role locally
+and loads the relevant specialist instructions itself.
 The implementer must write `analyze.md` before editing:
 
 - acceptance criteria from issue, comments, and parent; label genuinely inferred criteria;
@@ -130,9 +176,15 @@ criterion. Stage only scoped files, create a conventional commit, push the branc
 create/update the PR with `gh`. Return `pr_created` with issue, branch,
 worktree path, PR URL/number, head SHA, criteria status, and validation. Never invoke
 `peaklab.ship-pr`, wait for CI, perform the official QA review, launch the watcher, or merge.
+
+If APEX returns `needs_confirmation`, preserve its canonical plan and return that status to the
+parent without editing. This is the expected approval gate for `--no-auto` / APEX `-A`.
 </step>
 
 <step name="handle-terminal-result">
+- `needs_confirmation`: show the canonical plan to the user. On approval, resume the same worker
+  with the existing artifact and explicit decision; on rejection, restore Todo and remove only a
+  newly-created clean worktree.
 - `needs_clarification`: comment exact questions through `peaklab.plane-api`, restore Todo,
   remove a newly-created clean worktree, and report.
 - `already_done`: comment evidence and recommend closing; do not close without confirmation.
@@ -145,8 +197,11 @@ Resume the same worker for missing evidence or requested fixes. Do not respawn e
 </step>
 
 <step name="review">
-Before review, fetch the remote base, record its SHA, and verify the PR head is current with it.
-If it needs rebasing, have the same worker rebase, validate, push, and return the new head first.
+Initialize `repair_cycles=0` once before the first parent review and carry that value through every
+review and watcher handoff; never reset it after a successful intermediate repair.
+Fetch the remote base, record its SHA, and verify the PR head is current with it. If it needs
+rebasing, have the same worker rebase, validate, push, and return the new head first; that pushed
+head consumes one repair cycle.
 
 Launch one repository review agent: its deep/risk route for billing, authorization, tenant
 boundaries, migrations, customer data, or cross-service contracts; its standard route
@@ -154,7 +209,9 @@ otherwise. Give it the exact PR diff, acceptance criteria, validation evidence, 
 base SHA. Require file/line findings classified blocking or non-blocking and a verdict for that
 head/base pair.
 
-Blocking findings return to the same worker; review the new SHA again. Stop after two cycles.
+Blocking findings return to the same worker when the shared repair budget is not exhausted;
+increment it after the worker pushes a new head, then review that SHA again. Stop when two total
+worker mutation cycles have been consumed across review and shipping.
 Post non-blocking findings as a PR comment. If no review agent is available, the parent performs
 one equivalent explicit review. Record `reviewed_head=<sha>`, `reviewed_base=<sha>`, and
 `review_verdict=clean|fixed`.
@@ -162,16 +219,30 @@ one equivalent explicit review. Record `reviewed_head=<sha>`, `reviewed_base=<sh
 
 <step name="handoff">
 - Default or `--no-merge`: report the reviewed PR and leave Plane In Progress.
-- `--wait-merge`: invoke `peaklab.plane-ship-watch` now with PR, issue,
+- `--wait-merge`: invoke `peaklab.plane-ship-watch` now with full PR URL, `--repo <OWNER/REPO>`, issue,
   `--reviewed-head <sha>`, `--reviewed-base <sha>`, `--review-verdict <verdict>`, and
   `--plane-skill-dir <SKILL_DIR>`; wait for its terminal result.
 - `--async-merge`: pass the same arguments to a live `plane-ship-watcher` session worker only
   when the host guarantees it can complete and report. Otherwise stop at the reviewed PR and
   provide the explicit watcher command. Do not create deferred monitoring.
 
-If the watcher returns `blocked_rebase_required` or `blocked_review_required`, resume the same
-implementation worker, validate/push the new head, repeat the single parent review, and invoke
-the watcher with the new head/base pair. Stop after two such cycles with exact evidence.
+Handle watcher results against the same shared repair budget:
+
+- `blocked_review_required` or `blocked_rebase_required`: resume the same worker, rebase when
+  needed, validate, push, repeat the parent review, and invoke the watcher with the new pair.
+- `blocked_ci`: resume the same worker only when the watcher proves the failure is attributable
+  to this change and the fix is safely in scope. Pass the failed check URL and logs, then require
+  focused validation, a new push, and a new parent review.
+- `blocked_conflict`: resume the same worker only for a localized conflict whose resolution is
+  determined by the issue intent and repository rules. Require rebase completion, validation, a
+  new push, and a new parent review.
+- Infrastructure failures, flaky or third-party failures, broad conflicts, product-semantic
+  uncertainty, policy failures, missing CI, and issue mismatches remain terminal blockers. Do not
+  mutate code or Plane for them.
+
+Every resumed worker mutation that produces a new head increments the shared repair counter.
+Stop after two total cycles with the exact evidence and decision needed; never reset the budget
+between review, rebase, CI, and conflict causes.
 </step>
 </workflow>
 

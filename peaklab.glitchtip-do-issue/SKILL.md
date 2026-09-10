@@ -38,21 +38,11 @@ are alternative selectors. Reject conflicting modes and nonpositive limits. Auto
 and adaptive testing are defaults. Fatal errors need deeper investigation/review; ask only for
 new authority or an unresolved product decision. Drafts are never merged.
 
-## Configuration and transport
+## Shared service contract
 
-Read exported `GLITCHTIP_URL`, `GLITCHTIP_TOKEN`, `GLITCHTIP_ORG`; fill missing values from
-project `.env`, then `~/.agents/.env`, without sourcing/printing files. Require real values;
-examples are never defaults. API base: `<URL>/api/0`. Use Bearer authentication and verify
-access with `GET /projects/`.
-
-Use the deployment's supported transport. If its Cloudflare edge rejects Python with 403/1010,
-use curl; a 403 alone does not prove this cause. Inspect HTTP status and response shape.
-Serialize JSON payloads and use data files, not exception-message interpolation in shell JSON.
-Temporary sensitive data needs a unique private location and deletion after extraction;
-never retain a shared `/tmp/gt-issues.json`.
-
-Reads are project-scoped; mutations use `/issues/<id>/`. On a documented PUT 405, retry PATCH.
-Report a missing comment endpoint separately from resolution status.
+Read [the GlitchTip evidence and resolution contract](references/glitchtip-contract.md) before
+API access. It owns credentials, transport, data minimization and all resolution gates used
+by this skill, `peaklab.fix-glitchtip` and `peaklab.track-error`.
 
 ## Select and prove clusters
 
@@ -87,26 +77,11 @@ and never call the GlitchTip API.
 PRs list every covered GlitchTip ID, common cause and validation. Never use GitHub `Closes #N`
 for GlitchTip IDs. QA checks each member; remove uncovered IDs from the claim and keep them open.
 
-## Resolution evidence
+## Finish
 
-| Evidence | Outcome |
-|---|---|
-| Reviewed PR, not merged | `pr_created`; errors remain unresolved |
-| Merged fix, deployment unverified | `merged`; deployment verification pending |
-| Fix deployed in affected environment, regression verified | Resolve covered IDs if authorized |
-| `already_done` / `stale_signal` | Require deployed-release evidence establishing the error is no longer active |
-| `noise` | Explain classification and obtain agreement before resolving/suppressing |
-| Unclear cause, failed checks, incomplete coverage | Keep affected IDs unresolved; report blocker |
-
-`--no-resolve` or `--no-merge` skips all GlitchTip writes. Fix-and-deliver intent may include
-resolution after this gate; it does not authorize deployment or future monitoring itself.
-If runtime observation occurred, record environment, release and time window. Otherwise mark it
-unverified; absence of events without representative traffic is not regression proof.
-
-For each authorized covered ID, send `{"status":"resolved"}` to `/issues/<id>/` and verify the
-response. Add a sanitized root-cause/PR/release comment when supported. If status succeeds but
-comment fails, report both accurately. Never infer API success from a transport exit code alone.
-
-Finish with one concise row per cluster: IDs, PR, code status, deployment evidence, GlitchTip
-status and next action. Only report an inbox total if supplied by the API or actually measured.
-No automatic queue chaining, background deployment or scheduled rechecks.
+Apply the shared service contract after execution. A reviewed PR is `pr_created`, not merged;
+`merged` without verified deployment still leaves GlitchTip unresolved. For
+`needs_confirmation` or `needs_clarification`, return the plan/decision and resume the same
+worker after an explicit answer; `needs_planning` ends implementation without status writes.
+Report one row per cluster: IDs, PR, code status, deployment evidence, GlitchTip status and
+next action. No automatic queue chaining, background deployment or scheduled rechecks.

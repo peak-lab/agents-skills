@@ -57,6 +57,9 @@ Use APEX inline (`-e`) with supplied analysis/plan and canonical task state:
 Omitting a default-on flag does not disable it. Do not pass `-b`, `-pr`, `-m` or `-x`:
 checkout setup and official QA are owned here. Self-checks remain the worker's job.
 Without a Skill tool, read the installed APEX instructions and follow their applicable steps.
+For `-A`, carry approval for the current plan revision or return `needs_confirmation` to the
+parent before edits. A reusable plan is not automatically an approved plan. Resume that same
+worker only with the user's decision recorded against the plan revision.
 
 Reuse reliable analysis; verify ticket relevance before editing. Use one plan of observable
 behavior slices with file ownership, dependencies and verification. Reproducible bugs need a
@@ -68,10 +71,11 @@ Commit only task-owned changes/hunks; no co-author or generated attribution. Nev
 an implementation worker. Return:
 
 ```text
-status: pr_created | needs_clarification | already_done | obsolete | blocked | no_changes
+status: pr_created | needs_confirmation | needs_clarification | needs_planning | already_done | obsolete | blocked | no_changes
 source_ids: ...
 worktree: absolute path
 branch: ...
+repository: owner/repo
 head_sha: ...
 pr_url: ...
 task_state: absolute path
@@ -101,8 +105,21 @@ unchanged. Any changed review head/base requires checking the delta and renewing
 
 ## Deliver and finish
 
-For requested delivery, invoke `peaklab.ship-pr --auto-fix --base <base>` with the QA verdict
-and validation evidence. It consumes current evidence and renews stale/missing checks.
+For each requested delivery, bind the exact target from that task's result:
+
+```text
+peaklab.ship-pr --pr <PR_URL> --repo <OWNER/REPO> --worktree <ABSOLUTE_PATH> --task-state <ABSOLUTE_TASK_PATH> --base <BASE> --auto-fix
+```
+
+Pass the task-state path, expected branch/head/base, QA verdict and validation evidence.
+All local shipping commands run in that task's checkout, never the parent's by inference;
+GitHub calls use the explicit repository and PR. A target mismatch blocks that delivery.
+If the host has no Skill tool or rejects `disable-model-invocation`, the shipping owner reads
+the installed `peaklab.ship-pr/SKILL.md` and follows its same target/review/CI/merge gates
+directly. Tool availability grants no extra authority. No alternate, weaker shipping loop.
+
+It consumes current evidence and renews stale/missing checks. Return the verified `merged`,
+`pr_created` or `blocked` status with PR/repository/head; callers must not infer merge from return.
 One owner handles shipping; do not assign another reviewer/watcher the same responsibility.
 
 Merge batches sequentially. Synchronization with a moving base requires renewed checks.

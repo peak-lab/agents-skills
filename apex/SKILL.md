@@ -15,9 +15,9 @@ APEX turns a requested code change into a scoped, verified patch. Reuse trustwor
 - Use one canonical plan/task state. Do not copy the same plan into task files, todos, and logs.
 - Prefer direct inspection and implementation. Delegate only independent work with a clear latency or context benefit.
 - Never commit, push, or create a pull request unless `-pr`/`--pull-request` was explicitly supplied.
-- Evidence is reusable only while the code and configuration it covers are unchanged.
+- Evidence is reusable only while the code and configuration it covers are unchanged. In non-auto mode, plan approval is separate evidence tied to the current plan revision.
 - Clean up any workers created by this workflow on every terminal path.
-- Before any completed, blocked, cancelled, or `needs_planning` terminal response, load `step-09-finish.md`.
+- Before any completed, blocked, cancelled, `needs_planning`, `needs_clarification`, or `needs_confirmation` terminal response, load `step-09-finish.md`.
 </constraints>
 
 <flags>
@@ -27,7 +27,7 @@ APEX turns a requested code change into a scoped, verified patch. Reuse trustwor
 | `-a`, `--auto` | `-A`, `--no-auto` | Proceed without routine approval pauses. Default: enabled. |
 | `-x`, `--examine` | `-X`, `--no-examine` | Run an additional risk-based review. Default: disabled. |
 | `-s`, `--save` | `-S`, `--no-save` | Retain expanded resumable evidence in the canonical task artifact. Default: disabled. |
-| `-t`, `--test` | `-T`, `--no-test` | Include appropriate automated tests. Default: enabled; disabling tests also disables adaptive TDD. |
+| `-t`, `--test` | `-T`, `--no-test` | Include appropriate automated tests. Default: enabled; `-T` disables every APEX test-writing and TDD phase. Repository-mandated checks still apply. |
 | `-d`, `--tdd` | `-D`, `--no-tdd` | Force or disable strict RED-GREEN-REFACTOR. Default: adaptive. |
 | `-e`, `--economy` | `-E`, `--no-economy` | Disable nested delegation. Verification is unchanged. |
 | `-b`, `--branch` | `-B`, `--no-branch` | Prepare a task branch. Default: disabled. |
@@ -37,7 +37,7 @@ APEX turns a requested code change into a scoped, verified patch. Reuse trustwor
 | `-i`, `--interactive` | — | Ask once for configuration overrides. |
 | `-r`, `--resume TASK_ID` | — | Resume modern state or a legacy `.claude/output/apex/` task. |
 
-Reject conflicting enable/disable pairs. `-d` implies tests and conflicts with `-T`. `-D` disables only strict TDD, not testing. Explicit flags override defaults regardless of order.
+Reject conflicting enable/disable pairs. `-d` implies tests and conflicts with `-T`. `-D` disables only strict TDD, not testing. `-T` dominates adaptive and non-TDD test creation. Explicit flags override defaults regardless of order.
 </flags>
 
 <workflow>

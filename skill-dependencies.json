@@ -4,6 +4,7 @@
   ],
   "peaklab.fix-glitchtip": [
     "apex",
+    "peaklab.glitchtip-do-issue",
     "peaklab.ship-pr"
   ],
   "peaklab.gh-do-issue": [
@@ -38,10 +39,13 @@
   ],
   "peaklab.ship-pr": [
     "peaklab.gh-create-issue",
+    "peaklab.plane-api",
+    "peaklab.plane-do-issue",
     "peaklab.plane-create-issue"
   ],
   "peaklab.track-error": [
     "peaklab.gh-create-issue",
+    "peaklab.glitchtip-do-issue",
     "peaklab.gh-do-issue"
   ]
 }

@@ -73,7 +73,9 @@ for multiline `gh` input. A PR reference alone does not prove its acceptance cri
 | `merged` | Verify merger and whether GitHub closed the issue |
 | `already_done` | Present merged/code evidence; close only when the request authorizes closure |
 | `obsolete` | Explain the obsolete premise; request a decision before closing or rewriting |
+| `needs_confirmation` | Present the current plan; record approval and resume the same worker |
 | `needs_clarification` | Return the missing decision and retain useful evidence |
+| `needs_planning` | Return decision-sized unknowns; do not implement or publish planning tickets implicitly |
 | `blocked` | Preserve checkout; report failing condition and next safe action |
 | `no_changes` | Explain why no implementation was needed; do not imply resolution |
 

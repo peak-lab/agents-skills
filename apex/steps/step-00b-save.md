@@ -13,7 +13,7 @@ Use the caller's existing harness task artifact, or `~/.agents/tasks/{task_id}/p
 
 - request, flags, base SHA, initial dirty paths, and owned paths;
 - acceptance criteria and links to caller-owned issue/plan artifacts;
-- vertical plan slices with status and ownership;
+- vertical plan slices with status and ownership, `{plan_revision}`, and `{approved_plan_revision}` when approval was obtained;
 - validation evidence with command, scope, result, and code/config/environment fingerprint;
 - active workers and the next step.
 

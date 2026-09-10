@@ -4,26 +4,24 @@ description: Use when the user says "ship", "ship PR", "review and merge", or wa
 effort: deep
 disable-model-invocation: true
 allowed-tools: "Bash(git :*), Bash(gh :*), Bash(pnpm :*), Bash(curl :*), Bash(jq :*), Bash(python3 :*), Read, Edit, MultiEdit, Skill, Agent, Task"
-argument-hint: "[--base <branch>] [--draft] [--no-merge] [--auto-fix] [--plane]"
+argument-hint: "[--pr NUMBER|URL --repo OWNER/REPO --worktree PATH --task-state PATH] [--base BRANCH] [--draft] [--no-merge] [--auto-fix] [--plane]"
 ---
 
 <objective>
 Orchestrate the full PR lifecycle: create, review, fix, merge. Uses GitHub commands plus explicit review and issue-tracking steps; optionally syncs with Plane after merge.
 </objective>
-<context>
-- Current branch: !`git branch --show-current`
-- Working tree: !`git status --short`
-- Recent commits: !`git log --oneline -5`
-- Existing PR: !`gh pr list --head $(git branch --show-current) --json number,title,state --jq '.[0] // empty' 2>/dev/null`
-</context>
 <arguments>
 | Argument          | Description                                                                       | Default |
 |-------------------|-----------------------------------------------------------------------------------|---------|
+| `--pr NUMBER\|URL` | Existing PR to deliver; required for composed issue workflows                     | current branch only for a standalone invocation |
+| `--repo OWNER/REPO` | GitHub repository containing the PR                                               | resolve from checkout for standalone use |
+| `--worktree PATH` | Absolute checkout for all local commands                                           | current checkout for standalone use |
+| `--task-state PATH` | Absolute canonical caller artifact containing the handoff below                  | required for composed calls |
 | `--base <branch>` | Explicit base override, subject to repository policy                             | existing PR base, otherwise repository policy or remote default |
 | `--draft`         | Create PR as draft                                                                | `false` |
 | `--no-merge`      | Stop after fix, don't merge                                                       | `false` |
 | `--auto-fix`      | Compatibility flag: in-scope review fixes are part of authorized delivery          | automatic in scope |
-| `--plane`         | Sync Plane after merge: move matched tickets → Done, create tickets for untracked changes | `false` |
+| `--plane`         | Sync confirmed Plane tickets to their configured merge state; offer missing tickets | `false` |
 </arguments>
 <env>
 Required when using --plane (same vars as `peaklab.plane-do-issue`):
@@ -41,6 +39,34 @@ Required when using --plane (same vars as `peaklab.plane-do-issue`):
 - Empty PR check rollups, missing checks, pending workflow runs with no jobs, or unavailable GitHub Actions status are blockers only when remote CI is configured or branch protection requires checks. Wait for GitHub Actions or stop and report the blocker.
 </constraints>
 <workflow>
+## Bind the delivery target
+
+For a caller-owned issue workflow, require `--pr`, `--repo`, `--worktree` and `--task-state` together.
+Read that canonical artifact in place; do not create a second task state. Its minimal shipping
+handoff contains `repository`, `pr_url`, `worktree_path`, `branch`, `expected_head_sha`,
+`base_branch`, `expected_base_sha`, scope/acceptance criteria, and validation commands/results
+with their covered revision/environment. Review is either explicitly absent or records its
+verdict, reviewed head/base and covered scope. Existing field names may be mapped explicitly;
+missing required identities or ambiguous mappings block delivery, not trigger guessed defaults.
+Reject an incomplete target instead of falling back to the parent's current branch.
+Standalone `ship` may resolve the target from the current checkout once, before any mutation.
+
+1. Set `WORKTREE` to its absolute path and resolve `REPO`, checkout `BRANCH` and any existing `PR_NUMBER`. Run every git,
+   package and local validation command in that checkout; scope every `gh` command to
+   `--repo "$REPO"` (or the matching explicit `repos/$REPO/...` API path).
+2. Verify the checkout's remote belongs to that repository. For an existing PR, fetch metadata
+   with `gh pr view "$PR_NUMBER" --repo "$REPO"`: head branch/SHA, base, state and draft flag.
+   The checkout branch and HEAD must match the task state and PR head before local fixes.
+   A mismatch returns `blocked` with reason `target_mismatch`; do not switch/reset/stash another checkout.
+   Cross-repository PRs require an explicitly mapped head remote; otherwise stop safely.
+3. Preserve initial dirty hunks. Already merged PRs need no new merge: report the verified
+   state, then run only an explicitly requested status sync. Closed unmerged PRs stop.
+
+`disable-model-invocation` controls automatic discovery, not delivery authority. If the host
+refuses a nested Skill invocation, the authorized delivery owner reads this installed file
+and executes the same phases through available tools. Do not enable the skill globally,
+invent a second merge loop, or bypass any review/CI gate.
+
 ## Incoming evidence and execution scope
 
 Accept a caller's validation record and explicit review verdict when they identify the current
@@ -55,17 +81,18 @@ branch policies and the caller's explicit base. Draft PRs are never merged by th
 
 ## Phase 1: ENSURE PR EXISTS
 
-1. Check if a PR already exists for the current branch:
+1. For an explicit `--pr`, use only that verified PR. Otherwise check the bound checkout branch:
    ```bash
-   gh pr list --head $(git branch --show-current) --json number,url,state
+   gh pr list --repo "$REPO" --head "$BRANCH" --json number,url,state
    ```
+   Multiple matches require disambiguation. Never substitute another PR for an explicit target.
 2. **If PR exists**: capture its number, URL, head and base. Preserve a policy-valid existing
    base unless `--base` explicitly requests another. A policy mismatch without retargeting
    authority is a blocker. After an authorized retarget, invalidate prior review/CI evidence.
 3. **If no PR**: create one with `gh pr create` following the repository's PR conventions.
    - Pass `--draft` if provided
    - Always pass the base resolved from repository policy, the explicit argument or remote default
-4. Capture the PR number for subsequent phases.
+4. Capture `PR_NUMBER`, `REPO`, `WORKTREE`, `BRANCH`, `HEAD_SHA` and the base SHA for subsequent phases. Refresh the SHA variables after every authorized edit/push before collecting evidence.
 
 ---
 
@@ -85,8 +112,8 @@ This phase is mandatory. Do not proceed to CI checks or merge until it has an ex
 
 1. Fetch the PR diff and changed file list:
    ```bash
-   gh pr diff <number> --name-only
-   gh pr diff <number> --patch
+   gh pr diff "$PR_NUMBER" --repo "$REPO" --name-only
+   gh pr diff "$PR_NUMBER" --repo "$REPO" --patch
    ```
 2. Reuse a valid incoming review or execute it:
    - When delegation helps, use one reviewer appropriate to the changed scope. Add an independent
@@ -118,9 +145,9 @@ If no review outcome is set, stop. Do not merge.
 
 1. Classify each blocking issue:
    - **In-scope** (directly related to this PR's changes) → fix inline
-   - **Out-of-scope** (pre-existing problem, separate concern, or too large) → create a GitHub issue
+   - **Out-of-scope** (pre-existing problem, separate concern, or too large) → report; create an issue only if authorized
 
-2. For out-of-scope issues, use the `peaklab.gh-create-issue` skill:
+2. For separately authorized tracking, use the `peaklab.gh-create-issue` skill:
    - Title: `fix(scope): <description of the problem>`
    - Body: include the file path, line numbers, and why it was flagged
    - Label: `bug` or `enhancement` depending on nature
@@ -131,6 +158,7 @@ If no review outcome is set, stop. Do not merge.
    - Read the target file, apply the fix and run affected repository checks.
 
 4. Commit and push in-scope fixes:
+   Stage only owned hunks; the full-file command below is valid only for wholly owned files.
    ```bash
    git add <specific-files>
    git commit -m "fix: address review findings"
@@ -142,22 +170,22 @@ If no review outcome is set, stop. Do not merge.
 **If only SUGGESTION issues:**
 
 - Report them but proceed to merge
-- If a suggestion is important enough to track: create a GitHub issue with label `enhancement`
+- Offer important suggestions for tracking; do not create unrelated issues without authorization
 
 ---
 
 ## Phase 5: CI CHECKS
 
-**Skip merge phases if `--no-merge` provided.**
+**For `--no-merge`, return `pr_created` with the current review verdict and `CI: not_checked_pr_only` after Phase 4; skip CI/merge phases. This status is not CI success or delivery evidence.**
 
 1. Get current CI status:
    ```bash
-   gh pr checks <PR_NUMBER> --json name,state,workflow,link
+   gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state,workflow,link
    ```
 2. If no checks are reported, inspect whether remote CI is configured:
    ```bash
    BRANCH=$(git branch --show-current)
-   gh run list --branch "$BRANCH" --limit 5 --json databaseId,status,conclusion,workflowName,headSha,url
+   gh run list --repo "$REPO" --branch "$BRANCH" --commit "$HEAD_SHA" --limit 5 --json databaseId,status,conclusion,workflowName,headSha,url
    git ls-tree -r --name-only HEAD .github/workflows 2>/dev/null
    ```
    - If a run for the PR head SHA is pending or in progress, wait for it.
@@ -166,7 +194,7 @@ If no review outcome is set, stop. Do not merge.
 3. If all GitHub Actions checks pass for the current PR head SHA → jump to Phase 7 MERGE.
 4. If checks are pending → wait:
    ```bash
-   gh pr checks <PR_NUMBER> --watch --interval 15
+   gh pr checks "$PR_NUMBER" --repo "$REPO" --watch --interval 15
    ```
 5. If any check fails → go to Phase 6 FIX CI
 
@@ -178,8 +206,8 @@ For each iteration:
 
 ```bash
 BRANCH=$(git branch --show-current)
-RUN_ID=$(gh run list --branch "$BRANCH" --status failure --limit 1 --json databaseId -q '.[0].databaseId')
-gh run view $RUN_ID --log-failed
+RUN_ID=$(gh run list --repo "$REPO" --branch "$BRANCH" --commit "$HEAD_SHA" --status failure --limit 1 --json databaseId -q '.[0].databaseId')
+gh run view "$RUN_ID" --repo "$REPO" --log-failed
 ```
 
 **Step 2 — Classify the failure**
@@ -187,23 +215,25 @@ gh run view $RUN_ID --log-failed
 For each failing job, decide:
 
 - **Fix inline** (quick, directly caused by this PR's changes)
-- **Create issue** (pre-existing bug, unrelated regression, large refactor needed)
+- **Report blocker** (pre-existing bug, unrelated regression, large refactor needed)
 
 Use the actual failing command and repository-native fix for type, lint, test, build or
 migration failures. Do not assume a package manager or introduce unrelated cleanup.
 
-**For out-of-scope CI failures** — use `peaklab.gh-create-issue` skill:
+**For separately authorized tracking of out-of-scope CI failures** — use `peaklab.gh-create-issue`:
 
 - Title: `fix(ci): <describe the root cause>`
-- Include: error message, file/line, run ID (`gh run view $RUN_ID`)
+- Include: error message, file/line, run ID (`gh run view "$RUN_ID" --repo "$REPO"`)
 - Label: `bug`
 
 **Step 3 — Verify locally before pushing**
 
 Run the affected repository checks discovered in Phase 2. Record evidence for the repaired
-head and renew its review verdict; use the actual failing CI command when it can run locally.
+tree; use the actual failing CI command when it can run locally.
 
 **Step 4 — Commit and push**
+
+Stage only owned hunks; do not include pre-existing edits in the same file.
 
 ```bash
 git add <specific-files>
@@ -213,8 +243,11 @@ git push origin HEAD
 
 **Step 5 — Wait for new run**
 
+Refresh `HEAD_SHA` after the push and renew the Phase 3 verdict for this exact commit before
+continuing. A successful local check does not replace that review.
+
 ```bash
-gh pr checks <PR_NUMBER> --watch --interval 15
+gh pr checks "$PR_NUMBER" --repo "$REPO" --watch --interval 15
 ```
 
 **Step 6 — Check result**
@@ -244,172 +277,46 @@ Merge is allowed when either:
 Do not merge on local-only checks when remote CI is configured, empty check rollups with configured workflows, pending runs, skipped status without a successful workflow conclusion, or unavailable GitHub Actions status.
 
 ```bash
-gh pr checks <PR_NUMBER> --json name,state,workflow,link
+gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state,workflow,link
 BRANCH=$(git branch --show-current)
-gh run list --branch "$BRANCH" --limit 5 --json databaseId,status,conclusion,workflowName,headSha,url
+gh run list --repo "$REPO" --branch "$BRANCH" --commit "$HEAD_SHA" --limit 5 --json databaseId,status,conclusion,workflowName,headSha,url
 git ls-tree -r --name-only HEAD .github/workflows 2>/dev/null
 ```
 
 ```bash
-gh pr merge <PR_NUMBER> --squash --delete-branch --match-head-commit <verified-head-sha>
+gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --match-head-commit "$HEAD_SHA"
 ```
 
-Return final PR URL and merge status.
+Verify `gh pr view "$PR_NUMBER" --repo "$REPO" --json state,url,mergeCommit` after the merge command, even if it returned an error. Only `state=MERGED` yields `status=merged`. Return repository, PR URL, verified head, merge commit, CI/review evidence and any blocker. Leave branch/worktree cleanup to the caller; never switch or delete the parent checkout.
 
 ---
 
 ## Phase 8: PLANE SYNC (--plane only)
 
-Execute only if `--plane` was provided **and** merge succeeded.
+Only an explicit `--plane` request enables this phase, after GitHub confirms the bound PR is
+merged into the permitted default branch. A source adapter that already owns Plane sync must
+not enable a second owner here.
 
-### 8.0 — Setup + Guard
+1. Load [the shared Plane API](../peaklab.plane-api/SKILL.md) for atomic configuration and
+   paginated metadata lookup. Use its installed directory, not an assumed home path.
+2. Extract exact Plane identifiers from the PR's source links/body/branch and verify the
+   configured project and acceptance-criteria coverage. A title/file similarity is only a
+   candidate: obtain confirmation before updating such a ticket.
+3. For each confirmed covered issue, use the existing
+   [merge-state helper](../peaklab.plane-do-issue/scripts/finish_issue.py):
 
-```python
-import os, json, re, urllib.request
+   ```bash
+   python3 "$PLANE_DO_ISSUE_DIR/scripts/finish_issue.py" --merged --issue "$ISSUE" --pr-url "$PR_URL"
+   ```
 
-# Load Plane credentials: .env → ~/.agents/.env → legacy settings.local.json
-def _load(path):
-    try:
-        for line in open(path):
-            if line.startswith('PLANE_') and '=' in line:
-                k, _, v = line.strip().partition('=')
-                os.environ.setdefault(k.strip(), v.strip().strip('"\''))
-    except Exception: pass
-
-_load('.env')
-if not (os.environ.get('PLANE_TOKEN') and os.environ.get('PLANE_PROJECT')):
-    _load(os.path.expanduser('~/.agents/.env'))
-if not (os.environ.get('PLANE_TOKEN') and os.environ.get('PLANE_PROJECT')):
-    for _sl in ('.claude/settings.local.json', '.codex/settings.local.json'):
-        try:
-            for k, v in json.load(open(_sl)).get('env', {}).items():
-                if k.startswith('PLANE_'): os.environ.setdefault(k, v)
-        except Exception: pass
-
-url        = os.environ['PLANE_PROJECT']
-TOKEN      = os.environ['PLANE_TOKEN']
-HOST       = re.search(r'https://([^/]+)/', url).group(1)
-WORKSPACE  = re.search(r'https://[^/]+/([^/]+)/', url).group(1)
-PROJECT_ID = re.search(r'/projects/([^/]+)/', url).group(1)
-BASE       = f'https://{HOST}/api/v1'
-WP         = f'{BASE}/workspaces/{WORKSPACE}/projects/{PROJECT_ID}'
-
-def plane_api(method, path, data=None):
-    req = urllib.request.Request(f'{BASE}{path}', method=method,
-        headers={'x-api-key': TOKEN, 'Content-Type': 'application/json'})
-    if data: req.data = json.dumps(data).encode()
-    return json.loads(urllib.request.urlopen(req).read().decode())
-```
-
-Guard: check that the merged PR targeted the default branch:
-```bash
-BASE_BRANCH=$(gh pr view <number> --json baseRefName --jq '.baseRefName')
-DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | awk '{print $NF}')
-```
-
-If `BASE_BRANCH != DEFAULT_BRANCH`: print `⚠️ PR merged to $BASE_BRANCH (not default) — Plane sync skipped.` and exit phase.
-
----
-
-### 8.1 — Resolve Plane states (one call, reused throughout phase)
-
-```python
-states = plane_api('GET', f'/workspaces/{WORKSPACE}/projects/{PROJECT_ID}/states/')
-states = states if isinstance(states, list) else states.get('results', [])
-DONE_STATE_ID = next((s['id'] for s in states if s['group'] == 'completed'), None)
-```
-
----
-
-### 8.2 — Collect PR changes
-
-```bash
-# Modified files
-CHANGED_FILES=$(gh pr diff <number> --name-only)
-
-# Commit titles only
-COMMIT_MESSAGES=$(gh pr view <number> --json commits --jq '[.commits[].messageHeadline]')
-
-# PR title + body
-PR_META=$(gh pr view <number> --json title,body)
-```
-
-Build a text summary of the changes: file list + commit titles. Used for Plane matching.
-
----
-
-### 8.3 — Fetch active Plane tickets
-
-```python
-issues = plane_api('GET', f'/workspaces/{WORKSPACE}/projects/{PROJECT_ID}/issues/?state_group=started,unstarted&per_page=100')
-issues = issues if isinstance(issues, list) else issues.get('results', [])
-```
-
----
-
-### 8.4 — Match changes to tickets
-
-For each active Plane ticket (`started` or `unstarted`), compare its `name` and `description` against:
-
-- Commit titles
-- PR title/body
-- Modified file names
-
-Classify each ticket as:
-
-- **[MATCH]**: clear match → propose moving to Done
-- **[POSSIBLE]**: partial match → present to user for confirmation
-- **[NO MATCH]**: no match → skip
-
-Present results to user **before making any changes**:
-
-```
-Tickets detected in this PR:
-  ✅ [MATCH]    PROJ-42 · Refactor billing page
-  ✅ [MATCH]    PROJ-38 · Fix null check in useCart
-  ❓ [POSSIBLE] PROJ-31 · Update CI pipeline — confirm? [y/N]
-```
-
-Wait for confirmation on `[POSSIBLE]`. Proceed automatically for `[MATCH]`.
-
----
-
-### 8.5 — Move confirmed tickets to Done
-
-For each validated ticket (MATCH or confirmed POSSIBLE):
-
-```python
-plane_api('PATCH', f'/workspaces/{WORKSPACE}/projects/{PROJECT_ID}/issues/<ISSUE_ID>/',
-    {'state': DONE_STATE_ID})
-```
-
----
-
-### 8.6 — Create missing tickets
-
-For each change (commit, file, or functional block) **without a matching Plane ticket**:
-
-- Infer a label: `fix:`, `feat:`, `refactor:`, `chore:` based on the nature of the change
-- Ask: `"No ticket found for: <description> — Create? [y/N]"`
-- If yes, invoke `peaklab.plane-create-issue` once for that change. Pass the inferred title, `priority=medium`, and the dynamically resolved `DONE_STATE_ID` as the requested state:
-
-```text
-Skill("peaklab.plane-create-issue", args="TITLE; priority=medium; state=DONE_STATE_ID; work already completed")
-```
-
-Tickets created here are placed directly in **Done** (not Backlog) — the work is already done.
-
----
-
-### 8.7 — Plane sync output
-
-```
-PLANE SYNC ──────────────────────────────
-✅ PROJ-42 → Done  (Refactor billing page)
-✅ PROJ-38 → Done  (Fix null check in useCart)
-➕ Created → Done  (feat: add dark mode toggle)
-⏭️ PROJ-31 skipped  (not confirmed)
-```
+   Resolve `PLANE_DO_ISSUE_DIR` from that installed skill package. The helper owns dynamic
+   state resolution, including `PLANE_MERGED_STATE` from the same atomic configuration source.
+   Report its actual resulting state; a merge is not necessarily Done or deployed.
+4. For completed work lacking a ticket, offer one ticket per coherent behavior, not per file.
+   Only after confirmation, use `peaklab.plane-create-issue` with the reviewed description,
+   evidence and dynamically resolved requested state. Do not create tickets directly.
+5. If sync fails after merge, return `merged` with `plane_sync=failed` and the recoverable
+   error. Never report a successful source transition merely because GitHub merged.
 
 </workflow>
 <rules>
@@ -423,19 +330,18 @@ PLANE SYNC ───────────────────────
 - If the user explicitly asks for post-run monitoring: one loop for all PRs, a pass cap written into its own prompt (`pass k/N`, N ≤ 8), backoff 1h → 3h → 12h → stop, and report what was armed
 - Commit messages follow conventional commits format (`fix(ci): ...`)
 - No "Generated with" or co-author tags
-- --plane (Phase 8) only executes if merge succeeded AND base is the default branch; skip silently otherwise
-- State IDs resolved dynamically via group field, never hardcoded
-- Plane states fetched once in 8.1 and reused — no duplicate API calls
-- Tickets created for untracked work are placed directly in Done, not Backlog
-- Get user confirmation for [POSSIBLE] matches before moving a ticket to Done
+- --plane (Phase 8) only executes if merge succeeded AND base is the permitted default branch; report a skip otherwise
+- Plane state IDs and configured merge-state overrides are resolved by the shared client/helper
+- New tickets need confirmation and an explicit dynamically resolved state
+- Inferred thematic ticket matches need confirmation before any Plane update
 </rules>
 <on_success>
 On completion, display:
 ```
 PR: <url>
-Status: <created|reviewed|fixed|merged>
+Status: <pr_created|merged|blocked|closed_unmerged>
 Review: <N blocking fixed inline, N suggestions>
-CI: <passed|fixed in N iterations>
+CI: <passed|fixed in N iterations|not_checked_pr_only|not_configured|blocked|pending>
 Issues created: <N> (list URLs if any)
 Iterations: <N fix cycles>
 Plane: <ticket moved|tickets created|skipped>

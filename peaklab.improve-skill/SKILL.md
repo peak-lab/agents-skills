@@ -13,9 +13,10 @@ Audit and rewrite agent commands and skills (Claude Code + Codex compatible) to 
 
 <constraints>
 - Always read the target file(s) before editing
-- Apply ALL checklist items — do not skip any
-- Preserve all existing functionality — improve structure, not behavior
-- Commands use `$ARGUMENTS` and are user-invoked (`/name`); skills are agent-invoked via `Skill("name")`
+- Audit requests are read-only; apply changes only when the user authorizes implementation
+- Evaluate applicable checklist items; mark others N/A instead of adding boilerplate
+- Preserve useful behavior and safeguards; document intentional behavior changes and migrate their callers
+- Invocation depends on the host: slash command, skill tool, or reading installed instructions; never require one provider's tool
 - Never add content that doesn't improve clarity or usability
 - After every edit, verify the file passes the validation step
 </constraints>
@@ -28,11 +29,11 @@ Audit and rewrite agent commands and skills (Claude Code + Codex compatible) to 
 
 1. **Resolve target** — single file or batch glob → build file list
 2. **Detect type** per file (command vs skill)
-3. **Run audit checklist** → mark each item ✅ / ❌
+3. **Run audit checklist** → mark each applicable item pass / fail / N/A; report only actionable findings for audit-only requests
 4. **Skip if already compliant** — if all items pass, report "already good" and stop
-5. **Apply improvements** in order: language → XML → credential pattern → code quality → token efficiency
+5. **Apply authorized improvements** in order: contracts and callers → verification and safety → clarity → token efficiency
 6. **Validate** — run post-edit checks
-7. **Report** fixes applied + token delta
+7. **Report** fixes, preserved capabilities, intentional changes, verification limits, and size delta (not a measured speed gain)
 
 </workflow>
 
@@ -42,16 +43,21 @@ Audit and rewrite agent commands and skills (Claude Code + Codex compatible) to 
 
 ## Step 1 — Resolve target
 
+Resolve the actual repository and skill root first: this catalog uses top-level `*/SKILL.md`;
+other repositories may use `skills/*/SKILL.md`. Expand relative examples against that root.
+A nonexistent path or a glob matching no skills is an input error, never an "already compliant"
+result. Audit only the selected repository, not a user's entire installed collection.
+
 Single file:
-- `skills/peaklab.plane-do-issue/SKILL.md` → one file
-- `skills/peaklab.plane-api/SKILL.md` → one file
+- `<skill-root>/peaklab.plane-do-issue/SKILL.md` → one file
+- `<skill-root>/peaklab.plane-api/SKILL.md` → one file
 
 Batch mode (glob):
 - `commands/` → all `commands/*.md`
-- `skills/peaklab:*` → all `skills/peaklab:*/SKILL.md`
+- `<skill-root>/peaklab.*` → all matching `peaklab.*/SKILL.md` under that root
 - `all` → all commands + all skills
 
-For batch: run Steps 2–7 for each file independently, then print a summary table.
+For batch: inspect shared contracts and callers together, then validate each changed file and report the combined result.
 
 </step>
 
@@ -65,11 +71,10 @@ For batch: run Steps 2–7 for each file independently, then print a summary tab
 |--------|------|
 | Path starts with `commands/` | Command |
 | Path contains `/SKILL.md` | Skill |
-| Content contains `$ARGUMENTS` | Command |
 | Content has YAML frontmatter with `name:` | Skill |
 
 **Command** — user invokes via `/name [args]`, has `$ARGUMENTS`
-**Skill** — the agent invokes via `Skill("name")`, has YAML frontmatter
+**Skill** — has YAML frontmatter; invocation varies by host. Both types may use `$ARGUMENTS`, so it is not a type discriminator.
 
 </step>
 
@@ -107,7 +112,7 @@ Auto-detect non-English: scan for French indicators (`quand`, `depuis`, `toujour
 | Inline bash/python comments | Any |
 
 ### Frontmatter (skills only)
-- [ ] `name` field present — letters, numbers, hyphens, plus an optional `namespace:` prefix; quote names containing `:` in YAML
+- [ ] `name` present and compatible with the repository's naming convention and supported installers
 - [ ] `description` starts with `"Use when..."` — triggering conditions ONLY, not workflow summary
 - [ ] `description` third-person, under 500 chars
 - [ ] No provider-specific `model` field in shared skill frontmatter
@@ -120,17 +125,15 @@ Auto-detect non-English: scan for French indicators (`quand`, `depuis`, `toujour
 - `effort: deep` — architecture, security, code review, product/design audits, high-risk orchestration
 - Use effort as routing intent only; do not encode concrete model names in shared skill metadata
 
-### Naming convention — `peaklab:` prefix
-- [ ] Skills specific to this org's tooling use `peaklab:` prefix (`peaklab.improve-skill`)
-- [ ] Generic/reusable skills have no prefix (`peaklab.plane-api`, `debug-code`)
+### Naming convention
+- [ ] Existing public names are preserved; this catalog uses `peaklab.` for org-specific tooling
+- [ ] Generic/reusable skills have no prefix (`debug-code`)
 - [ ] Directory name matches `name` field in frontmatter
 
-### XML structure
-- [ ] Top-level sections use semantic XML tags, not bare Markdown headers
-- [ ] Commands have: `<purpose>`, `<arguments>`, `<constraints>`, `<acceptance_criteria>`
-- [ ] Skills have: `<overview>`, `<constraints>`, `<workflow>` (if multi-step)
-- [ ] Named step tags used: `<step name="X">`, `<phase name="X">`
-- [ ] Bash/Python blocks wrapped in named tags: `<setup>`, `<bootstrap>`, `<on_merged>`, `<on_blocked>`
+### Structure
+- [ ] Markdown or semantic XML makes routing and phase boundaries clear; neither requires converting the other
+- [ ] Intent, inputs, constraints, completion states, and relevant references are explicit where needed
+- [ ] Optional examples and detailed implementation recipes live in referenced files when that reduces routine loading
 
 ### Best Practices
 - [ ] Task spec upfront: intent + constraints + acceptance criteria + relevant file locations
@@ -148,8 +151,8 @@ Auto-detect non-English: scan for French indicators (`quand`, `depuis`, `toujour
 ### Token Efficiency
 - [ ] No redundant alternatives — one canonical approach per operation
 - [ ] No duplicated patterns — extract to variables/functions
-- [ ] Quick Reference table present for multi-operation skills
-- [ ] `<gotchas>` or common mistakes section present
+- [ ] Tables and gotchas are included only when they prevent a concrete mistake or improve navigation
+- [ ] Model-default advice is removed only if it carries no project-specific invariant or useful failure recovery
 
 </audit_checklist>
 
@@ -162,9 +165,9 @@ Auto-detect non-English: scan for French indicators (`quand`, `depuis`, `toujour
 ## Step 3b — When NOT to improve
 
 Stop and report "already compliant" if:
-- All checklist items pass
-- File is under 50 lines and already clear
-- File is a thin wrapper that delegates entirely to another skill
+- All applicable checklist items pass, including caller contracts and referenced resources
+
+Short files and thin wrappers still need contract checks; size alone does not establish correctness.
 
 Do NOT apply changes just to reformat a file that already communicates clearly.
 
@@ -176,7 +179,7 @@ Do NOT apply changes just to reformat a file that already communicates clearly.
 
 ## Step 4 — Apply improvements
 
-### XML structure patterns
+### Optional XML structure patterns
 
 **Command skeleton:**
 
@@ -249,7 +252,7 @@ Do NOT apply changes just to reformat a file that already communicates clearly.
 ### Credential loading pattern (generic)
 
 Canonical global env lives in `~/.agents/.env` (never committed, shared by all agents).
-Project `.env` holds project-scoped values and takes priority. Replace any other loading with:
+Prefer the service's existing shared loader and its documented precedence; do not replace atomic host/token selection with a per-key fallback. For a new independent integration without a loader, exported variables take priority, then project `.env`, then global fallback. Never source env files as shell code or print credentials. The following sketch is not a replacement for service-specific parsing or credential-pair validation:
 
 ```python
 import os
@@ -291,6 +294,8 @@ load_credentials('MY_TOKEN', 'MY_PROJECT_URL')
 
 ## Step 5 — Validate after edit
 
+Run repository checks and relevant helper tests first. Trace changed flags, terminal states, approval, delivery and error paths through callers; use existing contract scenarios where available. Static text checks do not prove an agent executed the workflow correctly. The optional checker below only detects basic formatting issues, not correct XML nesting or behavioral regressions.
+
 ```python
 import sys, re
 
@@ -320,7 +325,8 @@ def validate(path):
 
     # XML tags balanced (count-based: nesting order is legal, only missing tags are errors)
     from collections import Counter
-    structural = strip_code(content)
+    body = re.sub(r'^---\n.*?\n---\n', '', content, count=1, flags=re.DOTALL)
+    structural = strip_code(body)
     opens  = re.findall(r'<(\w[\w-]*)(?:\s[^>]*)?>',  structural)
     closes = re.findall(r'</(\w[\w-]*)>', structural)
     # Filter out self-closing and HTML void elements
@@ -366,12 +372,12 @@ Single file:
     - [x] Translated instructions to English
     - [x] Added XML structure (<purpose>, <constraints>, <step>, <phase>)
     - [x] Replaced bash curl chains with Python api() helper
-    - [x] Updated credential loading (~/.agents/.env first, project .env fallback)
+    - [x] Reused shared credential loading (exports, project .env, global fallback)
     - [x] Added <acceptance_criteria>
     - [x] Added <on_blocked> error path
     - [ ] Subagent patterns — not applicable
 
-    Token delta: 438 → 187 lines  ✅ validation passed
+    Size delta: 438 → 187 lines; list checks passed and remaining behavioral validation limits
 
 Batch summary:
 
@@ -393,6 +399,6 @@ Batch summary:
 | Auditing this skill with itself: the loaded copy shows substituted placeholders | Same fix — Read from disk |
 | `import yaml` may be missing from system python | Fall back to a frontmatter regex sanity check if `yaml` import fails |
 | Ordered-list tag comparison flags legal nesting as unbalanced | Validator uses `Counter` — count-based, order-insensitive |
-| Renamed skills (`peaklab.x` → `peaklab:x`) leave stale references in sibling skills | Grep `~/.agents` for the old name after any rename |
+| Renaming public skills leaves stale callers and installation dependencies | Preserve names unless requested; search the catalog, dependency manifest and installed callers after an authorized rename |
 
 </gotchas>

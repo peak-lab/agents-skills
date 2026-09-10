@@ -1,7 +1,7 @@
 # PeakLab Agent Skills
 
 Reusable workflows for Codex, Claude Code, and other agents that support the Agent Skills format.
-The repository contains sanitized instructions only: no production credentials, private page IDs,
+The repository contains instructions and helper scripts: no production credentials, private page IDs,
 internal hostnames, or customer data.
 
 Each top-level directory is a selectable skill package; orchestrators also require their declared
@@ -45,6 +45,10 @@ npx skills add peak-lab/agents-skills -g --skill '*' --agent claude-code --copy 
 Re-run the same command to update an installed skill. Install the whole repository for orchestrated
 workflows so their called skills are available too.
 
+For shared setup, ownership and the smallest useful workflow, see the
+[team guide](docs/team-workflows.md). It explains which entry point to use, what callers pass,
+and which runtime-specific integrations are optional.
+
 ## Common workflows
 
 | Goal | Recommended skill |
@@ -62,7 +66,7 @@ workflows so their called skills are available too.
 | Skill | Use when |
 |---|---|
 | `apex` | Implementing a feature or fix through the Analyze-Plan-Execute-eXamine workflow with validation. |
-| `review-code` | Reviewing code or a PR through a multi-agent deep review focused on high-impact issues. |
+| `review-code` | Reviewing code or a PR with risk-appropriate review depth and optional independent specialists. |
 | `domain-modeling` | Maintaining a precise business glossary and durable architectural decisions. |
 | `to-spec` | Turning established context into an implementation-ready product specification. |
 | `to-tickets` | Breaking approved work into dependency-aware, vertical-slice tickets. |
@@ -87,7 +91,7 @@ workflows so their called skills are available too.
 | `peaklab.plane-ship-watch` | Checking a reviewed Plane-linked PR, merging its verified head, and syncing Plane; returning code/rebase work to its owner. |
 | `peaklab.ship-pr` | Finalizing a branch into a reviewed, clean, merged PR. |
 | `peaklab.sync-ai-docs` | Syncing AGENTS.md, Claude compatibility docs, Codex rules, and shared agent assets. |
-| `peaklab.track-error` | Tracking GlitchTip errors, creating linked work, fixing code, and resolving issues. |
+| `peaklab.track-error` | Linking one GlitchTip error to a GitHub issue and reviewed fix, with optional delivery and evidence-gated resolution. |
 | `peaklab.update-deps` | Handling dependency updates, Dependabot PRs, update PRs, and CI follow-up. |
 | `peaklab.uptime-kuma` | Managing Uptime Kuma monitors, status pages, maintenance windows, and uptime checks. |
 
@@ -98,6 +102,8 @@ Several skills call others:
 - `peaklab.gh-do-issue`, `peaklab.plane-do-issue`, `peaklab.fix-glitchtip`, and `peaklab.glitchtip-do-issue` use `apex` during implementation.
 - GitHub and GlitchTip issue adapters share the execution contract bundled inside
   `peaklab.gh-do-issue/references/execution.md`; install that dependency with the GlitchTip skill.
+- All three GlitchTip entry points share configuration/evidence/resolution rules in
+  `peaklab.glitchtip-do-issue/references/glitchtip-contract.md`.
 - `peaklab.plane-*` skills read shared configuration through `peaklab.plane-api`.
 - `peaklab.client-audit` delegates code-quality analysis to `review-code`.
 - `peaklab.glitchtip-do-issue` and `peaklab.gh-do-issue` can use the harness agents `issue-resolver`, `issue-resolver-deep`,
@@ -130,9 +136,9 @@ The seven complementary skills are adapted from Matt Pocock's MIT-licensed
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the pinned source revision and full notice.
 
 [`skill-dependencies.json`](skill-dependencies.json) is the source of truth for composition.
-`python3 scripts/check_portability.py` verifies that every caller and dependency exists, every skill
-name matches its directory, installed-skill paths resolve, legacy names are absent from skill files,
-and no workstation-specific home path was committed.
+`python3 scripts/check_portability.py` verifies callers/dependencies, matching package names,
+nested Markdown resources and local links, declared cross-skill links, legacy names and
+workstation-specific home paths. It does not execute the workflows or prove model behavior.
 
 ## Issue workflow behavior
 
@@ -202,10 +208,16 @@ Validate skill discovery and Python helper scripts:
 ```bash
 npx skills add . --list
 python3 scripts/check_portability.py
+python3 -m unittest discover -s scripts -p 'test_*.py'
+python3 -m unittest discover -s apex -p 'test_*.py'
 python3 -m unittest discover -s peaklab.plane-do-issue -p 'test_*.py'
+python3 -m unittest discover -s peaklab.plane-api -p 'test_*.py'
+python3 -m unittest discover -s peaklab.plane-create-issue/scripts -p 'test_*.py'
 python3 -m py_compile peaklab.coolify-api/scripts/coolify.py peaklab.plane-api/*.py
-cd peaklab.plane-api && python3 -m unittest test_plane_client.py
 ```
+
+Also review the [contract scenarios](docs/contract-scenarios.md) when changing orchestration.
+Helper unit tests, static contract guards and semantic scenario review serve different purposes.
 
 Check for accidental private references before publishing:
 

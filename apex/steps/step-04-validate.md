@@ -37,7 +37,7 @@ Any review fix or later edit invalidates affected evidence.
 
 <routing>
 - If validation fails because of the patch, return to `step-03-execute.md` and invalidate affected evidence.
-- If requested tests are still missing on a legacy non-TDD route, load `step-07-tests.md` once.
+- If test mode is enabled and requested tests are still missing on a legacy non-TDD route, load `step-07-tests.md` once. Never enter steps 07 or 08 when tests are disabled.
 - If examine mode is enabled and no review exists for the current fingerprint, load `step-05-examine.md`.
 - Otherwise load `step-09-finish.md`, which is the single terminal cleanup path even when PR mode is off.
 </routing>

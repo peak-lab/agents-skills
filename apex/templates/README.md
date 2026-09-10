@@ -2,6 +2,8 @@
 
 These templates support APEX v1 multi-file saved runs and `-r` compatibility. Modern runs treat `.claude/output/apex/` as read-only and keep canonical state in the caller's harness task artifact.
 
+On resume, legacy boolean TDD values are normalized by initialization: `true` means forced TDD and `false` means strict TDD disabled. A legacy `test_mode=false` remains authoritative and suppresses APEX test-writing/TDD phases.
+
 ## Legacy initialization
 
 `../scripts/setup-templates.sh` accepts:

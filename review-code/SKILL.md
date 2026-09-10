@@ -6,8 +6,16 @@ argument-hint: "[PR number or file paths]"
 ---
 
 <objective>
-Multi-agent code review orchestrator. Analyze the scope of changes, determine which review domains apply, then launch parallel specialized sub-agents (each on Opus) that load the right references for deep, domain-specific analysis.
+Review the exact requested patch, loading the relevant domain references. Use independent
+specialists when distinct risks justify them; consolidate one explicit verdict for the caller.
 </objective>
+
+<constraints>
+- Review is read-only unless the user also requested implementation; do not post findings or change PR state implicitly.
+- Bind the repository, PR or baseline, head SHA and scope before inspection. Do not substitute the current checkout for a caller's explicit target.
+- If a caller already supplied a current verdict for the same scope/head/base, reuse it unless an independent review was requested; inspect changed evidence and renew stale verdicts.
+- Use the host's available review capabilities and its model/effort routing. No particular vendor model, private agent or Task API is required.
+</constraints>
 
 <workflow>
 ## Phase 1: SCOPE - Analyze changes and determine review domains
@@ -16,7 +24,7 @@ Multi-agent code review orchestrator. Analyze the scope of changes, determine wh
    - If user provided a PR number: `gh pr diff {number}`
    - If user provided file paths: `git diff` on those files
    - If nothing specified: `git diff` (unstaged) + `git diff --cached` (staged)
-   - If no local changes: ask user what to review
+   - A caller-provided PR or commit range remains the target even with a clean worktree. Ask only when no target can be established.
 
 2. **Categorize changed files** into domains by scanning extensions and paths:
 
@@ -39,14 +47,15 @@ Multi-agent code review orchestrator. Analyze the scope of changes, determine wh
 | Backend files (API, DB, services) | **Backend** | API design, DB patterns, error handling | `references/backend-patterns.md` |
 | Test files changed | **Tests** | Coverage gaps, test quality | (inline guidance) |
 
-4. **Determine review scale:**
-   - Small (1-5 files): 1-2 agents
-   - Medium (6-15 files): 2-3 agents
-   - Large (16+ files): 3-5 agents (full coverage)
+4. **Determine review scale:** one reviewer may cover several domains. Add an independent
+   specialist for a distinct material risk, respecting host capacity; file count alone does
+   not impose a reviewer quota. Keep the final verdict under one owner.
 
 ## Phase 2: DISPATCH - Launch parallel specialized review agents
 
-Launch all determined agents **in parallel** using the Task tool with `subagent_type: "code-reviewer"` and `effort: "deep"`.
+Launch independent review assignments in parallel using the host's available agent tools and
+deep review intent. Use repository-declared reviewers when present; if delegation is unavailable,
+read the same references and perform an explicit local review with the same reporting standard.
 
 Each agent gets a structured prompt following this template:
 
@@ -83,7 +92,7 @@ INSTRUCTIONS:
 
 ## Phase 3: CONSOLIDATE - Merge and present findings
 
-After all agents complete:
+After the review assignments complete (or the equivalent local review):
 
 1. **Collect all findings** from each agent
 2. **Deduplicate**: If multiple agents flagged the same issue, keep the most detailed one
@@ -117,12 +126,12 @@ After all agents complete:
 </workflow>
 
 <execution_rules>
-- ALWAYS launch at minimum 1 agent, maximum 5
-- ALWAYS use `effort: "deep"` for sub-agents
+- Perform at least one explicit review; do not require an unavailable agent to complete it
+- Resolve deep review model/effort through the repository and host routing policy
 - ALWAYS pass the relevant reference file paths so agents can Read them
 - ALWAYS include the actual diff context in the agent prompt (not just file paths)
 - NEVER skip the scoping phase - it determines which agents are needed
-- If the change is tiny (1-2 files, <50 lines), you MAY do a single-agent review with general focus instead of multi-agent
+- Small focused changes usually need one general review, not multiple specialist passes
 - Each agent should complete independently - they don't need to communicate with each other
 </execution_rules>
 

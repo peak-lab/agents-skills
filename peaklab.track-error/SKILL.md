@@ -1,112 +1,54 @@
 ---
-name: "peaklab.track-error"
-description: Use when tracking GlitchTip errors end to end, fetching unresolved errors, fixing code, creating GitHub issues, shipping PRs, or resolving GlitchTip issues.
+name: peaklab.track-error
+description: Use when one GlitchTip error needs a GitHub issue as its permanent trace, followed by a verified fix and optional delivery.
 effort: deep
-allowed-tools: Bash(git:*), Bash(gh:*), Bash(rg:*), Bash(pnpm:*), Bash(npm:*), Bash(curl:*), Bash(jq:*), Bash(glitchtip:*), Read, Edit, Write, Glob, Grep, Agent, Skill
-argument-hint: [project-slug]
+argument-hint: "[project-slug] [--wait-merge | --no-merge] [--no-resolve] [--no-auto] [--no-tdd]"
 ---
 
-<objective>
-End-to-end error resolution: fetch → analyze → fix → issue → PR → resolve on GlitchTip.
-</objective>
+<overview>
+Track one error through a GitHub issue. Use `peaklab.glitchtip-do-issue` instead for isolated
+root-cause clusters without a separate GitHub ticket; use `peaklab.fix-glitchtip` for an
+explicit inline inbox pass.
+</overview>
 
-<config>
-```bash
-GLITCHTIP_API="https://glitchtip.example.com/api/0"
-ORG_SLUG="peaklab"
-```
+<constraints>
+- Read [the shared GlitchTip contract](../peaklab.glitchtip-do-issue/references/glitchtip-contract.md)
+  before API access. It owns configuration, sanitized evidence and resolution requirements.
+- Default to a reviewed PR. Explicit delivery intent or `--wait-merge` permits shipping;
+  `--no-merge` takes precedence. Never infer merge from a child workflow's completion.
+- `--no-resolve` forbids GlitchTip writes, not creation of the requested GitHub trace.
+- Preserve unknown or uncovered errors as unresolved. Never deploy or monitor implicitly.
+</constraints>
 
-Always use `rtk proxy curl` instead of bare `curl` for GlitchTip API calls to get raw JSON.
-</config>
+<workflow>
+1. Resolve the requested project and fetch unresolved candidates using the shared contract.
+   Preserve the positional project-slug input. If no candidates exist, report the observed
+   scope; if several exist, ask which one to track. Do not start an unrequested queue.
+2. Read the selected error's current event and relevant code. Record sanitized evidence,
+   environment/release, a proven or explicitly unconfirmed cause, and acceptance criteria.
+   Ask only for a material missing decision; do not invent a code fix.
+3. Look for an existing GitHub issue linked to this exact GlitchTip ID/permalink with `gh`.
+   Reuse a matching issue; otherwise invoke `peaklab.gh-create-issue` with sanitized context.
+   Capture its repository, issue number and URL. Keep one task record for the entire flow.
+4. Invoke `peaklab.gh-do-issue <issue-number> <MERGE_FLAG>` in that repository with the current
+   task record, existing analysis and criteria. Set `MERGE_FLAG=--wait-merge` only for authorized
+   delivery; otherwise explicitly pass `--no-merge`. Propagate `--no-auto` and `--no-tdd`
+   when requested; do not duplicate analysis or add another review/ship owner.
+5. Handle the actual result:
+   - `pr_created`: report the reviewed PR and keep GlitchTip unresolved.
+   - `merged`: verify that exact PR's `state=MERGED` via `gh pr view --repo <repository>`.
+     Then apply the shared deployment/regression evidence gate; missing evidence means
+     resolution pending, not success.
+   - `needs_confirmation` / `needs_clarification`: present the plan/question and resume the
+     same task only after the required answer.
+   - `already_done` / `obsolete` / `needs_planning` / `no_changes` / `blocked`: report the
+     evidence and next action; do not resolve solely on that status.
+6. Only when the shared gate and authority both permit it, update the selected GlitchTip ID.
+   Never use the obsolete project-scoped mutation endpoint. Record the returned state and
+   comment outcome separately.
+</workflow>
 
-## Phase 1: Detect Project Slug
-
-If `$ARGUMENTS` provided, use it. Otherwise auto-detect from `package.json`:
-
-```bash
-rtk proxy curl -s -H "Authorization: Bearer ${GLITCHTIP_TOKEN}" \
-  "${GLITCHTIP_API}/projects/" | python3 -c "
-import json,sys; [print(p['slug']) for p in json.load(sys.stdin)]"
-```
-
-Match project slug to `package.json` `name` field.
-
-## Phase 2: Fetch Unresolved Errors
-
-```bash
-PROJECT_SLUG="<slug>"
-
-rtk proxy curl -s -H "Authorization: Bearer ${GLITCHTIP_TOKEN}" \
-  "${GLITCHTIP_API}/projects/${ORG_SLUG}/${PROJECT_SLUG}/issues/?is_status=unresolved&limit=20" \
-  | python3 -c "
-import json,sys
-data=json.load(sys.stdin)
-if not data: print('No unresolved errors.'); exit()
-for i,issue in enumerate(data):
-    print(f'[{i}] ID:{issue[\"id\"]} | x{issue[\"count\"]} | {issue[\"title\"][:80]}')
-    print(f'    Last seen: {issue[\"lastSeen\"]}')
-"
-```
-
-- **No errors** → report and stop
-- **1 error** → auto-select
-- **Multiple** → show list, ask user which one to fix
-
-## Phase 3: Analyze the Error
-
-Extract from issue metadata:
-- `metadata.type` — error type
-- `metadata.value` — error message
-- `metadata.filename` — source file
-- `title` — full error title
-
-Investigate the codebase with `Grep` and `Read` to identify the root cause from the error message and context. Use an `Explore` subagent for complex analysis.
-
-## Phase 4: Create GitHub Issue
-
-Use the `peaklab.gh-create-issue` skill to document the error:
-- Title: `fix(scope): <error description>`
-- Include: GlitchTip error ID, permalink, error message, root cause, stack trace context
-- Label: `bug`
-
-**Capture the GitHub issue number** (e.g., `#42`) from the returned URL.
-
-## Phase 5: Do the Issue
-
-Invoke `peaklab.gh-do-issue` with the captured issue number:
-```
-Skill("peaklab.gh-do-issue"): <issue-number>
-```
-
-This handles investigation, fix, PR creation, review, and merge end-to-end. Wait for it to complete.
-
-## Phase 6: Resolve on GlitchTip
-
-```bash
-ISSUE_ID="<glitchtip-issue-id>"
-
-rtk proxy curl -s -X PUT \
-  -H "Authorization: Bearer ${GLITCHTIP_TOKEN}" \
-  -H "Content-Type: application/json" \
-  "${GLITCHTIP_API}/projects/${ORG_SLUG}/${PROJECT_SLUG}/issues/${ISSUE_ID}/" \
-  -d '{"status":"resolved"}'
-```
-
-If `PUT` returns "Method not allowed", try `PATCH` with the same payload.
-
-## Output
-
-```
-GlitchTip: <error-id> resolved ✅
-GitHub Issue: <url>
-PR: <url> (merged)
-```
-
-## Rules
-
-- Don't resolve GlitchTip error before `peaklab.gh-do-issue` completes (PR merged)
-- If multiple errors: ask user which to fix, never guess
-- Use `rtk proxy curl` for API calls
-- Capture GitHub issue number after `peaklab.gh-create-issue` before calling `peaklab.gh-do-issue`
-
-User: $ARGUMENTS
+<result>
+Return GlitchTip ID, GitHub issue, PR, code status, deployment evidence, actual resolution
+status and next action. A reviewed PR, merged code and a resolved runtime error are distinct.
+</result>
