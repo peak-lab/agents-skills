@@ -1,220 +1,35 @@
 ---
 name: step-09-finish
-description: Finish APEX workflow and create pull request
-previous_step: step-08-run-tests.md (or step-04-validate.md if no tests)
+description: Clean up APEX resources, report verified results, and deliver a PR only when explicitly requested
+previous_step: steps/step-04-validate.md
 ---
 
-# Step 9: Finish & Create PR
+# Step 9: Finish
 
-## MANDATORY EXECUTION RULES (READ FIRST):
+<outcome>
+Preserve an existing `blocked`, `needs_planning`, `needs_clarification`, or cancelled status.
+Otherwise set `status=complete` only when all acceptance criteria are met, required validation
+is current, and any requested review has no unresolved blocking finding. If a gate is missing,
+set `status=blocked` and record the missing evidence or decision before continuing.
+</outcome>
 
-- 🛑 NEVER push without user confirmation (unless auto_mode)
-- 🛑 NEVER create PR if there are uncommitted changes
-- ✅ ALWAYS verify all changes are committed
-- ✅ ALWAYS push to remote before creating PR
-- 📋 YOU ARE A FINISHER, completing the workflow
-- 💬 FOCUS on PR creation and workflow summary
-- 🚫 FORBIDDEN to make code changes in this step
+<cleanup>
+This is the single terminal path. Stop or release every worker recorded in canonical state, whether the workflow succeeded, was blocked, or will create a PR. Preserve their useful completion messages before cleanup.
+</cleanup>
 
-## EXECUTION PROTOCOLS:
+<without_pr>
+When `{pr_mode}` is false, or status is `blocked`, `needs_planning`, `needs_clarification`, or cancelled, do not commit, push, or create a PR. Report the terminal status, owned files, acceptance-criteria status, fresh validation evidence, unresolved issues, and canonical task path. For `needs_planning`, summarize the decision-sized unknowns and recommend `wayfinder`. Branch mode alone does not authorize delivery.
+</without_pr>
 
-- 🎯 Verify git status before any push/PR operations
-- 💾 Save PR details to output file if save_mode enabled
-- 📖 Provide clear workflow summary
-- 🚫 FORBIDDEN to proceed with uncommitted changes
+<with_pr>
+Proceed only when status is complete, `-pr`/`--pull-request` was explicitly supplied, every acceptance criterion is satisfied, final validation evidence is current for the recorded environment, and any requested examine review is current with no unresolved blocking finding.
 
-## CONTEXT BOUNDARIES:
+1. Verify the branch is not the default branch and inspect the exact owned diff against `{base_sha}`.
+2. Stage only APEX-owned hunks. If a path contains inseparable pre-existing user edits, stop and ask rather than committing them implicitly.
+3. Create a concise repository-conventional commit with no co-author or tool-generated attribution.
+4. In non-auto mode, confirm before the first push. In auto mode, the explicit PR flag authorizes the ordinary push and PR creation, but never a force push.
+5. Push the current branch and create the PR with `gh`. Include a concise summary and the actual validation commands/results.
+6. Return the PR URL and final commit SHA. On push conflicts or required history rewrites, stop and request direction; never force push without explicit authorization.
+</with_pr>
 
-- Variables available: `{task_id}`, `{task_description}`, `{branch_name}`, `{pr_mode}`, `{auto_mode}`, `{save_mode}`, `{teams_mode}`, `{output_dir}`
-- Previous steps completed: analyze, plan, execute, validate (+ optional: tests, examine)
-- All implementation should be done at this point
-
-## YOUR TASK:
-
-Finalize the APEX workflow by committing remaining changes, pushing to remote, and creating a pull request.
-
----
-
-## EXECUTION SEQUENCE:
-
-### 0. Shutdown Agent Team (if teams_mode)
-
-<critical>
-This is the ONLY step where team shutdown should happen.
-All previous steps (validate, examine, resolve) keep the team alive.
-</critical>
-
-**If `{teams_mode}` = true:**
-
-1. Send shutdown_request to each teammate:
-```
-SendMessage:
-  type: "shutdown_request"
-  recipient: "impl-{name}"
-  content: "APEX workflow complete. Shutting down team."
-```
-
-2. Wait for all teammates to confirm shutdown.
-
-3. Delete the team:
-```
-TeamDelete
-```
-
-→ This cleans up team files and task directories.
-
-### 1. Verify Git Status
-
-```bash
-git status
-```
-
-**If uncommitted changes exist:**
-→ Compare them with the files and paths owned by this APEX task. Stage and commit only task-owned changes with message: `feat({task_id}): {task_description}`. Never stage, commit, discard, or reformat modifications that predated the task or belong to the user.
-
-**If working tree is clean:**
-→ Continue to step 2
-
-### 2. Check Commits to Push
-
-```bash
-git log origin/{branch_name}..HEAD --oneline 2>/dev/null || git log --oneline -5
-```
-
-Display commits that will be included in PR.
-
-### 3. Confirm Push (if not auto_mode)
-
-**If `{auto_mode}` = true:**
-→ Auto-push to remote
-
-**If `{auto_mode}` = false:**
-Use AskUserQuestion:
-```yaml
-questions:
-  - header: "Push"
-    question: "Ready to push {branch_name} and create PR?"
-    options:
-      - label: "Push and create PR (Recommended)"
-        description: "Push commits to remote and open pull request"
-      - label: "Push only"
-        description: "Push to remote without creating PR"
-      - label: "Review commits first"
-        description: "Show me the full diff before pushing"
-      - label: "Cancel"
-        description: "Don't push or create PR"
-    multiSelect: false
-```
-
-### 4. Push to Remote
-
-```bash
-git push -u origin {branch_name}
-```
-
-**If push fails:**
-→ Display error and ask user how to proceed
-→ Common fixes: pull --rebase, force push (with warning)
-
-### 5. Create Pull Request (if pr_mode)
-
-**If `{pr_mode}` = true:**
-
-Generate PR content:
-- **Title:** `feat({task_id}): {task_description}`
-- **Body:** Summary of changes from the workflow
-
-```bash
-gh pr create --title "feat({task_id}): {task_description}" --body "$(cat <<'EOF'
-## Summary
-
-{Brief description of what was implemented}
-
-## Changes
-
-{List of key changes made}
-
-## Testing
-
-{How the changes were validated}
-
-EOF
-)"
-```
-
-**Capture PR URL:**
-```bash
-gh pr view --json url -q '.url'
-```
-→ Store as `{pr_url}`
-
-### 6. Save Output (if save_mode)
-
-**If `{save_mode}` = true:**
-
-```bash
-bash {skill_dir}/scripts/update-progress.sh "{task_id}" "09" "finish" "in_progress"
-```
-
-Append to `{output_dir}/09-finish.md`: branch, PR URL, commits, timestamp.
-
-```bash
-bash {skill_dir}/scripts/update-progress.sh "{task_id}" "09" "finish" "complete"
-```
-
-### 7. Final Summary
-
-Display workflow completion summary:
-
-```
-═══════════════════════════════════════════════════════
-  APEX WORKFLOW COMPLETE
-═══════════════════════════════════════════════════════
-
-  Task: {task_description}
-  ID: {task_id}
-
-  ✓ Analysis complete
-  ✓ Plan created and approved
-  ✓ Implementation done
-  ✓ Validation passed
-  {if test_mode: "✓ Tests passing"}
-  {if examine_mode: "✓ Review findings resolved"}
-  ✓ Changes pushed to {branch_name}
-  {if pr_mode: "✓ PR created: {pr_url}"}
-
-═══════════════════════════════════════════════════════
-```
-
----
-
-## SUCCESS METRICS:
-
-✅ Agent team shut down gracefully via SendMessage shutdown_request (if teams_mode)
-✅ TeamDelete called to clean up team resources (if teams_mode)
-✅ All changes committed
-✅ Branch pushed to remote
-✅ PR created with proper title and description (if pr_mode)
-✅ PR URL captured and displayed
-✅ Output saved (if save_mode)
-✅ Clear completion summary provided
-
-## FAILURE MODES:
-
-❌ Creating PR with uncommitted changes
-❌ Pushing without user confirmation (when not auto_mode)
-❌ Force pushing without explicit user request
-❌ Not displaying PR URL after creation
-❌ **CRITICAL**: Using plain text prompts instead of AskUserQuestion
-
----
-
-## WORKFLOW COMPLETE
-
-This is the final step of the APEX workflow. No next step to load.
-
-<critical>
-Remember: This step handles git operations, PR creation, AND team shutdown (if teams_mode).
-All code changes should have been completed in earlier steps.
-Team shutdown MUST happen here — step 0 of execution sequence — before git operations.
-</critical>
+Always persist the terminal status and results to the canonical task artifact. When save mode is enabled, include its expanded evidence fields. Do not promise deferred monitoring unless the user requested it.

@@ -1,124 +1,27 @@
 ---
 name: step-00b-save
-description: Setup save output structure for APEX workflow
+description: Create or update one resumable APEX state artifact
 returns_to: step-00-init.md
 ---
 
-# Step 0b: Save Mode Setup
+# Optional setup: save
 
-## MANDATORY EXECUTION RULES (READ FIRST):
+Run only when `{save_mode}` is true.
 
-- 🛑 NEVER start analysis or implementation
-- ✅ ALWAYS run the setup script to create output structure
-- ✅ ALWAYS capture the generated `{task_id}` from the script output
-- 📋 YOU ARE A SETUP MANAGER, not an implementer
-- 🚫 FORBIDDEN to start any analysis work
+<modern_state>
+Use the caller's existing harness task artifact, or `~/.agents/tasks/{task_id}/plan.md` as fallback. Do not create a parallel state file. Save mode retains these expanded resume fields in that artifact:
 
-## CONTEXT BOUNDARIES:
+- request, flags, base SHA, initial dirty paths, and owned paths;
+- acceptance criteria and links to caller-owned issue/plan artifacts;
+- vertical plan slices with status and ownership;
+- validation evidence with command, scope, result, and code/config/environment fingerprint;
+- active workers and the next step.
 
-- Variables available: `{feature_name}`, `{task_description}`, all flag variables, `{branch_name}`
-- This sub-step sets: `{task_id}`, `{output_dir}`
-- Return to step-00-init.md after completion
+`{task_id}` must already be set by initialization. Update the artifact at phase boundaries, not after every observation or tool call.
+</modern_state>
 
-## YOUR TASK:
+<legacy_compatibility>
+For `-r`, accept directories produced by `scripts/setup-templates.sh` as read-only inputs. Read `00-context.md` first and consult numbered phase files only to recover missing state into the canonical harness artifact. Do not update or copy their phase logs. The files under `templates/` and both existing scripts remain available only for explicit legacy compatibility; ordinary modern runs do not load or invoke them.
+</legacy_compatibility>
 
-Create the output directory structure and initialize all output files for the APEX workflow.
-
----
-
-## OUTPUT STRUCTURE:
-
-When save_mode is enabled, all outputs go to the PROJECT directory:
-
-```
-.claude/output/apex/{task-id}/
-├── 00-context.md        # Params, user request, timestamp
-├── 01-analyze.md        # Analysis findings
-├── 02-plan.md           # Implementation plan
-├── 03-execute.md        # Execution log
-├── 04-validate.md       # Validation results
-├── tasks/                # Task breakdown (if -k or -m)
-│   ├── README.md
-│   └── task-NN-*.md
-├── 05-examine.md        # Review findings (if -x)
-├── 06-resolve.md        # Resolution log (if -x)
-├── 07-tests.md          # Test analysis (if -t and not -d)
-├── 08-run-tests.md      # Test runner log (if -t and not -d)
-└── 09-finish.md         # PR creation (if -pr)
-```
-
-## EXECUTION SEQUENCE:
-
-### 1. Run Template Setup Script
-
-```bash
-bash {skill_dir}/scripts/setup-templates.sh \
-  "{feature_name}" \
-  "{task_description}" \
-  "{auto_mode}" \
-  "{examine_mode}" \
-  "{save_mode}" \
-  "{test_mode}" \
-  "{tdd_mode}" \
-  "{economy_mode}" \
-  "{branch_mode}" \
-  "{pr_mode}" \
-  "{interactive_mode}" \
-  "{tasks_mode}" \
-  "{branch_name}" \
-  "{original_input}"
-```
-
-**Note:** Pass `{feature_name}` (without number prefix), NOT `{task_id}`.
-
-The script:
-- Auto-generates `{task_id}` = `NN-{feature_name}` (next available number)
-- Creates `.claude/output/apex/{task_id}/` directory
-- Initializes `00-context.md` with configuration and progress table
-- Pre-creates all step files from templates
-- Only creates files for enabled steps (examine, tests, PR)
-- Outputs the generated `{task_id}`
-
-### 2. Capture Output Variables
-
-From the script output, set:
-- `{task_id}` = the generated ID (e.g., `01-add-auth-middleware`)
-- `{output_dir}` = `.claude/output/apex/{task_id}`
-
-### 3. Return
-
-→ Return to step-00-init.md with `{task_id}` and `{output_dir}` set
-
----
-
-## SAVE OUTPUT PATTERN (for all subsequent steps):
-
-Each step uses this pattern:
-
-1. `bash {skill_dir}/scripts/update-progress.sh "{task_id}" "{step_num}" "{step_name}" "in_progress"`
-2. Append findings/outputs to the pre-created step file
-3. `bash {skill_dir}/scripts/update-progress.sh "{task_id}" "{step_num}" "{step_name}" "complete"`
-
----
-
-## SUCCESS METRICS:
-
-✅ Output directory created
-✅ `{task_id}` generated and captured
-✅ `{output_dir}` set
-✅ All template files initialized
-
-## FAILURE MODES:
-
-❌ Not capturing `{task_id}` from script output
-❌ Starting analysis before returning
-
----
-
-## RETURN:
-
-After setup complete, return to `./step-00-init.md` to continue initialization.
-
-<critical>
-Remember: This sub-step ONLY creates the output structure. Return immediately after setting {task_id} and {output_dir}.
-</critical>
+Set `{output_dir}` to the canonical task artifact's parent directory for caller compatibility, then return to `step-00-init.md`.

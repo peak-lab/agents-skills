@@ -22,16 +22,16 @@
     "peaklab.plane-api"
   ],
   "peaklab.plane-do-issue": [
+    "apex",
     "peaklab.plane-api",
-    "peaklab.plane-ship-watch",
-    "peaklab.ship-pr"
+    "peaklab.plane-ship-watch"
   ],
   "peaklab.plane-init": [
     "peaklab.plane-api"
   ],
   "peaklab.plane-ship-watch": [
     "peaklab.plane-do-issue",
-    "peaklab.ship-pr"
+    "peaklab.plane-api"
   ],
   "peaklab.plane-status": [
     "peaklab.plane-api"

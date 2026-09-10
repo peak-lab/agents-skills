@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import re
@@ -52,11 +53,48 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("issue", nargs="?", default="", help="PREFIX-N, N, UUID, URL, next, or empty")
     auto_mode = parser.add_mutually_exclusive_group()
-    auto_mode.add_argument("--auto", dest="auto", action="store_true", default=True, help="use the default non-interactive execution")
-    auto_mode.add_argument("--no-auto", dest="auto", action="store_false", help="retain urgent/high confirmation pauses")
+    auto_mode.add_argument(
+        "--auto",
+        dest="auto",
+        action="store_true",
+        default=True,
+        help="use the default non-interactive execution",
+    )
+    auto_mode.add_argument(
+        "--no-auto",
+        dest="auto",
+        action="store_false",
+        help="require the APEX plan approval gate",
+    )
     tdd_mode = parser.add_mutually_exclusive_group()
-    tdd_mode.add_argument("--tdd", dest="tdd", action="store_true", default=True, help="use the default APEX RED-GREEN-REFACTOR execution")
-    tdd_mode.add_argument("--no-tdd", dest="tdd", action="store_false", help="opt out of APEX RED-GREEN-REFACTOR execution")
+    tdd_mode.add_argument(
+        "--tdd",
+        dest="tdd",
+        action="store_true",
+        help="force strict APEX RED-GREEN-REFACTOR execution",
+    )
+    tdd_mode.add_argument(
+        "--no-tdd",
+        dest="tdd",
+        action="store_false",
+        help="opt out of APEX RED-GREEN-REFACTOR execution",
+    )
+    merge_mode = parser.add_mutually_exclusive_group()
+    merge_mode.add_argument(
+        "--wait-merge", dest="merge", action="store_const", const="wait-merge"
+    )
+    merge_mode.add_argument(
+        "--async-merge", dest="merge", action="store_const", const="async-merge"
+    )
+    merge_mode.add_argument(
+        "--no-merge", dest="merge", action="store_const", const="no-merge"
+    )
+    parser.add_argument(
+        "--no-subagent",
+        action="store_true",
+        help="run implementation in the parent process",
+    )
+    parser.set_defaults(tdd=None, merge="no-merge")
     return parser.parse_args()
 
 
@@ -172,16 +210,18 @@ def issue_from_arg(client, ctx: dict, raw_arg: str) -> tuple[dict | None, str]:
     project_path = ctx["project_path"]
 
     if not arg or arg == "next":
-        issue = best_issue(
-            fetch_issues(client, project_path, ctx["todo_ids"], assignee_id=ctx["me_id"]),
-            ctx["me_id"],
-            exclude_epics=True,
-        )
+        todo_issues = fetch_issues(client, project_path, ctx["todo_ids"])
+        assigned_issues = [
+            issue
+            for issue in todo_issues
+            if ctx["me_id"] in (issue.get("assignees") or [])
+        ]
+        issue = best_issue(assigned_issues, ctx["me_id"], exclude_epics=True)
         if issue:
             return issue, "assignée"
         return (
             best_issue(
-                fetch_issues(client, project_path, ctx["todo_ids"]),
+                todo_issues,
                 ctx["me_id"],
                 exclude_others=True,
                 exclude_epics=True,
@@ -312,52 +352,107 @@ def write_state_file(output: dict[str, object]) -> None:
         raise
 
 
-def worktree_context(cwd: Path) -> tuple[Path, str | None, str | None]:
+def worktree_context(cwd: Path) -> tuple[Path, Path, str | None, bool, str | None]:
     def git(*args: str) -> str:
         return subprocess.run(
             ["git", *args], cwd=cwd, check=True, text=True, capture_output=True
         ).stdout.strip()
 
     try:
-        git_dir = Path(git("rev-parse", "--git-dir"))
-        git_dir = git_dir if git_dir.is_absolute() else (cwd / git_dir).resolve()
+        repository_root = Path(git("rev-parse", "--show-toplevel")).resolve()
+        git_dir = Path(git("rev-parse", "--absolute-git-dir")).resolve()
+        common_dir = Path(
+            git("rev-parse", "--path-format=absolute", "--git-common-dir")
+        ).resolve()
         worktrees = [
             line.removeprefix("worktree ")
             for line in git("worktree", "list", "--porcelain").splitlines()
             if line.startswith("worktree ")
         ]
         if not worktrees:
-            return cwd, None, "Impossible de déterminer le checkout principal."
-        primary_root = Path(worktrees[0])
-        if not git_dir.is_file():
-            return primary_root, None, None
+            return cwd, cwd, None, False, "Impossible de déterminer le checkout principal."
+        primary_root = Path(worktrees[0]).resolve()
+        linked_worktree = git_dir != common_dir
+        if not linked_worktree:
+            return primary_root, repository_root, None, False, None
         branch = git("branch", "--show-current")
         dirty = git("status", "--short")
-        base_ref = git("symbolic-ref", "refs/remotes/origin/HEAD")
-        base_branch = base_ref.rsplit("/", 1)[-1]
     except subprocess.CalledProcessError as exc:
-        return cwd, None, f"Impossible de vérifier le worktree actif: {exc.stderr.strip()}"
+        return cwd, cwd, None, False, f"Impossible de vérifier le worktree actif: {exc.stderr.strip()}"
+
+    try:
+        base_ref = git("symbolic-ref", "refs/remotes/origin/HEAD")
+        base_branch = base_ref.removeprefix("refs/remotes/origin/")
+    except subprocess.CalledProcessError:
+        remote = subprocess.run(
+            ["git", "remote", "show", "origin"],
+            cwd=repository_root,
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+        head_line = next(
+            (line for line in remote.stdout.splitlines() if "HEAD branch:" in line),
+            "",
+        )
+        base_branch = head_line.partition("HEAD branch:")[2].strip()
+        if not base_branch:
+            return (
+                primary_root,
+                repository_root,
+                None,
+                True,
+                "Impossible de déterminer la branche de base distante.",
+            )
 
     if not branch:
-        return primary_root, None, "Le worktree actif est détaché; créez ou sélectionnez une branche avant de lancer l'issue."
+        return (
+            primary_root,
+            repository_root,
+            None,
+            True,
+            "Le worktree actif est détaché; créez ou sélectionnez une branche avant de lancer l'issue.",
+        )
     if dirty:
-        return primary_root, None, "Le worktree actif contient des modifications; validez ou isolez-les avant de lancer l'issue."
+        return (
+            primary_root,
+            repository_root,
+            None,
+            True,
+            "Le worktree actif contient des modifications; validez ou isolez-les avant de lancer l'issue.",
+        )
     if branch == base_branch:
-        return primary_root, None, f"Le worktree actif est sur la branche de base ({base_branch}); utilisez une branche de travail."
-    return primary_root, branch, None
+        return (
+            primary_root,
+            repository_root,
+            None,
+            True,
+            f"Le worktree actif est sur la branche de base ({base_branch}); utilisez une branche de travail.",
+        )
+    return primary_root, repository_root, branch, True, None
 
 
 def main() -> int:
     clear_state_file()
     args = parse_args()
-    task_root, active_branch, worktree_error = worktree_context(Path.cwd())
+    task_root, execution_root, active_branch, linked_worktree, worktree_error = (
+        worktree_context(Path.cwd())
+    )
     if worktree_error:
         print(json.dumps({"found": False, "message": worktree_error}, ensure_ascii=False))
         return 0
     client = load_plane_client()
     ctx = get_context(client)
     if not ctx["state_in_progress"]:
-        print(json.dumps({"found": False, "message": "L'état Plane In Progress est introuvable; aucune issue n'a été modifiée."}, ensure_ascii=False))
+        print(
+            json.dumps(
+                {
+                    "found": False,
+                    "message": "L'état Plane In Progress est introuvable; aucune issue n'a été modifiée.",
+                },
+                ensure_ascii=False,
+            )
+        )
         return 0
     issue, selection = issue_from_arg(client, ctx, args.issue)
 
@@ -385,6 +480,10 @@ def main() -> int:
     seq = issue.get("sequence_id")
     branch_type = infer_branch_type(title)
     slug = slugify(title)
+    repository_key = (
+        f"{slugify(task_root.name)}-"
+        f"{hashlib.sha256(str(task_root).encode()).hexdigest()[:8]}"
+    )
     extras = enrich_issue(client, ctx["project_path"], issue)
     output = {
         "found": True,
@@ -404,9 +503,20 @@ def main() -> int:
         "state": "In Progress",
         "auto_mode": args.auto,
         "skip_confirm": args.auto,
-        "tdd_mode": args.tdd,
+        "tdd_mode": "adaptive" if args.tdd is None else args.tdd,
+        "merge_mode": args.merge,
+        "use_subagent": not args.no_subagent,
         "branch": active_branch or f"{branch_type}/{ctx['prefix']}-{seq}-{slug}",
-        "task_dir": str(task_root / ".agents" / "tasks" / f"{ctx['prefix']}-{seq}-{slug}"),
+        "worktree_path": str(execution_root) if linked_worktree else "",
+        "linked_worktree": linked_worktree,
+        "task_dir": str(
+            Path.home()
+            / ".agents"
+            / "tasks"
+            / "plane"
+            / repository_key
+            / f"{ctx['prefix']}-{seq}-{slug}"
+        ),
     }
 
     write_state_file(output)

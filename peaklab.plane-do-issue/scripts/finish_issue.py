@@ -11,6 +11,7 @@ state and leave PLANE_RELEASED_STATE unset: merges park the issue, the release c
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import sys
 import tempfile
@@ -82,6 +83,13 @@ def resolve_by_name(states: list[dict], name: str) -> tuple[str, str]:
 
 def main() -> int:
     args = parse_args()
+    if args.merged and not args.pr_url:
+        raise SystemExit("--merged requires --pr-url as merge evidence")
+    if args.blocked and (not args.pr_url or not args.reason):
+        raise SystemExit("--blocked requires --pr-url and --reason as blocker evidence")
+    if args.released and not args.release_url:
+        raise SystemExit("--released requires --release-url as release evidence")
+
     client = load_plane_client()
     project_path = client.project.path
     issue_id, issue_ref = resolve_issue(client, project_path, args)
@@ -123,9 +131,10 @@ def main() -> int:
 
     link = args.release_url if args.released else args.pr_url
     if link:
-        text = f'<p>{comment} : <a href="{link}">{link}</a></p>'
+        safe_link = html.escape(link, quote=True)
+        text = f'<p>{comment} : <a href="{safe_link}">{safe_link}</a></p>'
         if args.reason:
-            text += f"<p>{args.reason}</p>"
+            text += f"<p>{html.escape(args.reason)}</p>"
         client.request("POST", f"{project_path}/issues/{issue_id}/comments/", {"comment_html": text})
 
     print(f"{issue_ref} -> {label}")

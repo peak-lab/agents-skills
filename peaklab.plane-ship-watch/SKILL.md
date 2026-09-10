@@ -1,211 +1,173 @@
 ---
 name: "peaklab.plane-ship-watch"
-description: "Use when peaklab.plane-do-issue has created a PR or when a Plane-linked GitHub PR needs non-blocking CI, rebase, conflict handling, review fixes, merge, and Plane sync in an isolated worktree."
+description: "Use when a Plane-linked pull request already has a parent review verdict and must be checked, merged, and synced within the current agent session."
 effort: standard
-argument-hint: "[PR_NUMBER | PR_URL] [--issue PREFIX-N] [--base main] [--max-fix 3]"
-allowed-tools: "Bash(git:*), Bash(gh:*), Bash(rg:*), Bash(pnpm:*), Bash(npm:*), Bash(curl:*), Bash(jq:*), Bash(plane:*), Read, Write, Edit, MultiEdit, Skill, Agent, Task"
+argument-hint: "<PR> --issue PREFIX-N --reviewed-head SHA --reviewed-base SHA --review-verdict clean|fixed --plane-skill-dir PATH"
+allowed-tools: "Bash(git:*), Bash(gh:*), Bash(rtk:*), Bash(python3:*), Read, Write, Skill"
 ---
 
-<objective>
-Finish a Plane issue PR without blocking the main orchestrator. The watcher owns the slow part of shipping: branch freshness, merge conflicts, GitHub Actions, review comments, CI fixes, final merge, and Plane sync.
-</objective>
+<overview>
+Consume a parent-owned review verdict for one exact PR head, wait for current CI, merge that
+same SHA, and sync Plane. This skill does not review code, fix code, or schedule another run.
+</overview>
 
-<tooling_rationale>
-This watcher keeps broad git/edit tools because it works in an isolated worktree to rebase, resolve safe conflicts, fix CI, commit, push, and merge. It must not mutate the parent repository worktree.
-</tooling_rationale>
-
-<quick_start>
-Use this skill after `peaklab.plane-do-issue` has created or updated a PR:
-
-```bash
-gh pr view <PR_NUMBER_OR_URL> --json number,url,headRefName,baseRefName,headRefOid,mergeStateStatus
-```
-
-Create a status directory:
-
-```bash
-mkdir -p .agents/tasks/plane-ship/PR-<number>
-```
-
-Write every state transition to:
-
-```text
-.agents/tasks/plane-ship/PR-<number>/status.md
-```
-</quick_start>
+<constraints>
+- Require PR, explicit Plane issue, reviewed head/base SHAs, verdict `clean` or `fixed`, and the
+  resolved filesystem directory of the loaded `peaklab.plane-do-issue` skill.
+- A verdict applies only to that head/base pair. Any change invalidates it and stops merge.
+- Never mutate the parent checkout. Use an external temporary detached worktree only when local
+  inspection is required.
+- Never rebase, resolve conflicts, or fix CI after review: each changes the reviewed state and
+  must return to the implementation worker and parent review gate.
+- Wait only inside this turn or a live session worker. Never create cron, cloud routines,
+  `/loop`, scheduled wakeups, or any deferred continuation.
+- Call Plane transition helpers only with an explicit issue and concrete GitHub evidence.
+</constraints>
 
 <workflow>
-1. Resolve PR metadata:
-   ```bash
-   gh pr view "$PR" --json number,url,headRefName,baseRefName,headRefOid,mergeStateStatus,state
-   ```
-   Stop if the PR is closed or merged already. If merged and an issue is known, sync Plane with `finish_issue.py --merged --issue <PREFIX-N>`.
+<step name="resolve">
+Fetch authoritative PR metadata:
 
-2. Create an isolated worktree for all watcher mutations, hard-aligned to the TRUE PR head:
-   ```bash
-   TASK_DIR=".agents/tasks/plane-ship/PR-$PR_NUMBER"
-   WORKTREE="$TASK_DIR/worktree"
-   git fetch origin
-   git worktree add "$WORKTREE" "$HEAD_BRANCH" || true
-   cd "$WORKTREE"
-   git fetch origin
-   git switch "$HEAD_BRANCH"
-   git reset --hard "origin/$HEAD_BRANCH"
-   ```
-   If `worktree add` fails because `$HEAD_BRANCH` is already checked out elsewhere
-   (typically the do-issue implementation worktree), do NOT touch that worktree: add
-   yours DETACHED at the PR head instead — `git worktree add --detach "$WORKTREE"
-   "origin/$HEAD_BRANCH"` — and push later with `git push origin HEAD:"$HEAD_BRANCH"`.
-   Then verify the aligned head matches the PR head GitHub reports:
-   ```bash
-   [ "$(git rev-parse HEAD)" = "$HEAD_REF_OID" ]
-   ```
-   On mismatch, re-fetch PR metadata (step 1) and retry once; still mismatched → write
-   `blocked_stale_head` to `status.md` and stop. This alignment is mandatory: rebasing a
-   stale local branch and force-pushing silently erases newer remote commits —
-   `--force-with-lease` does NOT protect against that once a fetch refreshed the
-   remote-tracking ref.
+```bash
+gh pr view "$PR" \
+  --json number,url,title,body,state,isDraft,headRefName,baseRefName,headRefOid,mergeStateStatus
+```
 
-3. Bring the branch up to date before waiting for CI:
-   ```bash
-   git fetch origin
-   git rebase "origin/$BASE_BRANCH"
-   ```
-   Prefer rebase for short issue branches. Use `git push --force-with-lease origin HEAD` after a successful rebase.
-   Force-push ONLY a branch that step 2 just hard-aligned to `origin/$HEAD_BRANCH`, and
-   never while a rebase is in progress (`.git/rebase-merge` or `.git/rebase-apply` exists).
+Before any Plane sync, extract complete `PREFIX-N` identifiers from the head branch, PR title,
+and PR body, then require the explicit issue to equal one extracted identifier exactly. Substring
+matching is forbidden (`PREFIX-1` must not match `PREFIX-10`). Otherwise return
+`blocked_issue_mismatch`.
 
-4. Conflict handling:
-   - Inspect conflicted files with `git status --short` and `git diff --name-only --diff-filter=U`.
-   - Resolve only localized, directly understandable conflicts where the issue intent and current base behavior are clear.
-   - After resolving, run targeted tests for touched packages, then:
-     ```bash
-     git add <resolved-files>
-     git rebase --continue
-     git push --force-with-lease origin HEAD
-     ```
-   - If conflicts are broad, architectural, generated-file heavy, or ambiguous, stop. Write `blocked_conflict` to `status.md` with conflicted files, attempted commands, and the manual decision needed. Do not merge.
-   - When blocking on a conflict, leave the worktree mid-rebase for human inspection and
-     say so in `status.md`. Never push in that state; the remote branch must keep the
-     last verified head untouched.
+Require `headRefOid == reviewed_head` for every state; otherwise return
+`blocked_review_required` with both SHAs. If already merged, confirm `state=MERGED`, sync Plane
+using the merged PR URL, and return. Stop without Plane mutation when closed but unmerged. Stop
+when `isDraft=true`.
+</step>
 
-5. Review and CI loop:
-   - Re-run or perform the required review from `peaklab.ship-pr` if it has not been completed.
-   - Check CI for the current head SHA:
-     ```bash
-     gh pr checks "$PR_NUMBER" --json name,state,workflow,link
-     gh run list --branch "$HEAD_BRANCH" --limit 5 --json databaseId,status,conclusion,workflowName,headSha,url
-     ```
-   - If CI is pending, wait INSIDE a blocking command — never end your turn while
-     checks are pending (an idle watcher silently abandons the PR):
-     ```bash
-     gh pr checks "$PR_NUMBER" --watch --fail-fast
-     ```
-     Use a long Bash timeout (10 min), and re-run the watch command if it times out
-     before checks settle.
-   - If CI fails, fetch failed logs, classify root cause, fix only in-scope failures, commit, push, and loop.
-   - Formatter/linter failures ("Would reformat", import order, etc.): NEVER fix by
-     hand-editing. Run the repo-pinned tool itself so output is byte-identical to CI
-     (e.g. `cd packages/back && uv run ruff format <files>`; front: `pnpm --filter
-     front lint --fix`). Verify with the tool's `--check` mode before pushing. A
-     tool run replaces manual attempts and does not burn a fix iteration.
-   - Stop after `--max-fix` iterations, default 3, with `blocked_ci` in `status.md`.
+<step name="check-base">
+Fetch the base and head refs without switching the parent checkout:
 
-6. Race protection before merge:
-   - Re-fetch PR metadata.
-   - Verify the head SHA you tested is still the PR head.
-   - Verify the branch is mergeable and not stale.
-   - Verify GitHub Actions is green for that exact SHA.
-   - If anything changed, restart from step 2.
+```bash
+git fetch origin
+```
 
-7. Merge, pinned to the exact SHA verified in step 6:
-   ```bash
-   gh pr merge "$PR_NUMBER" --squash --delete-branch --match-head-commit "$HEAD_SHA"
-   ```
-   `--match-head-commit` makes GitHub reject the merge server-side if the head moved
-   after step 6 — this closes the verify→merge race window. If it fails for that
-   reason, restart from step 2.
-   A non-zero exit does NOT always mean the merge failed: `--delete-branch` also tries
-   to delete the LOCAL branch and errors when another worktree (the do-issue one) still
-   holds it. On non-zero exit, check `gh pr view --json state` first — if MERGED,
-   continue; local branch deletion happens in cleanup (step 9).
-   Never merge with pending checks, empty check status, missing Actions run, unreviewed blocking comments, unresolved conflicts, or a stale head SHA.
+Resolve `origin/$BASE_BRANCH` and require it equals `reviewed_base`. If the base changed, return
+`blocked_review_required`; the parent must revalidate the updated diff. If the reviewed head is
+not a descendant of `origin/$BASE_BRANCH`, return
+`blocked_rebase_required`. The implementation worker must rebase, validate, push, and the
+parent must review the new SHA. If GitHub reports conflicts, return `blocked_conflict` with
+the affected PR and branches; do not attempt a post-review resolution.
+</step>
 
-8. Plane sync:
-   Always pass `--issue <PREFIX-N>` when the watcher received one; the shared state file
-   is a fallback only and may point at another session's ticket when runs are concurrent.
-   ```bash
-   python3 skill://peaklab.plane-do-issue/scripts/finish_issue.py --merged --issue "$ISSUE" --pr-url "$PR_URL"
-   ```
-   If the watcher blocks permanently after a PR exists, use:
-   ```bash
-   python3 skill://peaklab.plane-do-issue/scripts/finish_issue.py --blocked --issue "$ISSUE" --pr-url "$PR_URL"
-   ```
-   Omit `--issue` only when no issue identifier is known AND no other Plane run may be
-   active; otherwise skip the sync and record the manual command in `status.md`.
+<step name="check-policy">
+Read the repository's root instructions plus scoped instructions for changed files. Verify the
+PR is non-draft, its base branch is permitted, its changed modules may ship together, and its
+merge strategy/release gates match repository policy. This is a policy check, not another code
+review. Return `blocked_policy` with the exact rule when a required gate is missing.
+</step>
 
-   The target state is not always `Done`: `PLANE_MERGED_STATE` / `PLANE_BLOCKED_STATE` in the Plane
-   config source override it by exact name. Report the state the script printed, not an assumed one.
+<step name="wait-ci">
+Inspect checks and Actions runs for the reviewed SHA:
 
-9. Cleanup after a successful merge + Plane sync (skip entirely when blocked):
-   ```bash
-   cd "$REPO_ROOT"
-   git worktree remove "$WORKTREE" --force
-   git worktree remove ".worktrees/<issue-worktree>" --force 2>/dev/null || true
-   git worktree prune
-   git branch -D "$HEAD_BRANCH" 2>/dev/null || true
-   ```
-   - cd OUT of the watcher worktree first; removing your own cwd fails.
-   - Remove the do-issue implementation worktree under `.worktrees/` only if its branch
-     is the merged head branch and `git -C <path> status --short` is clean.
-   - Never touch other issues' worktrees. Record the cleanup in `status.md`.
+```bash
+gh pr checks "$PR_NUMBER" --json name,state,workflow,link
+gh run list --branch "$HEAD_BRANCH" --limit 10 \
+  --json databaseId,status,conclusion,workflowName,headSha,url
+```
+
+When checks for the reviewed SHA are pending, wait in this turn:
+
+```bash
+gh pr checks "$PR_NUMBER" --watch --fail-fast
+```
+
+Re-run the blocking watch if the command timeout expires while checks are still pending. If
+configured CI fails, return `blocked_ci` with failed check/run URLs and logs; code fixes belong
+to the implementation worker and require a new parent review. If workflows or required checks
+exist but no result is available for the reviewed SHA, return `blocked_missing_ci`.
+
+When the repository has no workflows, no required checks, and no Actions run for the head,
+record `ci_not_configured`; the parent's validation and review are the available gates.
+</step>
+
+<step name="race-check">
+Immediately before merge, fetch PR metadata and the remote base again:
+
+```bash
+gh pr view "$PR_NUMBER" --json state,isDraft,headRefOid,mergeStateStatus
+REMOTE_BASE=$(gh api "repos/{owner}/{repo}/git/ref/heads/$BASE_BRANCH" --jq .object.sha)
+```
+
+Require all of:
+
+- PR is open and mergeable;
+- `headRefOid` still equals `reviewed_head`;
+- `REMOTE_BASE` still equals `reviewed_base`;
+- successful configured CI belongs to that exact SHA, or CI is explicitly not configured;
+- the reviewed head is still current with the base branch.
+
+Any changed head or base returns `blocked_review_required`. Never reuse a verdict after either
+change. A behind-but-unchanged reviewed pair returns `blocked_rebase_required`.
+</step>
+
+<step name="merge">
+Use the merge strategy allowed by repository policy and pin the server-side merge to the
+reviewed head SHA:
+
+```bash
+gh pr merge "$PR_NUMBER" "$MERGE_FLAG" --delete-branch \
+  --match-head-commit "$REVIEWED_HEAD"
+```
+
+`MERGE_FLAG` is exactly one policy-approved strategy such as `--squash`, `--merge`, or
+`--rebase`; do not assume one globally. `--match-head-commit` atomically protects the head.
+The fresh base comparison closes the normal base race; when atomic base freshness is mandatory,
+repository branch protection must also require the branch to be up to date before merge.
+
+A non-zero exit may come from local branch deletion. Always re-read `gh pr view --json state,url`
+before deciding. Continue only when GitHub proves `state=MERGED`; otherwise return the exact
+merge error without changing Plane.
+</step>
+
+<step name="sync-plane">
+Use the caller-provided resolved filesystem root of the `peaklab.plane-do-issue` skill, never a
+`skill://` URI or an assumed home-directory install:
+
+```bash
+FINISH_ISSUE="$PLANE_SKILL_DIR/scripts/finish_issue.py"
+test -f "$FINISH_ISSUE"
+python3 "$FINISH_ISSUE" --merged --issue "$ISSUE" --pr-url "$PR_URL"
+```
+
+Use `--blocked` only for a permanent, evidenced post-PR blocker and include `--reason` with the
+head SHA plus GitHub check/conflict URL. Do not transition Plane for a transient wait, review
+invalidation, stale base, unavailable tool, or missing local credentials.
+
+State IDs and configured terminal names are resolved dynamically by `peaklab.plane-api` from
+one atomic config source. Report the state printed by `finish_issue.py`; never assume `Done`.
+</step>
 </workflow>
 
-<async_contract>
-When launched as a background/delegated agent:
+<session_contract>
+- `--wait-merge`: execute this workflow synchronously and return its terminal result.
+- `--async-merge`: valid only inside a live session worker that can complete this workflow and
+  deliver its result. If that facility is unavailable, do not start; return the reviewed PR and
+  the explicit command needed to resume.
+- A pending check is not a terminal result. Keep the current blocking watch active until success,
+  failure, or the current turn's bounded tool timeout.
+</session_contract>
 
-- Run as the `plane-ship-watcher` agent. Its frontmatter is the single source of truth
-  for model and effort; callers must not override it. Do not substitute a fast tier:
-  it previously idled while CI was pending and hand-edited formatter fixes instead of
-  running the repository tool, which cost more than the apparent saving.
+<result>
+Return PR URL, issue, reviewed SHA, CI evidence, merge state, Plane state, and one status:
+`merged`, `blocked_review_required`, `blocked_rebase_required`, `blocked_conflict`,
+`blocked_issue_mismatch`, `blocked_policy`, `blocked_ci`, `blocked_missing_ci`, or
+`closed_unmerged`.
+</result>
 
-- The parent orchestrator should not wait for GitHub Actions.
-- The watcher must own its isolated worktree.
-- The watcher must update `status.md` at start, after every push, on every blocker, and after merge.
-- The watcher must never change the parent worktree.
-- The watcher must never merge unless CI is green for the exact current PR head SHA.
-- The watcher is bounded by its own turn. It waits inside blocking commands (step 5); it must never
-  schedule a deferred re-check — cloud routine, `send_later`, cron, `/loop` — to resume later. A
-  blocker goes to `status.md` and the watcher ends. `blocked_*` is a finished watcher, not a paused one.
-- Re-arming from inside a watch has no reachable stop condition when the blocker is "waiting for a
-  human": it polls a frozen state forever, each pass rebuilding a full session. If the user explicitly
-  wants post-run monitoring, use ONE loop covering every open PR, with a pass cap (`pass k/N`, N ≤ 8)
-  written into its own prompt and a 1h → 3h → 12h → stop backoff.
-</async_contract>
-
-<status_template>
-Use this structure in `status.md`:
-
-```markdown
-# PR <number> Ship Watch
-
-Status: running | rebasing | fixing_ci | blocked_stale_head | blocked_conflict | blocked_ci | merged
-Issue: <PREFIX-N or empty>
-PR: <url>
-Branch: <head>
-Base: <base>
-Last checked head SHA: <sha>
-
-## Timeline
-- <timestamp>: <event>
-
-## Blocker
-<only when blocked>
-```
-</status_template>
-
-<success_criteria>
-- A merged PR is reported with its URL and Plane is synced to Done.
-- Or a blocker is recorded in `status.md` with enough detail for a human or later agent to resume safely.
-- The parent/orchestrator worktree remains untouched.
-</success_criteria>
+<acceptance_criteria>
+- Merge is server-pinned to the parent-reviewed head SHA and immediately preceded by a fresh
+  base-SHA check; repositories needing atomic base freshness enforce up-to-date branch protection.
+- A head/base/code change always returns through implementation and parent review.
+- Plane changes only after explicit GitHub evidence and uses an explicit issue identifier.
+- No parent checkout or deferred automation is created.
+</acceptance_criteria>

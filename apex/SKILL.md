@@ -1,123 +1,52 @@
 ---
 name: apex
-description: Use when implementing features, fixing bugs, or making code changes that benefit from the APEX Analyze-Plan-Execute-eXamine workflow with domain-aware planning, behavior-focused testing, and optional review.
+description: Use when implementing a non-trivial feature, bug fix, or code change that benefits from an analyze-plan-execute-verify workflow, optional delegation, and explicit delivery controls.
 effort: standard
-argument-hint: "[--no-auto] [--no-tdd] [-x] [-s] [-b] [-pr] [-i] [-m] [-r TASK_ID] TASK_DESCRIPTION"
+argument-hint: "[--no-auto] [--no-tdd] [-x] [-s] [-b] [-pr] [-i] [-k] [-m] [-e] [-r TASK_ID] TASK_DESCRIPTION"
 ---
 
-<objective>
-Execute systematic implementation workflows using the APEX methodology with progressive step loading.
-</objective>
+<overview>
+APEX turns a requested code change into a scoped, verified patch. Reuse trustworthy context and artifacts supplied by the caller; perform only the missing work.
+</overview>
 
-<quick_start>
-
-```bash
-/apex add authentication middleware           # Basic
-/apex -a -s implement user registration       # Autonomous + save
-/apex -a -x -s fix login bug                  # With adversarial review
-/apex -a -m implement full auth system        # Agent Teams (parallel)
-/apex -a -x -s -t add auth middleware         # Full workflow with tests
-/apex -a -x -d add auth middleware            # TDD: red, green, refactor per behavior
-/apex -a -pr add auth middleware              # With PR creation
-/apex -r 01-auth-middleware                   # Resume previous task
-/apex -e add auth middleware                  # Economy mode (save tokens)
-/apex -i add auth middleware                  # Interactive flag config
-```
-
-</quick_start>
+<constraints>
+- Preserve the user's scope and existing worktree changes. Never revert unrelated changes.
+- Resolve material product ambiguity before editing. Decide ordinary implementation details from repository evidence.
+- Use one canonical plan/task state. Do not copy the same plan into task files, todos, and logs.
+- Prefer direct inspection and implementation. Delegate only independent work with a clear latency or context benefit.
+- Never commit, push, or create a pull request unless `-pr`/`--pull-request` was explicitly supplied.
+- Evidence is reusable only while the code and configuration it covers are unchanged.
+- Clean up any workers created by this workflow on every terminal path.
+- Before any completed, blocked, cancelled, or `needs_planning` terminal response, load `step-09-finish.md`.
+</constraints>
 
 <flags>
-**Enable (lowercase ON) / Disable (UPPERCASE OFF):**
 
-| ON | OFF | Long | Description |
-|----|-----|------|-------------|
-| `-a` | `-A` | `--auto` | Default: skip confirmations, auto-approve |
-| `-x` | `-X` | `--examine` | Adversarial code review |
-| `-s` | `-S` | `--save` | Save outputs to `.claude/output/apex/` |
-| `-t` | `-T` | `--test` | Default with TDD: include test creation + runner |
-| `-d` | `-D` | `--tdd` | Default: test-drive implementation; enables `-t` |
-| `-e` | `-E` | `--economy` | No subagents, save tokens |
-| `-b` | `-B` | `--branch` | Verify not on main, create branch |
-| `-pr` | `-PR` | `--pull-request` | Create PR at end (enables -b) |
-| `-i` | | `--interactive` | Configure flags via menu |
-| `-k` | `-K` | `--tasks` | Task breakdown with dependencies |
-| `-m` | `-M` | `--teams` | Agent Teams parallel execution (enables -k) |
-| `-r` | | `--resume` | Resume from previous task ID |
+| Enable | Disable | Meaning |
+|---|---|---|
+| `-a`, `--auto` | `-A`, `--no-auto` | Proceed without routine approval pauses. Default: enabled. |
+| `-x`, `--examine` | `-X`, `--no-examine` | Run an additional risk-based review. Default: disabled. |
+| `-s`, `--save` | `-S`, `--no-save` | Retain expanded resumable evidence in the canonical task artifact. Default: disabled. |
+| `-t`, `--test` | `-T`, `--no-test` | Include appropriate automated tests. Default: enabled; disabling tests also disables adaptive TDD. |
+| `-d`, `--tdd` | `-D`, `--no-tdd` | Force or disable strict RED-GREEN-REFACTOR. Default: adaptive. |
+| `-e`, `--economy` | `-E`, `--no-economy` | Disable nested delegation. Verification is unchanged. |
+| `-b`, `--branch` | `-B`, `--no-branch` | Prepare a task branch. Default: disabled. |
+| `-pr`, `--pull-request` | `-PR`, `--no-pull-request` | Commit, push, and open a PR after verification; enables branch mode. |
+| `-k`, `--tasks` | `-K`, `--no-tasks` | Add dependency-aware vertical slices to the canonical plan. |
+| `-m`, `--teams` | `-M`, `--no-teams` | Delegate independent plan slices; enables task mode. |
+| `-i`, `--interactive` | — | Ask once for configuration overrides. |
+| `-r`, `--resume TASK_ID` | — | Resume modern state or a legacy `.claude/output/apex/` task. |
 
-**Parsing:** Defaults from `steps/step-00-init.md`, flags override, remainder = `{task_description}`, ID = `NN-kebab-case`.
+Reject conflicting enable/disable pairs. `-d` implies tests and conflicts with `-T`. `-D` disables only strict TDD, not testing. Explicit flags override defaults regardless of order.
 </flags>
 
 <workflow>
-1. **Init** → Parse flags, setup state
-2. **Analyze** → Context gathering (1-10 parallel agents)
-3. **Plan** → File-by-file strategy + TaskList creation
-4. **Tasks** → Task breakdown (if -k or -m)
-5. **Execute** → Implementation (standard or Agent Teams if -m; RED → GREEN → REFACTOR if -d)
-6. **Validate** → Typecheck, lint, tests
-7. **Tests** → Create + run tests (if -t)
-8. **Examine** → Adversarial review (if -x)
-9. **Resolve** → Fix findings (if examine found issues)
-10. **Finish** → Create PR (if -pr)
+1. Read `steps/step-00-init.md`.
+2. Load only the next step selected by the current state.
+3. Treat caller-supplied issue analysis, plans, test evidence, and task state as candidates for reuse; verify freshness instead of reproducing them.
+4. If analysis determines the work is not yet implementation-ready, or required user intent is unavailable, set status `needs_planning` or `needs_clarification` and route directly to Finish for cleanup.
 </workflow>
 
-<step_files>
-
-| Step | File | Purpose |
-|------|------|---------|
-| 00 | `steps/step-00-init.md` | Parse flags, initialize state |
-| 00b | `steps/step-00b-save.md` | Setup save output structure (if -s) |
-| 00b | `steps/step-00b-branch.md` | Git branch setup (if -b) |
-| 00b | `steps/step-00b-economy.md` | Economy mode overrides (if -e) |
-| 00b | `steps/step-00b-interactive.md` | Interactive flag config (if -i) |
-| 01 | `steps/step-01-analyze.md` | Smart context gathering |
-| 02 | `steps/step-02-plan.md` | File-by-file plan + TaskList |
-| 02b | `steps/step-02b-tasks.md` | Task breakdown (if -k/-m) |
-| 03 | `steps/step-03-execute.md` | Todo-driven implementation |
-| 03t | `steps/step-03-execute-teams.md` | Agent Team execution (if -m) |
-| 04 | `steps/step-04-validate.md` | Self-check and validation |
-| 05 | `steps/step-05-examine.md` | Adversarial code review |
-| 06 | `steps/step-06-resolve.md` | Finding resolution |
-| 07 | `steps/step-07-tests.md` | Test analysis and creation |
-| 08 | `steps/step-08-run-tests.md` | Test runner loop |
-| 09 | `steps/step-09-finish.md` | Create pull request |
-
-</step_files>
-
-<state_variables>
-
-| Variable | Type | Set by |
-|----------|------|--------|
-| `{task_description}` | string | step-00 |
-| `{feature_name}` | string | step-00 |
-| `{task_id}` | string | step-00 / step-00b-save |
-| `{acceptance_criteria}` | list | step-01 |
-| `{auto_mode}` | boolean | step-00 |
-| `{examine_mode}` | boolean | step-00 |
-| `{save_mode}` | boolean | step-00 |
-| `{test_mode}` | boolean | step-00 |
-| `{tdd_mode}` | boolean | step-00 |
-| `{economy_mode}` | boolean | step-00 |
-| `{branch_mode}` | boolean | step-00 |
-| `{pr_mode}` | boolean | step-00 |
-| `{tasks_mode}` | boolean | step-00 |
-| `{teams_mode}` | boolean | step-00 |
-| `{output_dir}` | string | step-00b-save |
-| `{branch_name}` | string | step-00b-branch |
-| `{domain_context}` | list | step-01 |
-
-</state_variables>
-
-<execution_rules>
-- **Load one step at a time** (progressive loading)
-- **ULTRA THINK** before major decisions
-- **Persist state variables** across all steps
-- **Read applicable domain glossaries and ADRs** before designing behavior
-- **Express acceptance criteria through observable seams** before writing tests
-- **Follow next_step directive** at end of each step
-- **Save outputs** if `{save_mode}` = true (each step appends to its file)
-- **Use parallel agents** for independent exploration (step-01)
-</execution_rules>
-
-<entry_point>
-**FIRST ACTION:** Load `steps/step-00-init.md`
-</entry_point>
+<compatibility>
+Legacy step filenames, flags, templates, scripts, and `.claude/output/apex/` resume directories remain supported. They are read-only compatibility surfaces for modern runs, not mandatory work.
+</compatibility>

@@ -4,12 +4,13 @@ Reusable workflows for Codex, Claude Code, and other agents that support the Age
 The repository contains sanitized instructions only: no production credentials, private page IDs,
 internal hostnames, or customer data.
 
-Each top-level directory is an independently installable skill. Skills cover implementation and
+Each top-level directory is a selectable skill package; orchestrators also require their declared
+dependencies. Skills cover implementation and
 review, GitHub and Plane delivery, GlitchTip incident handling, and PeakLab infrastructure operations.
 
 ## Install
 
-Install one skill with `npx skills add`:
+Select one skill with `npx skills add` (this does not install its dependencies automatically):
 
 ```bash
 npx skills add peak-lab/agents-skills@peaklab.ship-pr -y
@@ -69,7 +70,7 @@ workflows so their called skills are available too.
 | `grilling` | Stress-testing plans and decisions with a structured interview. |
 | `handoff` | Creating a concise, redacted continuation brief for the next agent session. |
 | `tdd` | Applying behavior-focused red-green-refactor development. |
-| `peaklab.glitchtip-do-issue` | Resolving one or more GlitchTip root-cause clusters through isolated worktrees, QA gates, sequential merge, and post-merge resolution. |
+| `peaklab.glitchtip-do-issue` | Fixing GlitchTip root-cause clusters through reviewed PRs, with explicit delivery and evidence-based error resolution. |
 | `peaklab.coolify-api` | Managing Coolify deployments, applications, databases, services, servers, logs, env keys, and lifecycle operations. |
 | `peaklab.plane-api` | Reading Plane configuration, metadata, issue lists, state transitions, and shared Plane API helpers. |
 | `peaklab.client-audit` | Auditing a client project before quoting or starting work. |
@@ -79,11 +80,11 @@ workflows so their called skills are available too.
 | `peaklab.improve-skill` | Auditing and improving an agent skill or command against the authoring conventions. |
 | `peaklab.infra-config` | Discovering and writing local infrastructure configuration for a project. |
 | `peaklab.plane-create-issue` | Creating or drafting a validated Plane work item. |
-| `peaklab.plane-do-issue` | Implementing one Plane issue through PR creation and async shipping handoff. |
+| `peaklab.plane-do-issue` | Implementing one Plane issue through a reviewed PR, with explicit optional delivery. |
 | `peaklab.plane-init` | Bootstrapping a new Plane project with its standard modules, labels, and weekly cycles. |
 | `peaklab.plane-status` | Reading a compact Plane board snapshot: in-progress work, backlog priorities, next issues. |
 | `peaklab.plane-archive` | Archiving completed Plane issues, with a dry run and an age threshold. |
-| `peaklab.plane-ship-watch` | Watching a Plane-linked PR through CI, rebase/conflict handling, merge, and Plane sync. |
+| `peaklab.plane-ship-watch` | Checking a reviewed Plane-linked PR, merging its verified head, and syncing Plane; returning code/rebase work to its owner. |
 | `peaklab.ship-pr` | Finalizing a branch into a reviewed, clean, merged PR. |
 | `peaklab.sync-ai-docs` | Syncing AGENTS.md, Claude compatibility docs, Codex rules, and shared agent assets. |
 | `peaklab.track-error` | Tracking GlitchTip errors, creating linked work, fixing code, and resolving issues. |
@@ -94,7 +95,9 @@ workflows so their called skills are available too.
 
 Several skills call others:
 
-- `peaklab.gh-do-issue`, `peaklab.fix-glitchtip`, and `peaklab.glitchtip-do-issue` use `apex` during implementation.
+- `peaklab.gh-do-issue`, `peaklab.plane-do-issue`, `peaklab.fix-glitchtip`, and `peaklab.glitchtip-do-issue` use `apex` during implementation.
+- GitHub and GlitchTip issue adapters share the execution contract bundled inside
+  `peaklab.gh-do-issue/references/execution.md`; install that dependency with the GlitchTip skill.
 - `peaklab.plane-*` skills read shared configuration through `peaklab.plane-api`.
 - `peaklab.client-audit` delegates code-quality analysis to `review-code`.
 - `peaklab.glitchtip-do-issue` and `peaklab.gh-do-issue` can use the harness agents `issue-resolver`, `issue-resolver-deep`,
@@ -105,15 +108,20 @@ Installing a caller without its called skills leaves dangling references. Instal
 repository for unattended workflows, then provision any harness-specific agent definitions described
 by your agent configuration.
 
+`skill-dependencies.json` documents composition; it is not an installer hook. For a selective
+installation, install every dependency transitively, preserving each package's `references/`
+and `scripts/` directories alongside the other skill packages.
+
 The repository contains every skill invoked by another bundled skill. Harness agents are optional:
 the GitHub and GlitchTip workflows fall back to their documented inline mode when those definitions
 are unavailable.
 
 ## Complementary engineering workflow
 
-`apex` remains the implementation workflow. Its analysis now reads domain glossaries and ADRs when
-they exist; its plan identifies observable verification seams and vertical delivery slices; and its
-test step rejects implementation-coupled tests. Use `domain-modeling`, `to-spec`, `to-tickets`,
+`apex` remains the implementation workflow. It reuses a caller's current analysis, keeps one plan
+of observable behavior slices, and runs verification appropriate to the patch. Its legacy flags
+and step filenames remain available; optional paths load only when needed. Use
+`domain-modeling`, `to-spec`, `to-tickets`,
 `wayfinder`, `grilling`, `handoff`, and `tdd` independently when their focused workflow fits the
 stage of work better.
 
@@ -125,6 +133,21 @@ The seven complementary skills are adapted from Matt Pocock's MIT-licensed
 `python3 scripts/check_portability.py` verifies that every caller and dependency exists, every skill
 name matches its directory, installed-skill paths resolve, legacy names are absent from skill files,
 and no workstation-specific home path was committed.
+
+## Issue workflow behavior
+
+- GitHub, Plane and GlitchTip issue workflows stop at a reviewed PR by default. Request delivery
+  explicitly, or use `--wait-merge`. `--no-merge` always stops at the PR; drafts never merge.
+- `--async-merge` requests a live session worker only when the host supports it. It does not
+  create deferred monitoring, scheduled wake-ups or recurring jobs.
+- `--no-auto` and `--no-tdd` are passed explicitly to APEX as `-A` and `-D`. Disabling TDD does
+  not disable validation. Standalone APEX adapts test-first work to the behavior under change.
+- One owner records the official review with the examined revision. Delivery reuses current
+  evidence and renews it after relevant changes, rather than unconditionally reviewing twice.
+- GlitchTip distinguishes reviewed PR, merged fix, deployed release and verified regression.
+  Resolution requires evidence for the affected environment; merge alone is insufficient.
+- These are repository artifacts. Updating the catalogue does not overwrite installed copies
+  under `~/.agents/skills` or another harness's skill directory; reinstall after delivery.
 
 ## Naming
 
@@ -179,6 +202,7 @@ Validate skill discovery and Python helper scripts:
 ```bash
 npx skills add . --list
 python3 scripts/check_portability.py
+python3 -m unittest discover -s peaklab.plane-do-issue -p 'test_*.py'
 python3 -m py_compile peaklab.coolify-api/scripts/coolify.py peaklab.plane-api/*.py
 cd peaklab.plane-api && python3 -m unittest test_plane_client.py
 ```

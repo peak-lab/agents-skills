@@ -130,8 +130,10 @@ def run_candidate(issue: dict[str, object], cwd: Path, *, escalation: bool) -> i
         "This Hermes host has 3.7 GiB RAM. Do not run a Front build:prod here: that script hard-codes a 4 GiB "
         "Node heap and can OOM the host. Run the relevant type-check, lint:ci/lint:ds and targeted tests instead, "
         "then record that build:prod remains a CI gate. "
-        "Write analyze.md before edits, then plan.md and implementation.md; use TDD where meaningful. "
-        "Create a reviewed PR only after analysis and validation, and stop at --no-merge."
+        "Write analyze.md before edits and keep the plan plus validation evidence in that one artifact. "
+        "Invoke APEX with -a -e and pass analyze.md as existing caller state so it is not rediscovered; "
+        "leave TDD adaptive unless the ticket explicitly requires strict TDD. "
+        "Create a PR only after analysis and validation; do not review or merge it."
     )
     return subprocess.run(
         [

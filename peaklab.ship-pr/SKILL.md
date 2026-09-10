@@ -19,10 +19,10 @@ Orchestrate the full PR lifecycle: create, review, fix, merge. Uses GitHub comma
 <arguments>
 | Argument          | Description                                                                       | Default |
 |-------------------|-----------------------------------------------------------------------------------|---------|
-| `--base <branch>` | Base branch for PR                                                                | auto-detect (main/master/develop) |
+| `--base <branch>` | Explicit base override, subject to repository policy                             | existing PR base, otherwise repository policy or remote default |
 | `--draft`         | Create PR as draft                                                                | `false` |
 | `--no-merge`      | Stop after fix, don't merge                                                       | `false` |
-| `--auto-fix`      | Auto-fix review issues without asking                                             | `false` |
+| `--auto-fix`      | Compatibility flag: in-scope review fixes are part of authorized delivery          | automatic in scope |
 | `--plane`         | Sync Plane after merge: move matched tickets → Done, create tickets for untracked changes | `false` |
 </arguments>
 <env>
@@ -41,32 +41,41 @@ Required when using --plane (same vars as `peaklab.plane-do-issue`):
 - Empty PR check rollups, missing checks, pending workflow runs with no jobs, or unavailable GitHub Actions status are blockers only when remote CI is configured or branch protection requires checks. Wait for GitHub Actions or stop and report the blocker.
 </constraints>
 <workflow>
+## Incoming evidence and execution scope
+
+Accept a caller's validation record and explicit review verdict when they identify the current
+head SHA, base SHA, reviewed scope and relevant environment. Verify those identities before
+reuse. A missing verdict is not supplied by a successful CI run. A changed head/base requires
+reviewing the delta and renewing the verdict; rerun validation affected by code, dependency,
+configuration or environment changes. Do not repeat checks just because this skill was invoked.
+
+The caller may own selection, implementation and source-specific status updates. This skill owns
+only the requested PR delivery phase; do not launch a second shipping owner. Respect repository
+branch policies and the caller's explicit base. Draft PRs are never merged by this workflow.
+
 ## Phase 1: ENSURE PR EXISTS
 
 1. Check if a PR already exists for the current branch:
    ```bash
    gh pr list --head $(git branch --show-current) --json number,url,state
    ```
-2. **If PR exists**: capture the number and URL, jump directly to Phase 2.
+2. **If PR exists**: capture its number, URL, head and base. Preserve a policy-valid existing
+   base unless `--base` explicitly requests another. A policy mismatch without retargeting
+   authority is a blocker. After an authorized retarget, invalidate prior review/CI evidence.
 3. **If no PR**: create one with `gh pr create` following the repository's PR conventions.
    - Pass `--draft` if provided
-   - Pass `--base` if provided
+   - Always pass the base resolved from repository policy, the explicit argument or remote default
 4. Capture the PR number for subsequent phases.
 
 ---
 
 ## Phase 2: QUALITY GATES
 
-Run quality checks before review:
-
-```bash
-pnpm type-check 2>&1 | tail -20
-pnpm lint 2>&1 | tail -10
-```
-
-- If type-check fails: fix TypeScript errors, commit, push.
-- If lint has auto-fixable errors on modified files: run `pnpm lint:fix`, commit, push.
-- Loop until clean or report blockers.
+Discover the repository's actual checks from its instructions and scripts. Reuse valid incoming
+results; otherwise run the applicable typecheck, lint, tests and build checks for the changed
+scope. Documentation-only changes need relevant structural/discovery checks, not an invented
+Node command. Fix failures caused by this work and rerun affected checks. Preserve exit codes
+and enough output to diagnose failure. Report unrelated failures separately.
 
 ---
 
@@ -79,10 +88,9 @@ This phase is mandatory. Do not proceed to CI checks or merge until it has an ex
    gh pr diff <number> --name-only
    gh pr diff <number> --patch
    ```
-2. Execute the review:
-   - Preferred, when delegation is available and permitted: launch two independent review agents.
-     - **Agent 1** (focus="security,logic"): security, authorization, data leakage, logic errors, edge cases.
-     - **Agent 2** (focus="clean-code,react"): maintainability, React/Next.js patterns, accessibility, UI regressions.
+2. Reuse a valid incoming review or execute it:
+   - When delegation helps, use one reviewer appropriate to the changed scope. Add an independent
+     specialist only for a distinct risk, such as security or cross-service contracts.
    - Fallback, when agents are unavailable or not permitted: perform the same review locally in code-review stance. This fallback is valid only if findings are written explicitly.
 3. Inspect at least:
    - changed routes/actions/API endpoints
@@ -118,9 +126,9 @@ If no review outcome is set, stop. Do not merge.
    - Label: `bug` or `enhancement` depending on nature
 
 3. For in-scope fixes:
-   - If `--auto-fix` provided: fix automatically
-   - Otherwise: present issues and ask user for confirmation
-   - Read the target file, apply the fix, verify with `pnpm type-check`
+   - Correct in-scope findings as part of the authorized delivery; `--auto-fix` retains this behavior.
+   - Ask only when the correction needs a product decision, new authority or scope expansion.
+   - Read the target file, apply the fix and run affected repository checks.
 
 4. Commit and push in-scope fixes:
    ```bash
@@ -128,7 +136,7 @@ If no review outcome is set, stop. Do not merge.
    git commit -m "fix: address review findings"
    git push origin HEAD
    ```
-5. Re-run quality gates (Phase 2).
+5. Renew affected validation and review evidence for the new head (Phases 2 and 3).
 6. If new issues appear: loop (max 3 iterations).
 
 **If only SUGGESTION issues:**
@@ -181,13 +189,8 @@ For each failing job, decide:
 - **Fix inline** (quick, directly caused by this PR's changes)
 - **Create issue** (pre-existing bug, unrelated regression, large refactor needed)
 
-| Error signal                | Local verify      | Fix                                                   |
-| --------------------------- | ----------------- | ----------------------------------------------------- |
-| `Type error` / `TS` / `tsc` | `pnpm type-check` | Fix TypeScript errors or create issue if pre-existing |
-| `biome` / `lint`            | `pnpm lint`       | Run `pnpm lint:fix`, fix remaining                    |
-| `test` / `vitest`           | `pnpm test`       | Fix failing tests; create issue if unrelated          |
-| `Module not found` / build  | `pnpm build`      | Fix imports/deps                                      |
-| Schema / migration          | —                 | Fix DB schema or create issue                         |
+Use the actual failing command and repository-native fix for type, lint, test, build or
+migration failures. Do not assume a package manager or introduce unrelated cleanup.
 
 **For out-of-scope CI failures** — use `peaklab.gh-create-issue` skill:
 
@@ -197,10 +200,8 @@ For each failing job, decide:
 
 **Step 3 — Verify locally before pushing**
 
-```bash
-pnpm type-check 2>&1 | tail -10
-pnpm lint 2>&1 | tail -10
-```
+Run the affected repository checks discovered in Phase 2. Record evidence for the repaired
+head and renew its review verdict; use the actual failing CI command when it can run locally.
 
 **Step 4 — Commit and push**
 
@@ -226,7 +227,15 @@ gh pr checks <PR_NUMBER> --watch --interval 15
 
 **Skip if `--no-merge` is provided.**
 
+If the PR is a draft, report its status and stop; do not mark it ready or merge automatically.
+
 Before merging, assert Phase 3 review outcome is `review_completed_no_blockers` or `review_blockers_fixed`. Then re-check remote CI for the current PR head commit.
+
+Re-fetch the PR head and remote base immediately before merge. Require the reviewed head/base
+pair; if either changed, renew the affected validation and review before continuing. The merge
+command pins the head only; atomic protection against a concurrent base update depends on the
+repository's branch protection or merge queue. Use the repository-approved merge strategy
+(`--squash` below is an example), without bypassing its protections.
 
 Merge is allowed when either:
 - GitHub Actions/checks are configured and the workflow conclusion is successful for the current head commit.
@@ -242,7 +251,7 @@ git ls-tree -r --name-only HEAD .github/workflows 2>/dev/null
 ```
 
 ```bash
-gh pr merge <PR_NUMBER> --squash --delete-branch
+gh pr merge <PR_NUMBER> --squash --delete-branch --match-head-commit <verified-head-sha>
 ```
 
 Return final PR URL and merge status.
