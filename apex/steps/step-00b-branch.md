@@ -18,7 +18,7 @@ returns_to: step-00-init.md
 
 ## CONTEXT BOUNDARIES:
 
-- Variables available: `{task_id}`, `{auto_mode}`, `{pr_mode}`
+- Variables available: `{feature_name}`, `{auto_mode}`, `{pr_mode}`
 - This sub-step sets: `{branch_name}`
 - Return to step-00-init.md after completion
 
@@ -51,7 +51,7 @@ Store result as `{current_branch}`
 ### 3. Create Feature Branch
 
 **If `{auto_mode}` = true:**
-→ Auto-create branch: `feat/{task_id}`
+→ Auto-create branch: `feat/{feature_name}`
 
 **If `{auto_mode}` = false:**
 Use AskUserQuestion:
@@ -60,7 +60,7 @@ questions:
   - header: "Branch"
     question: "You're on {current_branch}. Create a new branch for this task?"
     options:
-      - label: "Create feat/{task_id} (Recommended)"
+      - label: "Create feat/{feature_name} (Recommended)"
         description: "Create new feature branch and switch to it"
       - label: "Custom branch name"
         description: "I'll specify a custom branch name"
@@ -71,11 +71,11 @@ questions:
 
 ### 4. Execute Branch Creation
 
-**If user chose "Create feat/{task_id}" or auto_mode:**
+**If user chose "Create feat/{feature_name}" or auto_mode:**
 ```bash
-git checkout -b feat/{task_id}
+git checkout -b feat/{feature_name}
 ```
-→ `{branch_name}` = `feat/{task_id}`
+→ `{branch_name}` = `feat/{feature_name}`
 
 **If user chose "Custom branch name":**
 → Ask for branch name

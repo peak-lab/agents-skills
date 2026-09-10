@@ -37,7 +37,7 @@ When save_mode is enabled, all outputs go to the PROJECT directory:
 ├── 02-plan.md           # Implementation plan
 ├── 03-execute.md        # Execution log
 ├── 04-validate.md       # Validation results
-├── 02b-tasks/           # Task breakdown (if -k or -m)
+├── tasks/                # Task breakdown (if -k or -m)
 │   ├── README.md
 │   └── task-NN-*.md
 ├── 05-examine.md        # Review findings (if -x)

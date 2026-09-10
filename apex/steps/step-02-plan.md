@@ -15,6 +15,8 @@ next_step: steps/step-03-execute.md
 - ✅ ALWAYS structure plan by FILE, not by feature
 - ✅ ALWAYS include specific line numbers from analysis
 - ✅ ALWAYS map acceptance criteria to file changes
+- ✅ ALWAYS define the observable seams that verify acceptance criteria
+- ✅ ALWAYS prefer vertical, independently verifiable delivery slices
 - ✅ ALWAYS create a TaskList using TaskCreate tool to track all planned file changes
 - ✅ IF save_mode: ALWAYS use Edit tool to write the full plan to `{output_dir}/02-plan.md` BEFORE showing summary
 - 📋 YOU ARE A PLANNER, not an implementer
@@ -82,6 +84,17 @@ Mental simulation:
 - Determine logical order (dependencies first)
 - Consider edge cases and error handling
 - Plan test coverage
+- Keep terminology consistent with `{domain_context}` and applicable ADRs
+- Identify the highest public seam at which each acceptance criterion can be verified
+
+### 2.1 Decide Whether a Durable Domain Artifact Is Needed
+
+When the work resolves a business term, a bounded-context ownership question, or a hard-to-reverse architectural trade-off, plan the smallest durable artifact needed:
+
+- Update the relevant `CONTEXT.md` for a settled domain definition; keep implementation detail out.
+- Add an ADR only when the decision is hard to reverse, non-obvious without context, and the result of a genuine trade-off.
+
+Do not create documentation merely to narrate an implementation.
 
 ### 3. Clarify Ambiguities
 
@@ -141,6 +154,11 @@ questions:
 ---
 
 ### Testing Strategy
+
+### Verification Seams
+- [Acceptance criterion]: public interface or observable outcome used to verify it
+
+Tests must exercise agreed seams, not internal methods or collaborator call counts. Prefer an existing high-level seam; introduce a new one only when necessary.
 
 **New tests:**
 - `src/path/file1.test.ts` - Test functionName with:
@@ -207,6 +225,8 @@ For each file in the plan, call `TaskCreate` with:
 **Then set up dependencies using `TaskUpdate`:**
 - If file B depends on file A (e.g., B imports from A), use `addBlockedBy` to mark the dependency
 - This ensures execution follows the correct order
+
+For multi-layer work, make tasks tracer-bullet vertical slices: a task should deliver one narrow but complete, demonstrable behavior across the layers it needs. Do not split ordinary work into separate database, API, UI, and test tasks. A broad mechanical migration is the exception; use an expand → bounded migration batches → contract sequence that preserves compatibility.
 
 **Example:**
 ```
@@ -441,9 +461,9 @@ Include everything: Overview, Prerequisites, File Changes, Testing Strategy, Acc
 
 ### Next Step After Approval
 {if tasks_mode or teams_mode:}
-  Load `skills/workflow-apex/steps/step-02b-tasks.md`
+  Load `./step-02b-tasks.md`
 {else:}
-  Load `skills/workflow-apex/steps/step-03-execute.md`
+  Load `./step-03-execute.md`
 
 ---
 
