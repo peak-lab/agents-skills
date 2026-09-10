@@ -14,6 +14,7 @@ next_step: steps/step-02-plan.md
 - 🛑 NEVER mark analyze as "complete" BEFORE writing findings to `{output_dir}/01-analyze.md` (if save_mode)
 - ✅ ALWAYS focus on discovering WHAT EXISTS
 - ✅ ALWAYS report findings with file paths and line numbers
+- ✅ ALWAYS inspect applicable `CONTEXT.md`, `CONTEXT-MAP.md`, and ADRs when they exist
 - ✅ IF save_mode: ALWAYS use Edit tool to append ALL findings to `{output_dir}/01-analyze.md` BEFORE proceeding
 - 📋 YOU ARE AN EXPLORER, not a planner
 - 💬 FOCUS on "What is here?" NOT "What should we build?"
@@ -89,6 +90,21 @@ From the task description, identify:
 - **Action hints**: create, update, fix, add, etc.
 
 These keywords guide exploration - NOT planning.
+
+### 2.1 Establish Domain Context
+
+Before exploring implementation details:
+
+1. Read `CONTEXT-MAP.md` when present; otherwise locate the nearest relevant `CONTEXT.md`.
+2. Read ADRs applicable to the affected area, typically under `docs/adr/` or the bounded context's ADR directory.
+3. Set `{domain_context}` to the terms, invariants, ownership boundaries, and decisions that constrain this work.
+4. If the request uses an overloaded term, or contradicts the glossary, ADRs, or observed code, report the conflict explicitly. Do not silently invent a meaning.
+
+If none of these artifacts exists, record that fact. Do not create a glossary or ADR during analysis; that is a design decision for planning and execution.
+
+### 2.2 Scope Gate
+
+Before launching broad exploration, decide whether the destination is clear enough to implement in one bounded APEX workflow. If the work is larger than one implementation session or its next steps are still decision-sized unknowns, stop and recommend `wayfinder`. Do not create an implementation TaskList merely to give shape to unresolved decisions.
 
 ### 3. Explore Codebase
 
@@ -228,6 +244,8 @@ Find common patterns and pitfalls.
 - the smallest test boundary that can express each acceptance criterion
 
 This is factual discovery only; test design remains step 2.
+
+Include a **Domain Context** section with the vocabulary and decisions that apply, or explicitly state that no domain artifacts exist.
 
 <critical>
 **IF `{save_mode}` = true: You MUST write findings to the file BEFORE presenting the summary or proceeding.**

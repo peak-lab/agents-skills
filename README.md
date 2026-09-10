@@ -24,6 +24,8 @@ npx skills add peak-lab/agents-skills@peaklab.plane-do-issue -y
 npx skills add peak-lab/agents-skills@peaklab.plane-ship-watch -y
 npx skills add peak-lab/agents-skills@peaklab.sync-ai-docs -y
 npx skills add peak-lab/agents-skills@peaklab.glitchtip-do-issue -y
+npx skills add peak-lab/agents-skills@domain-modeling -y
+npx skills add peak-lab/agents-skills@tdd -y
 ```
 
 Install every skill by selecting all entries interactively:
@@ -60,6 +62,13 @@ workflows so their called skills are available too.
 |---|---|
 | `apex` | Implementing a feature or fix through the Analyze-Plan-Execute-eXamine workflow with validation. |
 | `review-code` | Reviewing code or a PR through a multi-agent deep review focused on high-impact issues. |
+| `domain-modeling` | Maintaining a precise business glossary and durable architectural decisions. |
+| `to-spec` | Turning established context into an implementation-ready product specification. |
+| `to-tickets` | Breaking approved work into dependency-aware, vertical-slice tickets. |
+| `wayfinder` | Mapping large, uncertain initiatives through decision tickets before delivery. |
+| `grilling` | Stress-testing plans and decisions with a structured interview. |
+| `handoff` | Creating a concise, redacted continuation brief for the next agent session. |
+| `tdd` | Applying behavior-focused red-green-refactor development. |
 | `peaklab.glitchtip-do-issue` | Resolving one or more GlitchTip root-cause clusters through isolated worktrees, QA gates, sequential merge, and post-merge resolution. |
 | `peaklab.coolify-api` | Managing Coolify deployments, applications, databases, services, servers, logs, env keys, and lifecycle operations. |
 | `peaklab.plane-api` | Reading Plane configuration, metadata, issue lists, state transitions, and shared Plane API helpers. |
@@ -99,6 +108,18 @@ by your agent configuration.
 The repository contains every skill invoked by another bundled skill. Harness agents are optional:
 the GitHub and GlitchTip workflows fall back to their documented inline mode when those definitions
 are unavailable.
+
+## Complementary engineering workflow
+
+`apex` remains the implementation workflow. Its analysis now reads domain glossaries and ADRs when
+they exist; its plan identifies observable verification seams and vertical delivery slices; and its
+test step rejects implementation-coupled tests. Use `domain-modeling`, `to-spec`, `to-tickets`,
+`wayfinder`, `grilling`, `handoff`, and `tdd` independently when their focused workflow fits the
+stage of work better.
+
+The seven complementary skills are adapted from Matt Pocock's MIT-licensed
+[`mattpocock/skills`](https://github.com/mattpocock/skills) catalogue. See
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the pinned source revision and full notice.
 
 [`skill-dependencies.json`](skill-dependencies.json) is the source of truth for composition.
 `python3 scripts/check_portability.py` verifies that every caller and dependency exists, every skill

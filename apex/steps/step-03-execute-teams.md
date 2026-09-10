@@ -76,11 +76,10 @@ Review TaskList and determine team size:
 |-------|-----------|-----------|
 | 1-2 | 1 | Sequential is fine |
 | 3-4 | 2 | Small parallel benefit |
-| 5-8 | 3-4 | Good parallelism |
-| 9+ | 4-6 | Max parallel benefit |
+| 5+ | 3 | Batch independent groups within available capacity |
 
 <critical>
-NEVER create more than 6 teammates. Group related tasks if needed.
+Respect the host's available concurrency. In Codex, use at most 3 active teammates because the root agent occupies the fourth slot. Group related tasks if needed.
 Cap at the number of independent task groups, not total tasks.
 </critical>
 
@@ -124,7 +123,6 @@ For each teammate, spawn via the Task tool:
 - `subagent_type`: `"implementer"` (MANDATORY)
 - `team_name`: `"apex-{feature_name}"`
 - `name`: `"impl-{group-name}"` (e.g., `impl-backend`, `impl-frontend`)
-- `mode`: `"bypassPermissions"`
 - `prompt`: Full task context (see template below)
 
 ### 5. Spawn Teammates with Assignments
@@ -136,7 +134,6 @@ Task:
   subagent_type: "implementer"
   team_name: "apex-{feature_name}"
   name: "impl-{group-name}"
-  mode: "bypassPermissions"
   prompt: |
     You are impl-{group-name} in team apex-{feature_name}.
 
@@ -174,9 +171,8 @@ Task:
 **Spawn rules:**
 - Spawn all INDEPENDENT teammates in PARALLEL (single message, multiple Task calls)
 - Each teammate gets ALL context (they can't see your conversation)
-- Use `mode: "bypassPermissions"` to avoid permission prompt interruptions
 - As tasks with dependencies complete, spawn teammates for dependent tasks
-- 2-4 teammates for most tasks — more adds overhead, not speed
+- Use only the available concurrency; more teammates add overhead, not speed
 
 ### 6. Monitor Progress
 

@@ -14,6 +14,7 @@ next_step: steps/step-08-run-tests.md
 - ✅ ALWAYS analyze test infrastructure BEFORE writing
 - ✅ ALWAYS follow existing test conventions exactly
 - ✅ ALWAYS map tests to acceptance criteria
+- ✅ ALWAYS test through agreed observable seams, not internals
 - 📋 YOU ARE A TEST ENGINEER, not a code generator
 - 💬 FOCUS on "What tests does this ACTUALLY need?"
 - 🚫 FORBIDDEN to ignore project test conventions
@@ -98,16 +99,13 @@ cat package.json | grep -A 5 '"scripts"' | grep -E "(test|spec)"
 - [ ] Mocking approach
 - [ ] Assertion style
 - [ ] Test data approach
+- [ ] Highest existing public seam used by comparable tests
 
 ### 4. Determine Test Strategy
 
-| Implementation Type | Test Type |
-|--------------------|-----------|
-| API Route | Integration with supertest/fetch |
-| Service/Logic | Integration with real deps |
-| Utility Function | Unit with mocks |
-| React Component | Component with testing-library |
-| Full Feature | Integration + E2E |
+For each acceptance criterion, record the highest practical observable seam from the approved plan. Prefer exercising an existing public interface over testing private methods, collaborator calls, database rows, or other implementation side channels.
+
+Use test doubles only for genuine system boundaries such as third-party services, time, randomness, or sometimes the filesystem. Do not mock code owned by the project merely to verify that it was called. Expected values must come from an independent source of truth, not repeat the production calculation.
 
 ### 5. Create Test Plan
 
@@ -116,6 +114,9 @@ cat package.json | grep -A 5 '"scripts"' | grep -E "(test|spec)"
 
 **Framework:** {jest/vitest}
 **Command:** `pnpm test`
+
+### Verification Seams
+- AC1: {public interface or observable outcome}
 
 ### Tests to Create
 
@@ -229,6 +230,7 @@ Append to `{output_dir}/07-tests.md`:
 ❌ Ignoring project conventions
 ❌ Tests don't match acceptance criteria
 ❌ Over-testing (testing implementation, not behavior)
+❌ Mocking internal collaborators or using tautological assertions
 ❌ **CRITICAL**: Not using AskUserQuestion for approval
 
 ## TEST PROTOCOLS:

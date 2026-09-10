@@ -1,6 +1,6 @@
 ---
 name: apex
-description: Use when implementing features, fixing bugs, or making code changes that benefit from the APEX Analyze-Plan-Execute-eXamine workflow with validation and optional review.
+description: Use when implementing features, fixing bugs, or making code changes that benefit from the APEX Analyze-Plan-Execute-eXamine workflow with domain-aware planning, behavior-focused testing, and optional review.
 effort: standard
 argument-hint: "[--no-auto] [--no-tdd] [-x] [-s] [-b] [-pr] [-i] [-m] [-r TASK_ID] TASK_DESCRIPTION"
 ---
@@ -103,6 +103,7 @@ Execute systematic implementation workflows using the APEX methodology with prog
 | `{teams_mode}` | boolean | step-00 |
 | `{output_dir}` | string | step-00b-save |
 | `{branch_name}` | string | step-00b-branch |
+| `{domain_context}` | list | step-01 |
 
 </state_variables>
 
@@ -110,6 +111,8 @@ Execute systematic implementation workflows using the APEX methodology with prog
 - **Load one step at a time** (progressive loading)
 - **ULTRA THINK** before major decisions
 - **Persist state variables** across all steps
+- **Read applicable domain glossaries and ADRs** before designing behavior
+- **Express acceptance criteria through observable seams** before writing tests
 - **Follow next_step directive** at end of each step
 - **Save outputs** if `{save_mode}` = true (each step appends to its file)
 - **Use parallel agents** for independent exploration (step-01)
