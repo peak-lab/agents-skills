@@ -137,8 +137,10 @@ The seven complementary skills are adapted from Matt Pocock's MIT-licensed
 
 [`skill-dependencies.json`](skill-dependencies.json) is the source of truth for composition.
 `python3 scripts/check_portability.py` verifies callers/dependencies, matching package names,
-nested Markdown resources and local links, declared cross-skill links, legacy names and
-workstation-specific home paths. It does not execute the workflows or prove model behavior.
+nested Markdown resources and local links, declared cross-skill links, legacy names,
+workstation-specific home paths and direct execution of unresolved skill URIs. Use real Markdown
+links for required cross-skill references so they can be checked against the manifest. The checker
+does not infer every dependency from prose, execute the workflows or prove model behavior.
 
 ## Issue workflow behavior
 

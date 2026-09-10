@@ -121,6 +121,30 @@ class RecursiveResourceValidationTests(unittest.TestCase):
 
         self.assertEqual(self.fixture.validate(), [])
 
+    def test_rejects_executing_skill_uri_as_a_path(self):
+        self.fixture.add_skill(
+            "caller",
+            'Run `rtk python3 "skill://caller/scripts/helper.py" --check`.',
+        )
+
+        self.assertIn("executable-skill-uri", self.error_codes())
+
+    def test_accepts_executing_a_resolved_skill_path(self):
+        self.fixture.add_skill(
+            "caller",
+            'Resolve the resource first, then run `python3 "$SKILL_DIR/scripts/helper.py"`.',
+        )
+
+        self.assertEqual(self.fixture.validate(), [])
+
+    def test_accepts_non_executable_skill_uri_mention(self):
+        self.fixture.add_skill(
+            "caller",
+            "The URI `skill://caller/scripts/helper.py` identifies a resource to resolve.",
+        )
+
+        self.assertEqual(self.fixture.validate(), [])
+
     def test_accepts_same_skill_resource_links(self):
         self.fixture.add_skill(
             "caller",

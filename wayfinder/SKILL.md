@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Wayfinding discovers the route; it does not prematurely execute the destination.
 
-Use it for work with meaningful uncertainty, multiple architectural decisions, or a horizon larger than one agent session. First define the destination in one or two sentences. If the route is already clear and small, stop and use `to-spec` or `to-tickets` instead.
+Use it for work with meaningful uncertainty, multiple architectural decisions, or a horizon larger than one agent session. First define the destination in one or two sentences. If the route is already clear and small, stop and use [to-spec](../to-spec/SKILL.md) for a specification or [to-tickets](../to-tickets/SKILL.md) to split an approved plan instead.
 
 Create one durable map in the project's issue tracker or planning location:
 

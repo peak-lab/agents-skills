@@ -86,9 +86,9 @@ INSTRUCTIONS:
 6. Use severity labels: BLOCKING (must fix) | CRITICAL (strongly recommended) | SUGGESTION (optional improvement)
 ```
 
-**Agent naming convention:** `review-{domain}` (e.g., `review-security`, `review-ux-ui`, `review-clean-code`, `review-backend`)
+**Review task names:** `review-{domain}` (e.g., `review-security`, `review-ux-ui`). These label assignments, not agent types. Use a repository-declared reviewer or the host's available review capability; keep the local fallback when delegation is unavailable.
 
-**If a best-practice skill exists** for the detected tech stack (e.g., `vercel-react-best-practices` for Next.js/React), include it in the prompt: tell the agent to also load that skill via the Skill tool for additional framework-specific checks.
+**If a best-practice skill exists** for the detected tech stack (e.g., `vercel-react-best-practices` for Next.js/React), include it in the prompt: tell the agent to load its installed instructions through the host's available facility for additional framework-specific checks. This is optional, not an undeclared required dependency.
 
 ## Phase 3: CONSOLIDATE - Merge and present findings
 

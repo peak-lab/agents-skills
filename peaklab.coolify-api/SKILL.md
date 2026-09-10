@@ -22,7 +22,7 @@ Never reimplement in REST something MCP already exposes. When the helper lacks a
 - Confirm destructive operations (delete, stop) with user before executing — MCP `control` also requires `confirm=true` to stop
 - Never hardcode UUIDs — resolve them via `mcp__coolify__search_resources` or a list endpoint
 - Never print secret values, tokenized Git URLs, private keys, or full env var payloads. MCP redaction is best-effort, not a guarantee — `get_logs` and `get_deployment(include_log_summary)` can still leak free-form log text
-- For deploy/status/env workflows on the REST path, use `python3 skill://peaklab.coolify-api/scripts/coolify.py ...` so the user can safely approve that script prefix instead of broad `python3 *`
+- For deploy/status/env workflows on the REST path, resolve `COOLIFY_SKILL_DIR` from the filesystem directory containing this loaded skill and use `python3 "$COOLIFY_SKILL_DIR/scripts/coolify.py" ...`. This scopes approval to the real helper path instead of broad `python3 *`.
 </constraints>
 
 <routing>
@@ -142,13 +142,15 @@ For full endpoint reference, see [references/endpoints.md](references/endpoints.
 
 Safe helper:
 
-Use the helper for common operations:
+Use the helper for common operations. Set `COOLIFY_SKILL_DIR` to this loaded package's absolute
+directory and verify [scripts/coolify.py](scripts/coolify.py) exists. Run from the target project's
+checkout so project configuration remains authoritative; do not change directory into the skill.
 
 ```bash
-python3 skill://peaklab.coolify-api/scripts/coolify.py apps --filter example
-python3 skill://peaklab.coolify-api/scripts/coolify.py deploy web api worker --wait
-python3 skill://peaklab.coolify-api/scripts/coolify.py status <deployment_uuid>
-python3 skill://peaklab.coolify-api/scripts/coolify.py upsert-env web NIXPACKS_NODE_VERSION 24 --both
+python3 "$COOLIFY_SKILL_DIR/scripts/coolify.py" apps --filter example
+python3 "$COOLIFY_SKILL_DIR/scripts/coolify.py" deploy web api worker --wait
+python3 "$COOLIFY_SKILL_DIR/scripts/coolify.py" status <deployment_uuid>
+python3 "$COOLIFY_SKILL_DIR/scripts/coolify.py" upsert-env web NIXPACKS_NODE_VERSION 24 --both
 ```
 
 App aliases come from `COOLIFY_APP_ALIASES`, a JSON object such as `{ "web": "my-web-app", "api": "my-api" }`.

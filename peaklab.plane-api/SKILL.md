@@ -6,13 +6,15 @@ allowed-tools: Bash(rtk :*), Read, Write, Skill
 ---
 
 <overview>
-Interact with the Plane project management API using Python. This skill defines the shared bootstrap and helpers that other commands (peaklab.plane-do-issue, peaklab.fix-glitchtip, etc.) rely on.
+Interact with the Plane project management API using Python. This skill owns the shared bootstrap and helpers used by the Plane workflows.
 
 New issue creation is owned by `peaklab.plane-create-issue`. For creation requests, load that skill and use this skill only for shared configuration, client access, and project metadata lookup.
 </overview>
 
 <shared-scripts>
-Reusable script helpers live in `~/.agents/skills/peaklab.plane-api/plane_client.py`.
+Reusable script helpers live in [plane_client.py](plane_client.py), alongside this loaded skill.
+Resolve the package's absolute filesystem directory from the loaded `SKILL.md`, not a fixed
+harness home. Run helpers from the target project's checkout to preserve its configuration scope.
 
 - `PlaneConfigLoader` owns config discovery from project settings, `.env`, and global settings.
 - `PlaneProject` owns URL-derived project metadata and issue URLs.
@@ -20,7 +22,7 @@ Reusable script helpers live in `~/.agents/skills/peaklab.plane-api/plane_client
 
 Prefer importing these helpers from `init_project.py` or future scripts instead of duplicating config/API code. New creation flows must invoke `peaklab.plane-create-issue`; this shared API skill intentionally exposes no separate creation helper.
 
-Related script: `~/.agents/skills/peaklab.plane-api/sync_issue_link.py` links a Plane issue with a git branch and GitHub PR by adding a Plane comment, updating a marked PR body block, and saving `.codex/plane/links/<ISSUE>.json`.
+Related script: [sync_issue_link.py](sync_issue_link.py) links a Plane issue with a git branch and GitHub PR by adding a Plane comment, updating a marked PR body block, and saving `.claude/plane/links/<ISSUE>.json` (the helper's existing compatibility location, regardless of host).
 </shared-scripts>
 
 <constraints>
@@ -44,12 +46,13 @@ PLANE_PROJECT=https://HOST/WORKSPACE/projects/UUID/issues/
 
 <bootstrap>
 Run once per session. Defines `api()`, `results()`, `BASE`, `WP`, `WORKSPACE`, `PROJECT_ID` through the shared atomic config loader.
+Replace the directory placeholder below with the resolved absolute package path before execution.
 
 ```python
 import sys
 from pathlib import Path
 
-PLANE_API_DIR = Path.home() / '.agents/skills/peaklab.plane-api'
+PLANE_API_DIR = Path("<resolved directory of loaded peaklab.plane-api>")
 sys.path.insert(0, str(PLANE_API_DIR))
 
 from plane_client import load_plane_client

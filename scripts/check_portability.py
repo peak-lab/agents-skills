@@ -17,6 +17,12 @@ FRONTMATTER_PATTERN = re.compile(
 NAME_PATTERN = re.compile(r'^name:\s*["\']?([^"\'\s]+)', re.MULTILINE)
 SKILL_CALL_PATTERN = re.compile(r'Skill\(\s*["\']([^"\']+)["\']')
 INSTALLED_SKILL_PATTERN = re.compile(r"~/.agents/skills/([A-Za-z0-9_.-]+)")
+EXECUTABLE_SKILL_URI_PATTERN = re.compile(
+    r"(?<![\w.-])"
+    r"(?:rtk[ \t]+(?:proxy[ \t]+)?)?"
+    r"(?:python(?:3(?:\.\d+)?)?|bash|sh|node|bun|deno|ruby|php|perl|source)"
+    r"[ \t]+(?:-[^\s`\"']+[ \t]+)*[\"']?skill://[A-Za-z0-9_.-]+(?:/[^\s`\"']*)?"
+)
 INLINE_LINK_PATTERN = re.compile(
     r"!?\[[^\]\n]*\]\(\s*(<[^>\n]+>|[^)\s]+)(?:\s+[^)]*)?\)"
 )
@@ -281,6 +287,14 @@ def validate(root: Path) -> list[ValidationError]:
                         f"installed-skill dependency {dependency} is absent from the manifest",
                         relative_markdown_file,
                     )
+
+            if EXECUTABLE_SKILL_URI_PATTERN.search(text):
+                add_error(
+                    errors,
+                    "executable-skill-uri",
+                    "skill:// URI is passed directly to a command instead of a resolved path",
+                    relative_markdown_file,
+                )
 
             for legacy_pattern in LEGACY_NAME_PATTERNS:
                 match = legacy_pattern.search(text)

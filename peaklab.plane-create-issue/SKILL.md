@@ -13,19 +13,23 @@ Keep issue creation focused and safe: reuse `peaklab.plane-api` for configuratio
 </objective>
 
 <quick_start>
+Resolve `PLANE_CREATE_SKILL_DIR` to the absolute directory containing this loaded `SKILL.md`.
+Verify [scripts/create_issue.py](scripts/create_issue.py) exists and the declared sibling API
+package is installed. Run commands from the target project's checkout, not the skill directory.
+
 1. Load `peaklab.plane-api` only for its shared configuration, client, and metadata lookup facilities. Creation remains owned by this skill.
 2. Build a fresh JSON payload from the current request. At minimum it needs `name`; use `description_html` and `priority` when known.
 3. Choose a unique `SESSION_ID`, run `rtk mkdir -p /private/tmp/plane-create-issue/SESSION_ID`, then write the payload with the file-editing tool. Never reuse a payload from an earlier request.
 4. Validate without contacting Plane:
 
 ```bash
-rtk python3 ~/.agents/skills/peaklab.plane-create-issue/scripts/create_issue.py --dry-run /private/tmp/plane-create-issue/SESSION_ID/payload.json
+rtk python3 "$PLANE_CREATE_SKILL_DIR/scripts/create_issue.py" --dry-run /private/tmp/plane-create-issue/SESSION_ID/payload.json
 ```
 
 5. When the user explicitly requested creation, execute exactly once:
 
 ```bash
-rtk python3 ~/.agents/skills/peaklab.plane-create-issue/scripts/create_issue.py --request-id SESSION_ID /private/tmp/plane-create-issue/SESSION_ID/payload.json
+rtk python3 "$PLANE_CREATE_SKILL_DIR/scripts/create_issue.py" --request-id SESSION_ID /private/tmp/plane-create-issue/SESSION_ID/payload.json
 ```
 
 6. Return `PREFIX-SEQ_ID`, the title, priority, and `URL`, then run `rtk rm -f` on the temporary payload and `rtk rmdir` on its now-empty session directory.
@@ -164,7 +168,7 @@ Remove only the temporary payload created for this request. Do not delete user f
 For skill maintenance, run:
 
 ```bash
-rtk python3 -m unittest discover -s ~/.agents/skills/peaklab.plane-create-issue/scripts -p 'test_*.py'
+rtk python3 -m unittest discover -s "$PLANE_CREATE_SKILL_DIR/scripts" -p 'test_*.py'
 ```
 
 The unit tests cover helper behavior, atomic configuration loading, replay protection, skill structure, canonical creation routing, and RTK compliance. They and the helper dry run must not load Plane credentials or make network calls.

@@ -102,16 +102,19 @@ All list endpoints return paginated responses with `{ results: [...] }`, not raw
 ### 1. Run the Python helper script
 
 The Python script handles everything: config parsing, idempotent checks, API quirks, and summary output.
+Resolve `PLANE_API_DIR` to the absolute directory of the loaded
+[peaklab.plane-api](../peaklab.plane-api/SKILL.md) package. Run from the target project, not the
+skill directory, so its configuration is used.
 
 ```bash
-python3 ~/.agents/skills/peaklab.plane-api/init_project.py
+python3 "$PLANE_API_DIR/init_project.py"
 ```
 
 Pass arguments if needed:
 ```bash
-python3 ~/.agents/skills/peaklab.plane-api/init_project.py --modules-only
-python3 ~/.agents/skills/peaklab.plane-api/init_project.py --cycles=8
-python3 ~/.agents/skills/peaklab.plane-api/init_project.py --dry-run
+python3 "$PLANE_API_DIR/init_project.py" --modules-only
+python3 "$PLANE_API_DIR/init_project.py" --cycles=8
+python3 "$PLANE_API_DIR/init_project.py" --dry-run
 ```
 
 The script:

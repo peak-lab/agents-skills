@@ -18,7 +18,7 @@ Show a compact Plane board snapshot using the shared `peaklab.plane-api` client 
 </constraints>
 
 <workflow>
-1. Import `~/.agents/skills/peaklab.plane-api/plane_client.py`.
+1. Load [peaklab.plane-api](../peaklab.plane-api/SKILL.md) and run its bootstrap from the target project; it resolves the installed client and exposes `CLIENT`.
 2. Fetch project metadata and states.
 3. Resolve unstarted/backlog, started, and review states dynamically by `group` and `name`.
 4. Fetch active issues with pagination unwrapped through `client.results()`.
@@ -26,14 +26,10 @@ Show a compact Plane board snapshot using the shared `peaklab.plane-api` client 
 </workflow>
 
 <python_template>
+Run after the shared bootstrap in the same Python context:
+
 ```python
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path.home() / ".agents/skills/peaklab.plane-api"))
-from plane_client import load_plane_client
-
-client = load_plane_client()
+client = CLIENT
 project = client.request("GET", f"{client.project.path}/")
 states = client.results(f"{client.project.path}/states/")
 issues = client.results(f"{client.project.path}/issues/?per_page=100")

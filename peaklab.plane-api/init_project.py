@@ -2,7 +2,10 @@
 """Plane project initializer — creates standard modules, labels, and cycles.
 
 Usage:
-    python3 ~/.agents/skills/peaklab.plane-api/init_project.py [--modules-only] [--labels-only] [--cycles-only] [--dry-run] [--cycles=N]
+    python3 "$PLANE_API_DIR/init_project.py" [--modules-only] [--labels-only] [--cycles-only] [--dry-run] [--cycles=N]
+
+Set PLANE_API_DIR to the absolute directory of this installed package.
+Run from the target repository so its project configuration is used.
 
 Reads PLANE_TOKEN and PLANE_PROJECT from supported Plane config sources.
 Idempotent: skips items that already exist (matched by name, case-insensitive).

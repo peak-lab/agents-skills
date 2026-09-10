@@ -237,7 +237,7 @@ grep -q "^\\.env$" .gitignore 2>/dev/null || echo ".env" >> .gitignore
 
   peaklab.coolify-api / deploy-check   ✅  example-app-lp → https://app.example.com
   peaklab.plane-api / peaklab.ship-pr  ✅ / ❌
-  glitchtip-api                ✅ / ❌
+  GlitchTip configuration      ✅ / ❌
 
 Re-run /peaklab.infra-config to update any value.
 ```

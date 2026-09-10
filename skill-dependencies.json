@@ -19,6 +19,9 @@
   "peaklab.plane-api": [
     "peaklab.plane-create-issue"
   ],
+  "peaklab.plane-archive": [
+    "peaklab.plane-api"
+  ],
   "peaklab.plane-create-issue": [
     "peaklab.plane-api"
   ],
@@ -47,5 +50,9 @@
     "peaklab.gh-create-issue",
     "peaklab.glitchtip-do-issue",
     "peaklab.gh-do-issue"
+  ],
+  "wayfinder": [
+    "to-spec",
+    "to-tickets"
   ]
 }

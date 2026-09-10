@@ -160,10 +160,12 @@ canonical plan; APEX amends it in place and must not create a second `plan.md`.
 </step>
 
 <step name="implement">
-The worker follows repository/package `AGENTS.md`, edits only inside `WORKTREE`, and invokes:
+The worker follows repository/package `AGENTS.md` and edits only inside `WORKTREE`. Invoke the
+installed `apex` skill with the arguments below through the host's skill facility, or read its
+installed instructions directly when that facility is unavailable:
 
 ```text
-/apex <AUTO_FLAG> <optional TDD_FLAG> -e <issue intent + acceptance criteria + analyze.md path>
+<AUTO_FLAG> <optional TDD_FLAG> -e <issue intent + acceptance criteria + analyze.md path>
 ```
 
 `AUTO_FLAG` is exactly `-a` or `-A`. Use `-d` only for explicit strict TDD, `-D` for explicit
@@ -219,7 +221,7 @@ one equivalent explicit review. Record `reviewed_head=<sha>`, `reviewed_base=<sh
 
 <step name="handoff">
 - Default or `--no-merge`: report the reviewed PR and leave Plane In Progress.
-- `--wait-merge`: invoke `peaklab.plane-ship-watch` now with full PR URL, `--repo <OWNER/REPO>`, issue,
+- `--wait-merge`: invoke `peaklab.plane-ship-watch` now with full PR URL, `--repo <OWNER/REPO>`, `--issue <PREFIX-N>`,
   `--reviewed-head <sha>`, `--reviewed-base <sha>`, `--review-verdict <verdict>`, and
   `--plane-skill-dir <SKILL_DIR>`; wait for its terminal result.
 - `--async-merge`: pass the same arguments to a live `plane-ship-watcher` session worker only

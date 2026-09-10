@@ -19,7 +19,9 @@ Archive completed Plane issues to clean up the board.
 
 ## Configuration
 
-Requires `PLANE_TOKEN` and `PLANE_PROJECT` in project `.env` or `~/.agents/.env` (see peaklab.plane-api skill).
+Load [peaklab.plane-api](../peaklab.plane-api/SKILL.md) for its shared client and atomic
+configuration. It resolves `PLANE_TOKEN` and `PLANE_PROJECT` from the configured project/global
+sources; do not implement another credential loader here.
 
 ## Behavior
 
