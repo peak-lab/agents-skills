@@ -1,0 +1,18 @@
+{
+  "name": "peaklab",
+  "version": "0.1.0",
+  "description": "Composable engineering skills and optional delivery agents for PeakLab teams.",
+  "repository": "https://github.com/peak-lab/agents-skills",
+  "agents": [
+    "./agents/claude/code-reviewer.md",
+    "./agents/claude/implementer.md",
+    "./agents/claude/issue-qa-reviewer.md",
+    "./agents/claude/issue-resolver.md",
+    "./agents/claude/issue-resolver-deep.md",
+    "./agents/claude/issue-ship-watcher.md",
+    "./agents/claude/plane-epic-planner.md",
+    "./agents/claude/plane-issue-worker.md",
+    "./agents/claude/plane-ship-watcher.md",
+    "./agents/claude/plane-story-planner.md"
+  ]
+}

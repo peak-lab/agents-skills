@@ -14,9 +14,9 @@ optional output optimization; without it, use the underlying command with the sa
 
 ```bash
 # Select the harness you actually use; do not overwrite another person's local customizations.
-npx skills add peak-lab/agents-skills -g --skill '*' --agent codex --copy -y
+npx skills add peak-lab/agents-skills --skill '*' --agent codex --copy -y
 # Or:
-npx skills add peak-lab/agents-skills -g --skill '*' --agent claude-code --copy -y
+npx skills add peak-lab/agents-skills --skill '*' --agent claude-code --copy -y
 ```
 
 For a repeatable team rollout, agree on a reviewed repository commit, check it out locally and
@@ -24,13 +24,30 @@ install from that checkout with `npx skills add . ...`. Record the chosen revisi
 can replace installed copies: keep team changes in version control, not only in a personal install.
 
 Keep branch policy, build/test commands, package ownership and deployment rules in the project's
-`AGENTS.md`/harness instructions. No colleague needs Fahari's home directory, private agent names,
-or the optional Hermes runner. A repository-owned specialist is used when declared; otherwise
+`AGENTS.md`/harness instructions. No colleague needs another person's home directory, private agent names,
+or a personal runner. A repository-owned specialist is used when declared; otherwise
 the workflow runs with available capabilities and the same verification requirements.
 
 Each person uses their own least-privileged service credentials. Configure only needed services
 in gitignored project settings or their personal harness configuration. Never share populated
 `.env` files, task artifacts with customer data, or access tokens in the catalogue.
+
+## First task
+
+Begin with the README's `apex`, `review-code`, `tdd`, and `handoff` starter set in a disposable
+branch of a familiar project. Read the existing project instructions and test commands first;
+do not scaffold new tracker configuration or duplicate project rules just to try the skills.
+
+Try: “Use apex to fix [one reproducible behavior]. Acceptance: [observable result]. Run the
+relevant project tests. Do not commit, push or open a PR.” Supply the actual reproduction.
+
+Then ask: “Use review-code to review these local changes, including new source files. Do not
+edit.” Use `handoff` only when another session needs to continue; `tdd` is available when a
+focused test-first task needs it, not a second mandatory implementation workflow.
+
+Once this works, install the full catalogue for composed issue workflows and configure only
+the tracker you use. Native agents are optional. Add `-g` only when intentionally installing
+for all your projects; do not combine plugin and native copies of the same skills by default.
 
 ## Choose one entry point
 
@@ -75,9 +92,9 @@ available. Do not copy the same analysis into several new plans.
 ## Maintaining the shared version
 
 Keep service rules in their owning package: GitHub execution in
-`peaklab.gh-do-issue/references/execution.md`, GlitchTip resolution in
-`peaklab.glitchtip-do-issue/references/glitchtip-contract.md`, Plane configuration in
-`peaklab.plane-api`, and APEX phase rules in `apex/steps/`.
+`skills/peaklab.gh-do-issue/references/execution.md`, GlitchTip resolution in
+`skills/peaklab.glitchtip-do-issue/references/glitchtip-contract.md`, Plane configuration in
+`skills/peaklab.plane-api`, and APEX phase rules in `skills/apex/steps/`.
 
 Changing a default or result requires checking every caller, not just the edited skill. Add
 missing dependencies to the manifest, run the helper tests and recursive portability check,
