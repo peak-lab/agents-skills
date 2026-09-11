@@ -1,0 +1,11 @@
+{
+  "name": "peaklab-skills",
+  "owner": { "name": "PeakLab" },
+  "plugins": [
+    {
+      "name": "peaklab",
+      "source": "./",
+      "description": "Composable engineering workflows for implementation, review and issue delivery."
+    }
+  ]
+}

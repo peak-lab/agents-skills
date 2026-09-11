@@ -1,0 +1,415 @@
+[
+  {
+    "id": "apex-rejects-conflicting-tdd-and-no-test",
+    "kind": "behavior",
+    "skill": "apex",
+    "prompt": "Implémente la validation d’e-mail avec les options -d -T.",
+    "files": {
+      "src/validator.ts": "export const valid = () => true;\n"
+    },
+    "services": [],
+    "assertions": [
+      { "kind": "status", "values": ["blocked", "needs_clarification"] },
+      { "kind": "files_unchanged" },
+      { "kind": "action_count", "type": "write_file", "max": 0 },
+      { "kind": "action_count", "type": "service_call", "max": 0 }
+    ]
+  },
+  {
+    "id": "apex-happy-fix-writes-discount-configuration",
+    "kind": "behavior",
+    "skill": "apex",
+    "prompt": "Configure la remise à 20 % et vérifie le résultat.",
+    "files": {
+      "config.json": "{\"discountPercent\":0}\n",
+      "package.json": "{\"scripts\":{\"test\":\"bun test\"}}\n"
+    },
+    "services": [
+      {
+        "service": "shell",
+        "operation": "run",
+        "target": "bun test",
+        "response": { "exitCode": 0, "stdout": "1 pass" }
+      }
+    ],
+    "assertions": [
+      { "kind": "status", "values": ["complete", "completed"] },
+      {
+        "kind": "file_json_value",
+        "path": "config.json",
+        "keys": ["discountPercent"],
+        "value": 20
+      },
+      { "kind": "action_count", "type": "write_file", "min": 1, "max": 1, "match": { "path": "config.json" } },
+      { "kind": "action_count", "type": "service_call", "min": 1, "match": { "service": "shell", "operation": "run", "target": "bun test" } }
+    ]
+  },
+  {
+    "id": "apex-reused-unapproved-plan-pauses-before-edit",
+    "kind": "behavior",
+    "skill": "apex",
+    "prompt": "Reprends ce plan R1 avec --no-auto : corriger le pluriel du panier.",
+    "files": {
+      "task-state.json": "{\"planRevision\":\"R1\",\"planFresh\":true,\"approvedRevision\":null}\n",
+      "src/cart.ts": "export const countLabel = (count: number) => `${count} item`;\n"
+    },
+    "services": [],
+    "assertions": [
+      { "kind": "status", "values": ["needs_confirmation"] },
+      { "kind": "action_count", "type": "write_file", "max": 0, "match": { "path": "src/cart.ts" } },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "task-state.json" } }
+    ]
+  },
+  {
+    "id": "apex-ambiguous-legacy-resume-does-not-choose",
+    "kind": "behavior",
+    "skill": "apex",
+    "prompt": "Reprends la tâche -r 01.",
+    "files": {
+      ".claude/output/apex/01-auth/state.json": "{\"baseline\":\"a1\"}\n",
+      ".claude/output/apex/01-api/state.json": "{\"baseline\":\"b2\"}\n"
+    },
+    "services": [],
+    "assertions": [
+      { "kind": "status", "values": ["needs_clarification"] },
+      { "kind": "files_unchanged" },
+      { "kind": "action_count", "type": "write_file", "max": 0 }
+    ]
+  },
+  {
+    "id": "review-code-finds-discount-regression-without-editing",
+    "kind": "behavior",
+    "skill": "review-code",
+    "prompt": "Review uniquement src/discount.ts pour la correction de remise.",
+    "files": {
+      "src/discount.ts": "export const discountedTotal = (amount: number) => amount * 0.2;\n",
+      "src/discount.test.ts": "import { expect, test } from 'bun:test';\nimport { discountedTotal } from './discount';\ntest('20 percent off 100', () => expect(discountedTotal(100)).toBe(80));\n"
+    },
+    "services": [],
+    "assertions": [
+      { "kind": "status", "values": ["complete", "completed"] },
+      { "kind": "message_matches", "pattern": "REQUEST CHANGES|BLOCKING" },
+      { "kind": "message_matches", "pattern": "20[\\s\\S]*80|80[\\s\\S]*20" },
+      { "kind": "files_unchanged" },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "src/discount.ts" } },
+      { "kind": "action_count", "type": "write_file", "max": 0 },
+      { "kind": "action_count", "type": "service_call", "max": 0 }
+    ]
+  },
+  {
+    "id": "review-code-reads-explicit-untracked-file",
+    "kind": "behavior",
+    "skill": "review-code",
+    "prompt": "Review src/auth/new-session.ts sans modifier le code.",
+    "files": {
+      "src/auth/new-session.ts": "export function session(token: string) { return { token }; }\n"
+    },
+    "services": [
+      {
+        "service": "git",
+        "operation": "status",
+        "target": "worktree",
+        "response": { "untracked": ["src/auth/new-session.ts"] }
+      }
+    ],
+    "assertions": [
+      { "kind": "status", "values": ["complete", "completed"] },
+      { "kind": "files_unchanged" },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "src/auth/new-session.ts" } },
+      { "kind": "action_count", "type": "write_file", "max": 0 },
+      { "kind": "service_calls_only" }
+    ]
+  },
+  {
+    "id": "gh-do-issue-target-mismatch-blocks-delivery",
+    "kind": "behavior",
+    "skill": "peaklab.gh-do-issue",
+    "prompt": "Livre l’issue GitHub #12 avec --wait-merge.",
+    "files": {
+      "task/result.json": "{\"status\":\"pr_created\",\"issue\":12,\"repository\":\"acme/app\",\"worktree\":\"worktrees/issue-12\",\"branch\":\"fix/12\",\"head\":\"head12\",\"pr\":12}\n",
+      "shipping-checkout.json": "{\"repository\":\"acme/app\",\"worktree\":\"worktrees/issue-99\",\"branch\":\"fix/99\",\"head\":\"head99\"}\n"
+    },
+    "services": [],
+    "assertions": [
+      { "kind": "status", "values": ["blocked"] },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "task/result.json" } },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "shipping-checkout.json" } },
+      { "kind": "files_unchanged" },
+      { "kind": "action_count", "type": "service_call", "max": 0 },
+      { "kind": "action_count", "type": "write_file", "max": 0 }
+    ]
+  },
+  {
+    "id": "gh-do-issue-pr-only-does-not-merge",
+    "kind": "behavior",
+    "skill": "peaklab.gh-do-issue",
+    "prompt": "Reprends le handoff préparé de l’issue GitHub #7 avec --no-merge.",
+    "files": {
+      "task/result.json": "{\"status\":\"pr_created\",\"issue\":7,\"repository\":\"acme/app\",\"worktree\":\"worktrees/issue-7\",\"branch\":\"fix/7\",\"head\":\"head7\",\"pr\":7}\n",
+      "task/review.json": "{\"head\":\"head7\",\"base\":\"base7\",\"verdict\":\"review_completed_no_blockers\"}\n",
+      "task/validation.json": "{\"head\":\"head7\",\"command\":\"bun test\",\"result\":\"pass\"}\n"
+    },
+    "services": [],
+    "assertions": [
+      { "kind": "status", "values": ["pr_created"] },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "task/review.json" } },
+      { "kind": "action_count", "type": "service_call", "max": 0 },
+      { "kind": "files_unchanged" }
+    ]
+  },
+  {
+    "id": "plane-headless-rejects-no-auto-before-selection",
+    "kind": "behavior",
+    "skill": "peaklab.plane-do-issue",
+    "prompt": "Traite APP-12 avec --no-auto.",
+    "files": {
+      "runtime.json": "{\"PLANE_DO_ISSUE_RUNTIME\":\"1\"}\n",
+      "worktree.json": "{\"linked\":true,\"clean\":true,\"branch\":\"fix/app-12\"}\n"
+    },
+    "services": [],
+    "assertions": [
+      { "kind": "status", "values": ["blocked"] },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "runtime.json" } },
+      { "kind": "message_matches", "pattern": "runtime|headless|mode|no-auto" },
+      { "kind": "files_unchanged" },
+      { "kind": "action_count", "type": "service_call", "max": 0 },
+      { "kind": "action_count", "type": "write_file", "max": 0 }
+    ]
+  },
+  {
+    "id": "plane-reuses-reviewed-handoff-without-private-agent",
+    "kind": "behavior",
+    "skill": "peaklab.plane-do-issue",
+    "prompt": "Reprends le handoff préparé de APP-15 jusqu’à la PR reviewée.",
+    "files": {
+      "agent-definitions.json": "[]\n",
+      "task/result.json": "{\"status\":\"pr_created\",\"issue\":\"APP-15\",\"repository\":\"acme/app\",\"worktree\":\"worktrees/app-15\",\"branch\":\"fix/app-15\",\"head\":\"head15\",\"pr\":15}\n",
+      "task/review.json": "{\"head\":\"head15\",\"base\":\"base15\",\"verdict\":\"review_completed_no_blockers\"}\n",
+      "task/validation.json": "{\"head\":\"head15\",\"command\":\"bun test\",\"result\":\"pass\"}\n"
+    },
+    "services": [],
+    "assertions": [
+      { "kind": "status", "values": ["pr_created"] },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "task/review.json" } },
+      { "kind": "action_count", "type": "service_call", "max": 0 },
+      { "kind": "files_unchanged" }
+    ]
+  },
+  {
+    "id": "glitchtip-pr-only-keeps-error-unresolved",
+    "kind": "behavior",
+    "skill": "peaklab.glitchtip-do-issue",
+    "prompt": "Reprends le handoff préparé de l’erreur GlitchTip 901 avec --no-merge.",
+    "files": {
+      "cluster.json": "{\"issueId\":901,\"project\":\"shop\",\"environment\":\"production\"}\n",
+      "task/result.json": "{\"status\":\"pr_created\",\"issueId\":901,\"repository\":\"acme/shop\",\"head\":\"head45\",\"pr\":45}\n",
+      "task/review.json": "{\"head\":\"head45\",\"base\":\"base45\",\"verdict\":\"review_completed_no_blockers\"}\n",
+      "task/validation.json": "{\"head\":\"head45\",\"command\":\"bun test\",\"result\":\"pass\"}\n"
+    },
+    "services": [],
+    "assertions": [
+      { "kind": "status", "values": ["pr_created"] },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "task/result.json" } },
+      { "kind": "action_count", "type": "service_call", "max": 0 },
+      { "kind": "files_unchanged" }
+    ]
+  },
+  {
+    "id": "glitchtip-merged-without-deployment-stays-open",
+    "kind": "behavior",
+    "skill": "peaklab.glitchtip-do-issue",
+    "prompt": "Finalise le traitement de l’erreur GlitchTip 902.",
+    "files": {
+      "cluster.json": "{\"issueId\":902,\"project\":\"shop\",\"environment\":\"production\",\"pr\":46}\n"
+    },
+    "services": [
+      {
+        "service": "glitchtip",
+        "operation": "issue.get",
+        "target": "902",
+        "response": { "id": 902, "status": "unresolved", "project": "shop", "environment": "production" }
+      },
+      {
+        "service": "github",
+        "operation": "pr.get",
+        "target": "acme/shop#46",
+        "response": { "state": "MERGED", "head": "h46" }
+      },
+      {
+        "service": "deployment",
+        "operation": "lookup",
+        "target": "shop/production",
+        "response": { "release": null }
+      }
+    ],
+    "assertions": [
+      { "kind": "status", "values": ["merged", "blocked"] },
+      { "kind": "service_calls_only" },
+      { "kind": "action_count", "type": "service_call", "min": 1, "match": { "service": "deployment", "operation": "lookup", "target": "shop/production" } },
+      { "kind": "message_matches", "pattern": "deployment|déploiement|pending|attente" },
+      { "kind": "action_count", "type": "service_call", "max": 0, "match": { "service": "glitchtip", "operation": "issue.update", "target": "902" } },
+      { "kind": "action_count", "type": "service_call", "max": 0, "match": { "service": "glitchtip", "operation": "comment.create", "target": "902" } }
+    ]
+  },
+
+  {
+    "id": "route-apex-feature",
+    "kind": "routing",
+    "skill": "apex",
+    "prompt": "Ajoute une recherche paginée aux commandes avec validation.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill", "name": "apex" }]
+  },
+  {
+    "id": "route-apex-bugfix",
+    "kind": "routing",
+    "skill": "apex",
+    "prompt": "Corrige le crash lors de l’import CSV et vérifie le correctif.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill", "name": "apex" }]
+  },
+  {
+    "id": "route-apex-not-review",
+    "kind": "routing",
+    "skill": "apex",
+    "prompt": "Review uniquement les changements locaux, sans les modifier.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill_not", "name": "apex" }]
+  },
+  {
+    "id": "route-apex-not-create-issue",
+    "kind": "routing",
+    "skill": "apex",
+    "prompt": "Crée une issue GitHub décrivant le bug de recherche.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill_not", "name": "apex" }]
+  },
+  {
+    "id": "route-review-code-pr",
+    "kind": "routing",
+    "skill": "review-code",
+    "prompt": "Review la PR 81 dans acme/store pour les régressions et risques sécurité.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill", "name": "review-code" }]
+  },
+  {
+    "id": "route-review-code-file",
+    "kind": "routing",
+    "skill": "review-code",
+    "prompt": "Peux-tu auditer src/billing/charge.ts sans faire de modification ?",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill", "name": "review-code" }]
+  },
+  {
+    "id": "route-review-code-not-implementation",
+    "kind": "routing",
+    "skill": "review-code",
+    "prompt": "Corrige src/billing/charge.ts puis ouvre une PR.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill_not", "name": "review-code" }]
+  },
+  {
+    "id": "route-review-code-not-plane-status",
+    "kind": "routing",
+    "skill": "review-code",
+    "prompt": "Quel est le statut actuel des tickets Plane ?",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill_not", "name": "review-code" }]
+  },
+  {
+    "id": "route-gh-do-issue-explicit",
+    "kind": "routing",
+    "skill": "peaklab.gh-do-issue",
+    "prompt": "Résous l’issue GitHub #42 jusqu’à une PR reviewée.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill", "name": "peaklab.gh-do-issue" }]
+  },
+  {
+    "id": "route-gh-do-issue-next",
+    "kind": "routing",
+    "skill": "peaklab.gh-do-issue",
+    "prompt": "Travaille la prochaine issue GitHub ouverte avec --no-merge.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill", "name": "peaklab.gh-do-issue" }]
+  },
+  {
+    "id": "route-gh-do-issue-not-create",
+    "kind": "routing",
+    "skill": "peaklab.gh-do-issue",
+    "prompt": "Rédige une issue GitHub décrivant ce bug, sans l’implémenter.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill_not", "name": "peaklab.gh-do-issue" }]
+  },
+  {
+    "id": "route-gh-do-issue-not-glitchtip",
+    "kind": "routing",
+    "skill": "peaklab.gh-do-issue",
+    "prompt": "Corrige l’erreur GlitchTip 78 et relie-la à une issue GitHub.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill_not", "name": "peaklab.gh-do-issue" }]
+  },
+  {
+    "id": "route-plane-do-issue-explicit",
+    "kind": "routing",
+    "skill": "peaklab.plane-do-issue",
+    "prompt": "Fais le ticket Plane APP-19 jusqu’à une PR reviewée.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill", "name": "peaklab.plane-do-issue" }]
+  },
+  {
+    "id": "route-plane-do-issue-next",
+    "kind": "routing",
+    "skill": "peaklab.plane-do-issue",
+    "prompt": "Travaille le prochain ticket Plane éligible avec --no-auto.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill", "name": "peaklab.plane-do-issue" }]
+  },
+  {
+    "id": "route-plane-do-issue-not-status",
+    "kind": "routing",
+    "skill": "peaklab.plane-do-issue",
+    "prompt": "Liste les tickets Plane en cours et leur statut.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill_not", "name": "peaklab.plane-do-issue" }]
+  },
+  {
+    "id": "route-plane-do-issue-not-github",
+    "kind": "routing",
+    "skill": "peaklab.plane-do-issue",
+    "prompt": "Implémente l’issue GitHub #19.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill_not", "name": "peaklab.plane-do-issue" }]
+  },
+  {
+    "id": "route-glitchtip-do-issue-explicit",
+    "kind": "routing",
+    "skill": "peaklab.glitchtip-do-issue",
+    "prompt": "Corrige les erreurs GlitchTip 901 et 902 avec --no-merge.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill", "name": "peaklab.glitchtip-do-issue" }]
+  },
+  {
+    "id": "route-glitchtip-do-issue-clusters",
+    "kind": "routing",
+    "skill": "peaklab.glitchtip-do-issue",
+    "prompt": "Traite les trois principaux clusters GlitchTip du projet storefront.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill", "name": "peaklab.glitchtip-do-issue" }]
+  },
+  {
+    "id": "route-glitchtip-do-issue-not-analysis",
+    "kind": "routing",
+    "skill": "peaklab.glitchtip-do-issue",
+    "prompt": "Explique pourquoi l’erreur GlitchTip 901 arrive, sans la corriger.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill_not", "name": "peaklab.glitchtip-do-issue" }]
+  },
+  {
+    "id": "route-glitchtip-do-issue-not-uptime",
+    "kind": "routing",
+    "skill": "peaklab.glitchtip-do-issue",
+    "prompt": "Crée un monitor Uptime Kuma pour https://shop.example.test.",
+    "files": {}, "services": [],
+    "assertions": [{ "kind": "first_skill_not", "name": "peaklab.glitchtip-do-issue" }]
+  }
+]

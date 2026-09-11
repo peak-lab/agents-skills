@@ -4,5 +4,12 @@
 *.local
 .DS_Store
 node_modules/
+dist/
+*.tgz
 __pycache__/
 *.pyc
+
+
+.worktrees
+.ruff_cache
+.eval-results/

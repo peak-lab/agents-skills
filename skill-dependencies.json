@@ -4,6 +4,7 @@
   ],
   "peaklab.fix-glitchtip": [
     "apex",
+    "peaklab.glitchtip-do-issue",
     "peaklab.ship-pr"
   ],
   "peaklab.gh-do-issue": [
@@ -18,30 +19,40 @@
   "peaklab.plane-api": [
     "peaklab.plane-create-issue"
   ],
+  "peaklab.plane-archive": [
+    "peaklab.plane-api"
+  ],
   "peaklab.plane-create-issue": [
     "peaklab.plane-api"
   ],
   "peaklab.plane-do-issue": [
+    "apex",
     "peaklab.plane-api",
-    "peaklab.plane-ship-watch",
-    "peaklab.ship-pr"
+    "peaklab.plane-ship-watch"
   ],
   "peaklab.plane-init": [
     "peaklab.plane-api"
   ],
   "peaklab.plane-ship-watch": [
     "peaklab.plane-do-issue",
-    "peaklab.ship-pr"
+    "peaklab.plane-api"
   ],
   "peaklab.plane-status": [
     "peaklab.plane-api"
   ],
   "peaklab.ship-pr": [
     "peaklab.gh-create-issue",
+    "peaklab.plane-api",
+    "peaklab.plane-do-issue",
     "peaklab.plane-create-issue"
   ],
   "peaklab.track-error": [
     "peaklab.gh-create-issue",
+    "peaklab.glitchtip-do-issue",
     "peaklab.gh-do-issue"
+  ],
+  "wayfinder": [
+    "to-spec",
+    "to-tickets"
   ]
 }
