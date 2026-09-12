@@ -2,11 +2,6 @@
   "peaklab.client-audit": [
     "review-code"
   ],
-  "peaklab.fix-glitchtip": [
-    "apex",
-    "peaklab.glitchtip-do-issue",
-    "peaklab.ship-pr"
-  ],
   "peaklab.gh-do-issue": [
     "apex",
     "peaklab.ship-pr"
@@ -54,5 +49,9 @@
   "wayfinder": [
     "to-spec",
     "to-tickets"
+  ],
+  "peaklab.fix-qa-bug": [
+    "peaklab.gh-do-issue",
+    "qa-session"
   ]
 }

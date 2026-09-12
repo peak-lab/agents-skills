@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: Deliver behavior with a disciplined red-green-refactor loop. Use when the user requests test-first work, red-green-refactor, or stronger integration coverage.
+description: "Implement behavior through a strict red-green-refactor loop when test-first work is requested."
 ---
 
 # Test-Driven Development

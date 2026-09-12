@@ -1,6 +1,6 @@
 ---
 name: peaklab.infra-config
-description: Use when starting or configuring a project that needs infrastructure, deployment, or service credentials discovered from local env files and shell config.
+description: "Discover infrastructure settings from local environment files and configure a project that needs them."
 effort: standard
 allowed-tools: Read, Write, Bash
 ---

@@ -57,13 +57,20 @@ for all your projects; do not combine plugin and native copies of the same skill
 | GitHub issue | `peaklab.gh-do-issue` | Selection, checkout, official review, result | APEX, explicit shipping target |
 | Plane issue | `peaklab.plane-do-issue` | Selection, owner routing, official review | APEX, `peaklab.plane-ship-watch` for requested delivery |
 | GlitchTip cluster, isolated | `peaklab.glitchtip-do-issue` | Error evidence and status | Shared issue execution, GlitchTip evidence contract |
-| GlitchTip inbox, explicit inline pass | `peaklab.fix-glitchtip` | Sequential fixes in current checkout | APEX, one shipping/review owner, shared evidence contract |
+| GlitchTip inbox, explicit inline pass | `peaklab.glitchtip-do-issue --inline --all` | Bounded sequential fixes in current checkout | Shared executor with inline checkout rules, one QA/delivery owner |
 | One error requiring a GitHub trace | `peaklab.track-error` | Error-to-ticket linkage and status | GitHub issue workflow, shared evidence contract |
 | Existing PR to finalize | `peaklab.ship-pr` | Bound target, review, CI, authorized merge | Current caller evidence; optional explicit Plane sync |
 
 Do not run several entry points over the same issue or checkout simultaneously. Parallel issues
 need separate branches/worktrees and explicit ownership; a source adapter remains the only owner
 of tracker/error state changes.
+
+GlitchTip repair has one canonical skill. Use `--project SLUG` for project selection and
+`--inline` only when the current checkout is intentional. `--all` is capped by `--limit`
+(default 20 candidates), not an unbounded inbox drain. Automatic plan execution is the default;
+add `--no-auto` for plan approval. Merge and error resolution still require their explicit gates.
+Updating the catalogue does not remove retired copies from personal skill installations;
+review those separately and keep only the canonical repair entrypoint.
 
 Use focused planning skills only when they add missing context: `grilling` for unresolved
 decisions, `wayfinder` for a broad uncertain initiative, `domain-modeling` for changed language

@@ -1,6 +1,6 @@
 ---
 name: apex
-description: Use when implementing a non-trivial feature, bug fix, or code change that benefits from an analyze-plan-execute-verify workflow, optional delegation, and explicit delivery controls.
+description: "Implement a non-trivial feature or fix through scoped analysis, planning and verification. Use tdd for explicitly requested test-first work."
 effort: standard
 argument-hint: "[--no-auto] [--no-tdd] [-x] [-s] [-b] [-pr] [-i] [-k] [-m] [-e] [-r TASK_ID] TASK_DESCRIPTION"
 ---

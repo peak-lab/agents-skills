@@ -1,6 +1,6 @@
 ---
 name: wayfinder
-description: Map a large, uncertain initiative as a sequence of decision tickets before committing to delivery work. Use when the route to an outcome cannot fit in one implementation session.
+description: "Map a broad, uncertain initiative into decision tickets before planning implementation."
 disable-model-invocation: true
 ---
 

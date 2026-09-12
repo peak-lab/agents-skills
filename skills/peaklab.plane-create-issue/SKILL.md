@@ -1,6 +1,6 @@
 ---
 name: "peaklab.plane-create-issue"
-description: "Use when the user asks to create, file, draft, or open a Plane issue, ticket, task, bug report, or feature request. Creates or drafts one validated work item with duplicate-safe API execution."
+description: "Draft or create a validated Plane issue, checking for duplicates before creation."
 effort: standard
 argument-hint: "[title or request] [--priority=none|low|medium|high|urgent]"
 allowed-tools: "Bash(rtk :*), Read, Write, Edit, Skill"

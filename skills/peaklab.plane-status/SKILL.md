@@ -1,6 +1,6 @@
 ---
 name: "peaklab.plane-status"
-description: "Use when the user asks for a quick Plane board/status overview, current in-progress tickets, backlog priorities, or next Plane issues without opening the Plane app."
+description: "Summarize a Plane board: active work, backlog priorities and next issues."
 effort: fast
 allowed-tools: "Bash(python3:*), Read"
 argument-hint: "[--mine] [--limit N]"

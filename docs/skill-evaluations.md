@@ -5,7 +5,7 @@ This repository has two distinct gates:
 - Deterministic CI checks: metadata, composition, helpers, CLI packaging, evaluation schema and runner tests. No model credentials or paid calls.
 - Explicit model evaluations: Claude or Codex chooses JSON actions in a controlled simulation. The runner executes those actions against isolated in-memory project files and fixed service fixtures, then grades the resulting trace and artifacts. No GitHub, Plane or GlitchTip API is contacted.
 
-The initial suite has 12 behavioral cases and 20 routing queries (two positives and two near-misses for each of five workflows). The scenarios live in `evals/scenarios.json`, outside distributed skills. Runner code lives in `scripts/evals/` and is not part of the npm agent installer.
+The suite has 17 behavioral cases and 20 routing queries (two positives and two near-misses for each of five workflows). The scenarios live in `evals/scenarios.json`, outside distributed skills. Runner code lives in `scripts/evals/` and is not part of the npm agent installer.
 
 ## Run
 

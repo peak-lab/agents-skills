@@ -1,6 +1,6 @@
 ---
 name: review-code
-description: Use when reviewing a specified patch, pull request, or local code changes for correctness, security risks, and missing regression coverage. Review is read-only unless fixes are requested.
+description: "Review a specified patch or PR for correctness, security and missing tests. Read-only unless fixes are requested."
 effort: deep
 argument-hint: "[PR number or file paths]"
 ---

@@ -1,14 +1,13 @@
 ---
 name: peaklab.track-error
-description: Use when one GlitchTip error needs a GitHub issue as its permanent trace, followed by a verified fix and optional delivery.
+description: "Fix one GlitchTip error with a GitHub issue as its permanent trace. Use peaklab.glitchtip-do-issue for broader triage."
 effort: deep
 argument-hint: "[project-slug] [--wait-merge | --no-merge] [--no-resolve] [--no-auto] [--no-tdd]"
 ---
 
 <overview>
-Track one error through a GitHub issue. Use `peaklab.glitchtip-do-issue` instead for isolated
-root-cause clusters without a separate GitHub ticket; use `peaklab.fix-glitchtip` for an
-explicit inline inbox pass.
+Track one error through a GitHub issue. Use `peaklab.glitchtip-do-issue` instead for root-cause
+clusters without a separate GitHub ticket, including an explicit `--inline` inbox pass.
 </overview>
 
 <constraints>

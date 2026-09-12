@@ -1,6 +1,6 @@
 ---
 name: "peaklab.plane-do-issue"
-description: "Use when the user asks to implement one Plane issue or the next eligible Plane ticket through a reviewed pull request."
+description: "Implement a Plane issue through the PR workflow. Use peaklab.plane-status for board inspection."
 effort: deep
 argument-hint: "[PREFIX-N | UUID | URL | next] [--no-auto] [--tdd | --no-tdd] [--wait-merge | --async-merge | --no-merge] [--no-subagent]"
 allowed-tools: "Bash(git :*), Bash(gh :*), Bash(rtk :*), Bash(python3 :*), Read, Write, Edit, MultiEdit, Skill, Agent, Task"

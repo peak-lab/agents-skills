@@ -1,6 +1,6 @@
 ---
 name: "peaklab.update-deps"
-description: Use when handling dependency updates, merging green Dependabot PRs, running package updates, opening update PRs, or monitoring update CI.
+description: "Update project dependencies or handle Dependabot PRs and their CI checks."
 effort: standard
 argument-hint: "[--create] [--auto]"
 allowed-tools: Bash(git :*), Bash(gh :*), Bash(pnpm :*)

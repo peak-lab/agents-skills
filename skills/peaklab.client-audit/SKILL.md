@@ -1,6 +1,6 @@
 ---
 name: peaklab.client-audit
-description: Use when auditing a client project before quoting or starting work, estimating feasibility, detecting blockers and ambiguities, checking stack compatibility, or producing a Codex-adjusted time estimate from a transcript or codebase.
+description: "Audit a client project before quoting or implementation: feasibility, blockers, stack compatibility and effort estimates."
 effort: deep
 argument-hint: "[chemin transcript/requirements] [chemin codebase (optionnel)]"
 ---

@@ -1,6 +1,6 @@
 ---
 name: peaklab.coolify-api
-description: Use when managing Coolify deployments, applications, databases, services, or servers. Triggers on "deploy", "redeploy", "restart", "check logs", "list apps", "manage env vars", or any reference to Coolify infrastructure. Routes to the Coolify MCP server when it covers the operation, REST otherwise.
+description: "Manage Coolify applications, deployments, databases and servers through MCP or REST. Use coolify-deploy for an app identified by its local registry name."
 effort: fast
 allowed-tools: Bash(python3 :*), Read
 argument-hint: "[operation] [resource] [args...]"

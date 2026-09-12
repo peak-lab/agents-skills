@@ -1,6 +1,6 @@
 ---
 name: "peaklab.plane-init"
-description: "Use when bootstrapping a new Plane project with its standard modules, labels, and weekly cycles."
+description: "Initialize a Plane project with standard modules, labels and weekly cycles."
 effort: fast
 argument-hint: "[--modules-only] [--labels-only] [--cycles-only] [--cycles=N]"
 allowed-tools: "Bash(python3 :*), Bash(rtk :*), Read, Skill"
