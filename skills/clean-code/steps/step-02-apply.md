@@ -87,9 +87,16 @@ questions:
 
 ### 4. Install Dependencies
 
-If new libraries needed:
+If the selected recommendations require new libraries, detect the repository's declared package
+manager from `packageManager` and its lockfile, then use that package manager only. Do not create a
+second lockfile.
+
 ```bash
+# Use exactly one command matching the repository.
 pnpm add @tanstack/react-query react-error-boundary
+npm install @tanstack/react-query react-error-boundary
+yarn add @tanstack/react-query react-error-boundary
+bun add @tanstack/react-query react-error-boundary
 ```
 
 ### 5. Apply Changes

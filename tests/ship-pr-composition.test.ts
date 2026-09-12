@@ -27,3 +27,19 @@ test("static shipping contract preserves review, merge identity and sync boundar
   expect(skill).toContain("plane_sync=failed");
   expect(skill).toContain("Unknown protection settings are not evidence of absence");
 });
+
+test("incoming review evidence must cover the complete PR patch", () => {
+  expect(skill).toContain('gh pr diff "$PR_NUMBER" --repo "$REPO" --name-only');
+  expect(skill).toContain('gh pr diff "$PR_NUMBER" --repo "$REPO" --patch');
+  expect(skill).toContain("must cover every\nchanged path");
+  expect(skill).toContain("matching head/base SHAs do not\nmake a partial scope complete");
+  expect(skill).toContain("checks applicable to the complete changed-path set");
+  expect(skill).toContain("matching revision does not broaden narrow\nvalidation evidence");
+});
+
+test("no-CI classification cannot be created by deleting the base workflow", () => {
+  expect(skill).toContain('git ls-tree -r --name-only "$HEAD_SHA" -- .github/workflows');
+  expect(skill).toContain('git ls-tree -r --name-only "$BASE_SHA" -- .github/workflows');
+  expect(skill).toContain("no workflow files in either the\nreviewed base or PR head");
+  expect(skill).toContain("invalidate prior CI/no-CI evidence and repeat section 4");
+});

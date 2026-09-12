@@ -91,7 +91,6 @@ Use the [Log Technique Reference](../references/log-technique.md) for proper for
 // At function entry
 console.log('[DEBUG:entry] processOrder', {
   timestamp: new Date().toISOString(),
-  orderId: order.id,
   itemCount: order.items.length
 });
 
@@ -128,10 +127,9 @@ Before asking user to run, verify NO sensitive data is logged!
 // BAD
 console.log('[DEBUG]', { password });
 
-// GOOD
+// GOOD - structural metadata only
 console.log('[DEBUG]', {
-  passwordProvided: !!password,
-  passwordLength: password?.length
+  credentialsSubmitted: Boolean(username && password)
 });
 ```
 

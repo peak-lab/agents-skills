@@ -72,10 +72,18 @@ Remove debug logs before finalizing!
 
 **Strategic logging pattern:**
 ```javascript
-console.log('[DEBUG] functionName:', { input, state, output });
-console.log('[DEBUG] processData: start', { data });
+console.log('[DEBUG] functionName:', {
+  inputPresent: input != null,
+  stateType: typeof state
+});
+console.log('[DEBUG] processData: start', {
+  inputCount: Array.isArray(data) ? data.length : undefined
+});
 // ... logic
-console.log('[DEBUG] processData: end', { result });
+console.log('[DEBUG] processData: end', {
+  resultPresent: result != null,
+  resultType: typeof result
+});
 ```
 
 **Track debug logs added:**

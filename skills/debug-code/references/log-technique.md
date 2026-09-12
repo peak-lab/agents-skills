@@ -30,13 +30,15 @@ Log at the boundaries of the suspected problematic area:
 // Entry point
 console.log('[DEBUG:entry] functionName called', {
   timestamp: new Date().toISOString(),
-  args: { param1, param2 }
+  param1Present: param1 != null,
+  param2Type: typeof param2
 });
 
 // Exit point
 console.log('[DEBUG:exit] functionName completed', {
   timestamp: new Date().toISOString(),
-  result: returnValue
+  resultPresent: returnValue != null,
+  resultType: typeof returnValue
 });
 ```
 
@@ -46,7 +48,6 @@ Log at conditionals where behavior branches:
 
 ```javascript
 console.log('[DEBUG:decision] checking condition', {
-  condition: someValue,
   willTake: someValue > threshold ? 'if-branch' : 'else-branch'
 });
 
@@ -64,9 +65,15 @@ if (someValue > threshold) {
 Log before and after data changes:
 
 ```javascript
-console.log('[DEBUG:transform:before] raw data', { data });
+console.log('[DEBUG:transform:before] raw data', {
+  inputType: Array.isArray(data) ? 'array' : typeof data,
+  inputCount: Array.isArray(data) ? data.length : undefined
+});
 const processed = transformData(data);
-console.log('[DEBUG:transform:after] processed data', { processed });
+console.log('[DEBUG:transform:after] processed data', {
+  outputType: Array.isArray(processed) ? 'array' : typeof processed,
+  outputCount: Array.isArray(processed) ? processed.length : undefined
+});
 ```
 
 ### 4. Async Boundaries
@@ -74,12 +81,19 @@ console.log('[DEBUG:transform:after] processed data', { processed });
 Log async operations with timing:
 
 ```javascript
-console.log('[DEBUG:async:start] fetching user', { userId, time: Date.now() });
+const startedAt = Date.now();
+console.log('[DEBUG:async:start] fetching user', { started: true });
 try {
   const user = await fetchUser(userId);
-  console.log('[DEBUG:async:success] user fetched', { user, time: Date.now() });
+  console.log('[DEBUG:async:success] user fetched', {
+    found: user != null,
+    durationMs: Date.now() - startedAt
+  });
 } catch (error) {
-  console.log('[DEBUG:async:error] fetch failed', { error: error.message, time: Date.now() });
+  console.log('[DEBUG:async:error] fetch failed', {
+    errorType: error instanceof Error ? error.name : 'unknown',
+    durationMs: Date.now() - startedAt
+  });
 }
 ```
 
@@ -115,7 +129,7 @@ Each log should include:
 console.log('[DEBUG:checkpoint-name] description', {
   function: 'functionName',
   timestamp: new Date().toISOString(),
-  data: { /* relevant values */ }
+  itemCount: Array.isArray(data) ? data.length : undefined
 });
 ```
 
@@ -124,30 +138,28 @@ console.log('[DEBUG:checkpoint-name] description', {
 ### JavaScript/TypeScript
 
 ```javascript
-console.log('[DEBUG:xxx]', JSON.stringify({ ... }, null, 2));
+console.log('[DEBUG:xxx]', { itemCount: Array.isArray(data) ? data.length : undefined });
 ```
 
 ### Python
 
 ```python
 import logging
-logging.debug(f'[DEBUG:xxx] {{"key": "{value}"}}')
-# or
-print(f'[DEBUG:xxx]', {'key': value})
+logging.debug('[DEBUG:xxx] item_count=%d', len(items))
 ```
 
 ### Go
 
 ```go
-log.Printf("[DEBUG:xxx] %+v\n", data)
+log.Printf("[DEBUG:xxx] item_count=%d\n", len(items))
 ```
 
 ### Rust
 
 ```rust
-println!("[DEBUG:xxx] {:?}", data);
+println!("[DEBUG:xxx] item_count={}", items.len());
 // or with tracing
-tracing::debug!(?data, "checkpoint description");
+tracing::debug!(item_count = items.len(), "checkpoint description");
 ```
 
 ## Asking for Logs - User Interaction
@@ -214,17 +226,19 @@ Keep a list of added logs:
 NEVER log sensitive data!
 </critical>
 
+Never log raw arguments, return values, request or response bodies, user objects, identifiers, or
+error messages that may contain application data. Allowlist structural metadata such as types,
+counts, booleans, and timings only. Treat production logs as externally persisted data.
+
 ### Sanitize Before Logging
 
 ```javascript
 // BAD - logs password
 console.log('[DEBUG:auth]', { user, password });
 
-// GOOD - sanitized
+// GOOD - structural metadata only
 console.log('[DEBUG:auth]', {
-  user,
-  passwordProvided: !!password,
-  passwordLength: password?.length
+  credentialsSubmitted: Boolean(user && password)
 });
 ```
 

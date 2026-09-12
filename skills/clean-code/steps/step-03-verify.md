@@ -35,26 +35,32 @@ Run build, fix any errors, and provide final summary.
 
 ## EXECUTION SEQUENCE:
 
-### 1. Run TypeScript Check
+### 1. Discover Applicable Checks
 
-```bash
-npx tsc --noEmit
-```
+Read `package.json` and the repository instructions. Detect the declared package manager and the
+available scripts before running anything. Use only that package manager, and skip TypeScript checks
+for projects that do not use TypeScript.
+
+### 2. Run TypeScript Check (if applicable)
+
+Run the repository's type-check script when it exists. Otherwise, if TypeScript is installed locally,
+run its compiler through the detected package manager with `--noEmit`.
 
 **If errors:** Fix and re-run until clean.
 
-### 2. Run Linter
+### 3. Run Linter (if configured)
 
 ```bash
-pnpm lint
+<package-manager> run lint
 ```
 
-**If errors:** Fix with `pnpm lint --fix`, then manual fixes.
+**If errors:** Use the repository's documented lint-fix script when one exists, then make the
+remaining manual fixes. Do not invent a `--fix` flag for an unknown linter.
 
-### 3. Run Build
+### 4. Run Build (if configured)
 
 ```bash
-pnpm build
+<package-manager> run build
 ```
 
 **If build fails:**
@@ -63,13 +69,13 @@ pnpm build
 3. Re-run
 4. **Loop until passes**
 
-### 4. Run Tests (if available)
+### 5. Run Tests (if configured)
 
 ```bash
-pnpm test
+<package-manager> run test
 ```
 
-### 5. Generate Summary
+### 6. Generate Summary
 
 ```markdown
 ## Clean Code Complete ✓
@@ -93,7 +99,7 @@ pnpm test
 **If `{save_mode}` = true:**
 → Write to the host task-output directory for `{task_id}/03-verify.md`
 
-### 6. Offer Commit
+### 7. Offer Commit
 
 **Use AskUserQuestion:**
 ```yaml
@@ -110,8 +116,20 @@ questions:
 
 **If commit:**
 ```bash
-git add -A && git commit -m "refactor: apply clean code improvements"
+git status --short
+# For owned files containing only this run's changes:
+git add -- <exact-owned-files>
+# For owned files that also contain unrelated hunks:
+git add -p -- <file-with-mixed-hunks>
+git diff --cached --name-only
+git diff --cached
+git commit -m "refactor: apply clean code improvements"
 ```
+
+If `{initial_staged_changes}` was non-empty, leave the index untouched and do not create an automated
+commit; report that the verified clean-code changes remain uncommitted. Otherwise, never use
+`git add -A` or stage pre-existing or unrelated changes. Use hunk staging for an owned file with mixed
+changes, and commit only after the staged diff contains exactly the hunks owned by this run.
 
 ---
 

@@ -2,7 +2,7 @@
 name: frontend-design
 description: "Design and implement polished web interfaces. Use shadcn for component-specific configuration and troubleshooting."
 effort: deep
-license: Complete terms in LICENSE.txt
+license: Apache-2.0; adapted by PeakLab, see NOTICE.md and LICENSE.txt
 ---
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.

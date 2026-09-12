@@ -80,6 +80,7 @@ SCAN → APPLY → VERIFY
 | `{save_mode}` | boolean | Save outputs |
 | `{detected_tech}` | object | Technologies found |
 | `{issues}` | array | Issues found |
+| `{initial_staged_changes}` | list | Paths already staged before this workflow |
 
 </state_variables>
 

@@ -68,6 +68,9 @@ mkdir -p {host_task_output_directory}/clean-code/{task_id}
 
 ### 4. Scan Codebase
 
+Before scanning, run `git status --short` and `git diff --cached --name-only`. Record paths already
+staged in `{initial_staged_changes}` and do not modify the existing index during this workflow.
+
 **If `{economy_mode}` = true:**
 → Direct tools only (Read, Grep, Glob)
 

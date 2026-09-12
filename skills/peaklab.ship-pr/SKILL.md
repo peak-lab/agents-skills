@@ -70,10 +70,24 @@ user grant extends exhausted budgets; record it. Do not automatically restart af
 
 ## 2. Validate and review once
 
-Discover applicable checks from repository instructions/scripts. Reuse results only when code,
-dependencies, configuration and relevant environment still match. Otherwise run affected checks,
-including appropriate structural checks for documentation. Preserve exit codes and diagnostic output.
-Failures enter section 3; there is no separate local-fix loop.
+Fetch the authoritative PR changed-path set and patch for the verified head/base pair before
+reusing or starting review:
+
+```bash
+gh pr diff "$PR_NUMBER" --repo "$REPO" --name-only
+gh pr diff "$PR_NUMBER" --repo "$REPO" --patch
+```
+
+Compare that set with task scope and any incoming review scope. A reusable review must cover every
+changed path and the acceptance-relevant interactions between them; matching head/base SHAs do not
+make a partial scope complete. Review uncovered or unexpected paths and renew the combined verdict.
+
+Discover applicable checks from repository instructions/scripts. Reuse results only when their
+recorded commands cover the checks applicable to the complete changed-path set and code, dependencies,
+configuration and relevant environment still match. A matching revision does not broaden narrow
+validation evidence. Otherwise run affected checks, including appropriate structural checks for
+documentation. Preserve exit codes and diagnostic output. Failures enter section 3; there is no
+separate local-fix loop.
 
 An explicit review is mandatory before merge; CI success is not a review. Reuse a valid incoming
 verdict for the exact head/base, scope and environment: do not launch another full review.
@@ -130,14 +144,17 @@ Inspect current-head checks, Actions runs and repository-required status checks:
 ```bash
 gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state,workflow,link
 gh run list --repo "$REPO" --branch "$BRANCH" --commit "$HEAD_SHA" --limit 20 --json databaseId,status,conclusion,workflowName,headSha,url
-git ls-tree -r --name-only HEAD .github/workflows
+git ls-tree -r --name-only "$HEAD_SHA" -- .github/workflows
+git ls-tree -r --name-only "$BASE_SHA" -- .github/workflows
 ```
 
 Follow additional pages when needed; truncation is not proof of missing CI. Workflow files or
 required checks mean local success cannot replace remote CI. Missing/unavailable required results
 return `blocked: missing_ci`; never push empty commits to provoke a run.
-Establish `ci_not_configured_no_remote_checks` only when there are no workflow files, no required
-checks and no runs for the head branch. Unknown protection settings are not evidence of absence.
+Establish `ci_not_configured_no_remote_checks` only when there are no workflow files in either the
+reviewed base or PR head, no required checks and no runs for the head branch. A PR cannot establish
+that CI is unconfigured by deleting or disabling the base workflow.
+Unknown protection settings are not evidence of absence.
 
 For pending runs poll in this turn with waits of at most 60 seconds and progress updates.
 Accumulate elapsed pending wait in `ci_wait_seconds` across runs, pushes and resumptions.
@@ -152,8 +169,9 @@ successful workflow evidence.
 Require a clean explicit review and successful configured CI, or the established no-CI classification
 with passed local validation. Re-fetch PR head and remote base immediately before merge.
 An unexpected external head change returns `blocked: target_mismatch`. For a changed base, renew
-affected validation/delta review once; if it moves again before merge, return `blocked: moving_base`
-rather than repeatedly chasing it. Any needed repair still uses section 3.
+affected validation/delta review once, invalidate prior CI/no-CI evidence and repeat section 4 against
+the new pair. If the base moves again before merge, return `blocked: moving_base` rather than repeatedly
+chasing it. Any needed repair still uses section 3.
 Never merge a draft or bypass branch protections, approvals or the repository's merge strategy.
 
 Use the approved strategy (`--squash` below is an example), pinning the verified head:
