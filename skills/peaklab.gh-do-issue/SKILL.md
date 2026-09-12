@@ -1,6 +1,6 @@
 ---
 name: peaklab.gh-do-issue
-description: Use when the user asks to implement a GitHub issue, work the next open issue, or resolve a bounded batch of GitHub issues.
+description: "Implement GitHub issues through APEX and the PR workflow. Use peaklab.glitchtip-do-issue for GlitchTip errors."
 effort: deep
 argument-hint: "[issue-number...] [--swarm [N]] [--base BRANCH] [--draft] [--no-auto] [--no-tdd] [--async-merge | --wait-merge | --no-merge] [--no-subagent]"
 ---

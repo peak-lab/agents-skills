@@ -16,7 +16,7 @@ separate provenance in [third-party notices](../THIRD_PARTY_NOTICES.md).
 
 ## Evaluation cases
 
-The [controlled evaluation runner](skill-evaluations.md) now provides 12 behavioral cases and
+The [controlled evaluation runner](skill-evaluations.md) now provides 17 behavioral cases and
 20 routing queries with hidden assertions, action traces and optional baseline comparisons.
 Run `bun run eval:check` without a model; native CLI calls require explicit `--execute`.
 Controlled routing is not native skill discovery, and simulated service success is not live

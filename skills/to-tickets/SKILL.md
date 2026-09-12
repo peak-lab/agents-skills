@@ -1,6 +1,6 @@
 ---
 name: to-tickets
-description: Break an approved plan or specification into independently verifiable vertical-slice tickets with explicit blockers. Use when work needs parallelizable, trackable execution.
+description: "Split an approved plan or specification into independently verifiable tickets with dependencies."
 disable-model-invocation: true
 ---
 

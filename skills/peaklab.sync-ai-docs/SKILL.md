@@ -1,6 +1,6 @@
 ---
 name: peaklab.sync-ai-docs
-description: Use when updating project AI instructions or regenerating stack-specific rules from bundled templates after the project's code or conventions have changed.
+description: "Synchronize project instructions, AGENTS.md, Claude compatibility files and shared agent assets."
 effort: deep
 disable-model-invocation: true
 argument-hint: "[--commit] [--dirs <dir1,dir2,...>] [--no-rules] [--root-rules-only] [--sync-symlinks]"

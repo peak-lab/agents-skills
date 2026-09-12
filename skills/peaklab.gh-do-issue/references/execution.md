@@ -98,7 +98,13 @@ checks every claimed ID. Add a specialist only for an independent risk that warr
 Record verdict (`review_completed_no_blockers`, `review_blockers_fixed` or
 `review_blocked_do_not_merge`), head/base SHA, reviewer, scope and findings in task state.
 In-scope fixes are authorized work: resume the same worker, validate affected paths and review
-the changed patch. After two unsuccessful QA correction cycles, report the remaining blocker.
+the changed patch. Use the [shipping correction contract](../../peaklab.ship-pr/SKILL.md#3-one-correction-loop)
+for QA repairs: persist `repair_budget: {limit: 3, used: N}` and `repair_attempts` in the canonical
+task state, increment before each hypothesis-driven repair batch, and retain failed attempts.
+Initialize zero only for fresh work; reconstruct legacy history or ask when unknown. A repeated
+failure without new evidence or a supported new hypothesis stops with `no_progress`.
+At the shared limit, report any remaining blocker; do not hand unresolved QA to shipping to
+obtain another budget. Successful QA carries all used attempts into delivery.
 
 Reuse validation only while code, dependencies, configuration and relevant environment remain
 unchanged. Any changed review head/base requires checking the delta and renewing the verdict.
@@ -111,7 +117,10 @@ For each requested delivery, bind the exact target from that task's result:
 peaklab.ship-pr --pr <PR_URL> --repo <OWNER/REPO> --worktree <ABSOLUTE_PATH> --task-state <ABSOLUTE_TASK_PATH> --base <BASE> --auto-fix
 ```
 
-Pass the task-state path, expected branch/head/base, QA verdict and validation evidence.
+Pass the task-state path, expected branch/head/base, QA verdict, validation evidence and persisted
+`repair_budget`, `repair_attempts`, `ci_wait_seconds` (zero before any CI wait). The delivery owner
+continues these counters; a new worker, invocation or push never resets them. Reuse a current
+clean review without another full review; only changed evidence requires delta review.
 All local shipping commands run in that task's checkout, never the parent's by inference;
 GitHub calls use the explicit repository and PR. A target mismatch blocks that delivery.
 If the host has no Skill tool or rejects `disable-model-invocation`, the shipping owner reads

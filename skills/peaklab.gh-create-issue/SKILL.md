@@ -1,6 +1,6 @@
 ---
 name: "peaklab.gh-create-issue"
-description: Use when creating comprehensive GitHub issues from descriptions, bug reports, feature requests, code context, or images.
+description: "Draft or create a GitHub issue from a bug report, feature request, code or image."
 effort: standard
 disable-model-invocation: true
 allowed-tools: Read, Bash(gh :*), Bash(git :*)

@@ -1,6 +1,6 @@
 ---
 name: to-spec
-description: Turn established conversation and codebase context into an implementation-ready product specification. Use when a feature, bug fix, or decision needs a durable, shared contract before delivery.
+description: "Turn established requirements and codebase context into an implementation-ready specification."
 disable-model-invocation: true
 ---
 

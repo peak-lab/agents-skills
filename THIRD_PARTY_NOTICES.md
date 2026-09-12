@@ -13,3 +13,9 @@ Licensed under the MIT License:
 > The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 >
 > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Additional imported packages
+
+- `frontend-design`: Apache-2.0; see the bundled [provenance](skills/frontend-design/NOTICE.md) and [license](skills/frontend-design/LICENSE.txt).
+- `shadcn`: MIT; see the bundled [provenance](skills/shadcn/NOTICE.md) and [license](skills/shadcn/LICENSE.md).
+- `computer-use`, `orca-cli`, and `orchestration`: adapted from stablyai/orca under MIT; each package bundles its license and pinned provenance, for example [orca-cli](skills/orca-cli/PROVENANCE.md).

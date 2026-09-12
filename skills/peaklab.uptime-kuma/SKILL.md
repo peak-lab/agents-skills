@@ -1,6 +1,6 @@
 ---
 name: peaklab.uptime-kuma
-description: Use when managing Uptime Kuma monitors, status pages, or maintenance windows for PeakLab — adding, removing, pausing, resuming monitors, checking uptime, or saying "add monitor", "Uptime Kuma", "status page", "monitoring.example.com".
+description: "Manage PeakLab Uptime Kuma monitors, status pages and maintenance windows, or inspect uptime."
 effort: standard
 allowed-tools: Bash(python3 :*)
 ---

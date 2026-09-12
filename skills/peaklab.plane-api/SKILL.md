@@ -1,6 +1,6 @@
 ---
 name: peaklab.plane-api
-description: Use when Plane API configuration, metadata lookup, issue listing, updates, status transitions, or issue-ID resolution are needed. Delegates new issue creation to peaklab.plane-create-issue.
+description: "Read or update Plane data and resolve configuration or IDs. Use peaklab.plane-create-issue for new issues."
 effort: fast
 allowed-tools: Bash(rtk :*), Read, Write, Skill
 ---

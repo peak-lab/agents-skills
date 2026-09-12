@@ -51,8 +51,8 @@ harness. For example, with Claude Code:
 npx skills add peak-lab/agents-skills --skill '*' --agent claude-code --copy -y
 ```
 
-Re-run the same command to update an installed skill. Install the whole repository for orchestrated
-workflows so their called skills are available too.
+Re-run the same command to update an installed skill. For orchestrated workflows, install the selected entry points and all their transitive
+dependencies; use the [context budget guide](docs/context-budget.md) to compute the selection.
 Add `-g` only for an intentional personal global installation. For a repeatable team rollout,
 install from a local checkout of an agreed, reviewed commit; a moving remote branch is not a pin.
 
@@ -80,7 +80,7 @@ depending on someone's global configuration.
 | Review a branch or pull request | `review-code` |
 | Create a comprehensive GitHub issue | `peaklab.gh-create-issue` |
 | Resolve one or more GitHub issues in isolated worktrees | `peaklab.gh-do-issue` |
-| Drain a GlitchTip inbox sequentially in the current checkout | `peaklab.fix-glitchtip` |
+| Process a bounded GlitchTip inbox sequentially in the current checkout | `peaklab.glitchtip-do-issue --inline --all` |
 | Resolve GlitchTip root-cause clusters using isolated worktrees and QA gates | `peaklab.glitchtip-do-issue` |
 | Implement a Plane issue and follow its delivery lifecycle | `peaklab.plane-do-issue` |
 
@@ -103,7 +103,6 @@ depending on someone's global configuration.
 | `peaklab.client-audit` | Auditing a client project before quoting or starting work. |
 | `peaklab.gh-create-issue` | Creating comprehensive GitHub issues from descriptions, bug reports, feature requests, code context, or images. |
 | `peaklab.gh-do-issue` | Resolving a GitHub issue end to end through implementation and PR shipping. |
-| `peaklab.fix-glitchtip` | Fixing GlitchTip errors end to end and shipping the fix. |
 | `peaklab.improve-skill` | Auditing and improving an agent skill or command against the authoring conventions. |
 | `peaklab.infra-config` | Discovering and writing local infrastructure configuration for a project. |
 | `peaklab.plane-create-issue` | Creating or drafting a validated Plane work item. |
@@ -118,14 +117,37 @@ depending on someone's global configuration.
 | `peaklab.update-deps` | Handling dependency updates, Dependabot PRs, update PRs, and CI follow-up. |
 | `peaklab.uptime-kuma` | Managing Uptime Kuma monitors, status pages, maintenance windows, and uptime checks. |
 
+## Optional development and tool packages
+
+These packages are selected individually; adding them to this catalogue does not install them.
+Orca skills require the Orca runtime. QA workflows require a configured qa-tracker integration,
+and app scaffolding requires access to the project generator. See each package for setup and fallbacks.
+
+| Skill | Use when |
+|---|---|
+| `debug-code` | Reproduce an application bug, identify its root cause, implement a fix and verify it. |
+| `refactor` | Apply a defined structural change across code while preserving behavior. Use clean-code for an open-ended maintainability assessment. |
+| `clean-code` | Assess maintainability or apply requested clean-code improvements. Use review-code for a patch and refactor for a defined transformation. |
+| `find-docs` | Look up authoritative documentation when library, framework, API or tool behavior requires current or version-specific verification. |
+| `frontend-design` | Design and implement polished web interfaces. Use shadcn for component-specific configuration and troubleshooting. |
+| `shadcn` | Build, configure or troubleshoot shadcn/ui components, registries and presets in projects using components.json. |
+| `humanize` | Edit reader-facing text to sound natural while preserving meaning and formatting. Use for stiff or AI-like prose, or literal newline escape artifacts. |
+| `ultrathink` | Analyze a difficult architecture, design or refactoring decision in depth before committing to an approach. |
+| `orchestration` | Coordinate multiple agents through Orca: task dispatch, dependencies, supervision and result collection. Use orca-cli for full handoffs or terminal control. |
+| `orca-cli` | Manage Orca worktrees, terminals, handoffs, artifacts and its embedded browser. Use computer-use for native windows and Playwright/CDP for external web pages. |
+| `computer-use` | Control visible native apps and desktop windows through Orca. Use orca-cli for its embedded browser, or Playwright/CDP for page-only web automation. |
+| `create-peaklab-app` | Scaffold a PeakLab app or configure its modules and ports with create-peaklab-app. |
+| `qa-session` | Run browser QA, record UI bugs and screenshots, or inspect known bugs in the qa-tracker ledger. Use for requested testing, not general app exploration. |
+| `peaklab.fix-qa-bug` | Fix a bug recorded in qa-tracker through a linked GitHub issue, then recheck it and record the verdict in the ledger. |
+
 ## Composition
 
 Several skills call others:
 
-- `peaklab.gh-do-issue`, `peaklab.plane-do-issue`, `peaklab.fix-glitchtip`, and `peaklab.glitchtip-do-issue` use `apex` during implementation.
+- `peaklab.gh-do-issue`, `peaklab.plane-do-issue`, and `peaklab.glitchtip-do-issue` use `apex` during implementation.
 - GitHub and GlitchTip issue adapters share the execution contract bundled inside
   `skills/peaklab.gh-do-issue/references/execution.md`; install that dependency with the GlitchTip skill.
-- All three GlitchTip entry points share configuration/evidence/resolution rules in
+- GlitchTip repair modes and GitHub-backed error tracking share configuration/evidence/resolution rules in
   `skills/peaklab.glitchtip-do-issue/references/glitchtip-contract.md`.
 - `peaklab.plane-*` skills read shared configuration through `peaklab.plane-api`.
 - `peaklab.client-audit` delegates code-quality analysis to `review-code`.
@@ -133,9 +155,16 @@ Several skills call others:
   `issue-qa-reviewer`, `code-reviewer`, and `issue-ship-watcher` when they are installed. Their
   documented inline fallback handles one issue or cluster when those agent definitions are unavailable.
 
-Installing a caller without its called skills leaves dangling references. Install the complete
-repository for unattended workflows, then provision any harness-specific agent definitions described
-by your agent configuration.
+Installing a caller without its called skills leaves dangling references. Resolve its transitive
+dependencies before a selective installation:
+
+```bash
+bun scripts/skill-context.ts --skill peaklab.gh-do-issue
+```
+
+The command previews the required packages and an installation command; it does not install or
+change configuration. Provision any optional harness-specific agents separately. See the
+[context budget guide](docs/context-budget.md) for invocation policies and measurement limits.
 
 `skill-dependencies.json` documents composition; it is not an installer hook. For a selective
 installation, install every dependency transitively, preserving each package's `references/`
@@ -258,7 +287,7 @@ python3 -m py_compile skills/peaklab.coolify-api/scripts/coolify.py skills/peakl
 
 Also review the [contract scenarios](docs/contract-scenarios.md) when changing orchestration.
 
-The [controlled skill evaluation runner](docs/skill-evaluations.md) adds 12 behavior cases and
+The [controlled skill evaluation runner](docs/skill-evaluations.md) adds 17 behavior cases and
 20 routing queries. `bun run eval:check` validates them without invoking a model. Claude/Codex
 evaluations require explicit `--execute`, host/model selection and bounded budgets; they run
 against simulated actions and fixtures, not production services or native skill discovery.

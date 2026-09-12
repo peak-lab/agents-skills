@@ -1,6 +1,6 @@
 ---
 name: peaklab.improve-skill
-description: Use when auditing or improving an existing agent skill or command for clarity, reliable triggering, portability, or workflow regressions.
+description: "Audit or improve an agent skill or command file. Use for its instructions, structure, metadata or workflow; not general code audits."
 effort: deep
 ---
 
@@ -47,7 +47,9 @@ Check in this order; mark non-applicable items N/A rather than adding boilerplat
   with the supported installers; do not rename public packages merely to satisfy a generic linter.
 - Shared effort expresses `fast`, `standard` or `deep` intent where used. Concrete models belong
   in native agent definitions, not shared skill metadata.
-- Agent-facing instructions are English; responses follow the user's language.
+- Prefer English for new or substantially revised descriptions and agent instructions to keep the catalogue consistent; do not translate clear existing text solely for uniformity.
+- User-facing responses follow the user's language. Preserve domain terms in their original language when translation would lose precision.
+- Assess clarity, precise triggers and duplication before language. English is not inherently better, and translation alone is not evidence of token savings or improved behavior.
 - Use clear Markdown or semantic XML. Do not convert between them without a concrete benefit.
 - Keep substantial mode-specific procedures in linked references. Do not split a short,
   self-contained skill or add a required read that provides no new information.

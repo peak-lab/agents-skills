@@ -1,6 +1,6 @@
 ---
 name: "peaklab.plane-archive"
-description: "Use when archiving completed Plane issues from the board, with dry-run and age threshold options using shared Plane API credentials."
+description: "Archive completed Plane issues using a dry run and an age threshold."
 effort: fast
 argument-hint: "[--dry-run] [--days N]"
 ---

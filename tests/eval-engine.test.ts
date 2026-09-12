@@ -19,9 +19,9 @@ function fake(actions: Action[]): ModelAdapter {
 }
 const finish: Action = { type: "finish", status: "complete", message: "Done" };
 
-test("suite has 12 behavior cases and balanced routing for five workflows", () => {
+test("suite has 17 behavior cases and balanced routing for five workflows", () => {
   const cases = parseScenarios(suite);
-  expect(cases.filter(s => s.kind === "behavior")).toHaveLength(12);
+  expect(cases.filter(s => s.kind === "behavior")).toHaveLength(17);
   const routing = cases.filter(s => s.kind === "routing");
   expect(routing).toHaveLength(20);
   expect(new Set(routing.map(s => s.skill)).size).toBe(5);
@@ -37,6 +37,21 @@ test("a baseline without a skill can genuinely pass the same behavioral oracle",
   expect(result.outcome).toBe("pass");
   expect(result.inputTokens).toBe(4);
   expect(result.outputTokens).toBe(6);
+});
+
+test("shipping budget oracle requires a saved refusal but not unnecessary remote reads", async () => {
+  const input = parseScenarios(suite).find(s => s.id === "ship-pr-exhausted-persisted-repair-budget-stops-without-mutation")!;
+  const path = "task/ship-state.json";
+  const stopped: Action = { type: "finish", status: "blocked", message: "repair budget exhausted" };
+  const state = JSON.parse(input.files[path]);
+  const actions: Action[] = [
+    { type: "read_file", path },
+    { type: "write_file", path, content: JSON.stringify({ ...state, status: "blocked", reason: "repair_budget_exhausted", ci: "failed" }) },
+    stopped,
+  ];
+  expect((await runScenario(input, emptyCatalogue(), fake(actions), options)).outcome).toBe("pass");
+  actions[1] = { type: "write_file", path, content: input.files[path] };
+  expect((await runScenario(input, emptyCatalogue(), fake(actions), options)).outcome).toBe("fail");
 });
 
 test("expected assertions and fixture responses are hidden from model requests", () => {
@@ -131,7 +146,7 @@ test("JSON artifact assertions ignore whitespace but not incorrect values", asyn
 
 test("catalogue contains only skill resources and no eval answers", () => {
   const catalogue = loadCatalogue(import.meta.dir + "/..");
-  expect(catalogue.skills).toHaveLength(29);
+  expect(catalogue.skills).toHaveLength(42);
   expect(Object.keys(catalogue.files).every(path => path.startsWith("skills/"))).toBe(true);
   expect(catalogue.files).not.toHaveProperty("evals/scenarios.json");
   expect(catalogue.hash).toMatch(/^[0-9a-f]{64}$/);

@@ -251,6 +251,146 @@
       { "kind": "action_count", "type": "service_call", "max": 0, "match": { "service": "glitchtip", "operation": "comment.create", "target": "902" } }
     ]
   },
+  {
+    "id": "ship-pr-exhausted-persisted-repair-budget-stops-without-mutation",
+    "kind": "behavior",
+    "skill": "peaklab.ship-pr",
+    "prompt": "Livre uniquement la PR https://github.com/acme/app/pull/41 avec --pr 41 --repo acme/app --worktree /workspace/acme-app --task-state /workspace/acme-app/task/ship-state.json (les chemins de fichiers du simulateur sont relatifs à /workspace/acme-app).",
+    "files": {
+      "task/ship-state.json": "{\"repository\":\"acme/app\",\"pr_url\":\"https://github.com/acme/app/pull/41\",\"worktree_path\":\"/workspace/acme-app\",\"branch\":\"fix/checkout\",\"expected_head_sha\":\"head41\",\"base_branch\":\"main\",\"expected_base_sha\":\"base41\",\"scope\":[\"src/checkout.ts\"],\"acceptance_criteria\":[\"Reject an empty postal code\"],\"environment\":\"test\",\"active_blocker\":{\"id\":\"ci-lint-postal-code\",\"phase\":\"ci\",\"evidence\":\"run 811: src/checkout.ts:12 no-unused-vars\"},\"repair_budget\":{\"limit\":3,\"used\":3},\"repair_attempts\":[{\"phase\":\"review\",\"head\":\"head39\",\"evidence\":\"blocking null guard\",\"hypothesis\":\"guard missing\",\"result\":\"fixed\"},{\"phase\":\"qa\",\"head\":\"head40\",\"evidence\":\"checkout test failure\",\"hypothesis\":\"postal code branch\",\"result\":\"fixed\"},{\"phase\":\"ci\",\"head\":\"head41\",\"evidence\":\"lint failure\",\"hypothesis\":\"unused import\",\"result\":\"remaining blocker\"}],\"ci_wait_seconds\":1200}\n",
+      "src/checkout.ts": "export const postalCodeIsPresent = (postalCode: string) => postalCode.trim().length > 0;\n"
+    },
+    "services": [
+      { "service": "git", "operation": "checkout.inspect", "target": "/workspace/acme-app", "response": { "repository": "acme/app", "path": "/workspace/acme-app", "branch": "fix/checkout", "head": "head41", "base": "base41" } },
+      { "service": "github", "operation": "pr.get", "target": "acme/app#41", "response": { "number": 41, "state": "OPEN", "draft": false, "head": "head41", "base": "base41" } }
+    ],
+    "assertions": [
+      { "kind": "status", "values": ["blocked"] },
+      { "kind": "message_matches", "pattern": "budget|limit|exhaust" },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "task/ship-state.json" } },
+      { "kind": "service_calls_only" },
+      { "kind": "action_count", "type": "service_call", "max": 0, "match": { "service": "review", "operation": "start" } },
+      { "kind": "action_count", "type": "write_file", "min": 1, "match": { "path": "task/ship-state.json" } },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["status"], "value": "blocked" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["reason"], "value": "repair_budget_exhausted" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["repair_budget", "used"], "value": 3 },
+      { "kind": "file_equals", "path": "src/checkout.ts", "content": "export const postalCodeIsPresent = (postalCode: string) => postalCode.trim().length > 0;\n" }
+    ]
+  },
+  {
+    "id": "ship-pr-reuses-clean-exact-review-for-no-merge",
+    "kind": "behavior",
+    "skill": "peaklab.ship-pr",
+    "prompt": "Finalise sans merge la PR https://github.com/acme/app/pull/42 avec --pr 42 --repo acme/app --worktree /workspace/acme-app --task-state /workspace/acme-app/task/ship-state.json --no-merge (les chemins de fichiers du simulateur sont relatifs à /workspace/acme-app).",
+    "files": {
+      "task/ship-state.json": "{\"repository\":\"acme/app\",\"pr_url\":\"https://github.com/acme/app/pull/42\",\"worktree_path\":\"/workspace/acme-app\",\"branch\":\"fix/tax\",\"expected_head_sha\":\"head42\",\"base_branch\":\"main\",\"expected_base_sha\":\"base42\",\"scope\":[\"src/tax.ts\"],\"acceptance_criteria\":[\"Apply the documented tax rate\"],\"environment\":\"test\",\"review\":{\"verdict\":\"review_completed_no_blockers\",\"head\":\"head42\",\"base\":\"base42\",\"scope\":[\"src/tax.ts\"],\"environment\":\"test\"},\"validation\":{\"head\":\"head42\",\"base\":\"base42\",\"environment\":\"test\",\"result\":\"pass\",\"command\":\"bun test\"},\"repair_budget\":{\"limit\":3,\"used\":0},\"repair_attempts\":[],\"ci_wait_seconds\":0}\n",
+      "src/tax.ts": "export const tax = (amount: number) => amount * 0.2;\n"
+    },
+    "services": [
+      { "service": "git", "operation": "checkout.inspect", "target": "/workspace/acme-app", "response": { "repository": "acme/app", "path": "/workspace/acme-app", "branch": "fix/tax", "head": "head42", "base": "base42" } },
+      { "service": "github", "operation": "pr.get", "target": "acme/app#42", "response": { "number": 42, "state": "OPEN", "draft": false, "head": "head42", "base": "base42" } }
+    ],
+    "assertions": [
+      { "kind": "status", "values": ["pr_created"] },
+      { "kind": "message_matches", "pattern": "review|CI.*not_checked_pr_only|not_checked_pr_only" },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "task/ship-state.json" } },
+      { "kind": "service_calls_only" },
+      { "kind": "action_count", "type": "service_call", "min": 1, "match": { "service": "git", "operation": "checkout.inspect", "target": "/workspace/acme-app" } },
+      { "kind": "action_count", "type": "service_call", "min": 1, "match": { "service": "github", "operation": "pr.get", "target": "acme/app#42" } },
+      { "kind": "action_count", "type": "service_call", "max": 0, "match": { "service": "review", "operation": "start" } },
+      { "kind": "action_count", "type": "write_file", "min": 1, "match": { "path": "task/ship-state.json" } },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["status"], "value": "pr_created" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["reason"], "value": null },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["ci"], "value": "not_checked_pr_only" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["repair_budget", "used"], "value": 0 },
+      { "kind": "file_equals", "path": "src/tax.ts", "content": "export const tax = (amount: number) => amount * 0.2;\n" }
+    ]
+  },
+  {
+    "id": "ship-pr-repeated-failure-without-new-evidence-stops",
+    "kind": "behavior",
+    "skill": "peaklab.ship-pr",
+    "prompt": "Reprends la PR https://github.com/acme/app/pull/43 avec --pr 43 --repo acme/app --worktree /workspace/acme-app --task-state /workspace/acme-app/task/ship-state.json (les chemins de fichiers du simulateur sont relatifs à /workspace/acme-app). Les résultats fournis concernent le même échec CI.",
+    "files": {
+      "task/ship-state.json": "{\"repository\":\"acme/app\",\"pr_url\":\"https://github.com/acme/app/pull/43\",\"worktree_path\":\"/workspace/acme-app\",\"branch\":\"fix/import\",\"expected_head_sha\":\"head43\",\"base_branch\":\"main\",\"expected_base_sha\":\"base43\",\"scope\":[\"src/import.ts\"],\"acceptance_criteria\":[\"Reject duplicate column names\"],\"environment\":\"test\",\"repair_budget\":{\"limit\":3,\"used\":1},\"repair_attempts\":[{\"blocker_id\":\"ci-typecheck-import\",\"phase\":\"ci\",\"head\":\"head43\",\"base\":\"base43\",\"evidence\":\"run 812: src/import.ts:12 TS2322\",\"hypothesis\":\"CSV header type needs narrowing\",\"changed_paths\":[\"src/import.ts\"],\"result\":\"failed: TS2322 remains\"}],\"latest_failure\":{\"blocker_id\":\"ci-typecheck-import\",\"head\":\"head43\",\"base\":\"base43\",\"evidence\":\"run 813: src/import.ts:12 TS2322\",\"hypothesis\":\"CSV header type needs narrowing\",\"result\":\"failed: TS2322 remains\"},\"ci_wait_seconds\":300}\n",
+      "src/import.ts": "export const uniqueHeaders = (headers: string[]) => new Set(headers).size === headers.length;\n"
+    },
+    "services": [
+      { "service": "git", "operation": "checkout.inspect", "target": "/workspace/acme-app", "response": { "repository": "acme/app", "path": "/workspace/acme-app", "branch": "fix/import", "head": "head43", "base": "base43" } },
+      { "service": "github", "operation": "pr.get", "target": "acme/app#43", "response": { "number": 43, "state": "OPEN", "draft": false, "head": "head43", "base": "base43" } }
+    ],
+    "assertions": [
+      { "kind": "status", "values": ["blocked"] },
+      { "kind": "message_matches", "pattern": "same|repeat|new evidence|evidence|no_progress|même" },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "task/ship-state.json" } },
+      { "kind": "service_calls_only" },
+      { "kind": "action_count", "type": "service_call", "max": 0, "match": { "service": "review", "operation": "start" } },
+      { "kind": "action_count", "type": "write_file", "min": 1, "match": { "path": "task/ship-state.json" } },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["status"], "value": "blocked" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["reason"], "value": "no_progress" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["repair_budget", "used"], "value": 1 },
+      { "kind": "file_equals", "path": "src/import.ts", "content": "export const uniqueHeaders = (headers: string[]) => new Set(headers).size === headers.length;\n" }
+    ]
+  },
+  {
+    "id": "ship-pr-suggestions-only-require-no-edit",
+    "kind": "behavior",
+    "skill": "peaklab.ship-pr",
+    "prompt": "Finalise sans merge la PR https://github.com/acme/app/pull/44 avec --pr 44 --repo acme/app --worktree /workspace/acme-app --task-state /workspace/acme-app/task/ship-state.json --no-merge (les chemins de fichiers du simulateur sont relatifs à /workspace/acme-app). Les seules remarques sont des suggestions.",
+    "files": {
+      "task/ship-state.json": "{\"repository\":\"acme/app\",\"pr_url\":\"https://github.com/acme/app/pull/44\",\"worktree_path\":\"/workspace/acme-app\",\"branch\":\"fix/copy\",\"expected_head_sha\":\"head44\",\"base_branch\":\"main\",\"expected_base_sha\":\"base44\",\"scope\":[\"src/copy.ts\"],\"acceptance_criteria\":[\"Show the saved confirmation copy\"],\"environment\":\"test\",\"review\":{\"verdict\":\"review_completed_no_blockers\",\"head\":\"head44\",\"base\":\"base44\",\"scope\":[\"src/copy.ts\"],\"environment\":\"test\",\"findings\":[{\"severity\":\"suggestion\",\"path\":\"src/copy.ts\",\"message\":\"Prefer a named constant\"}]},\"validation\":{\"head\":\"head44\",\"base\":\"base44\",\"environment\":\"test\",\"result\":\"pass\",\"command\":\"bun test\"},\"repair_budget\":{\"limit\":3,\"used\":0},\"repair_attempts\":[],\"ci_wait_seconds\":0}\n",
+      "src/copy.ts": "export const savedMessage = 'Saved';\n"
+    },
+    "services": [
+      { "service": "git", "operation": "checkout.inspect", "target": "/workspace/acme-app", "response": { "repository": "acme/app", "path": "/workspace/acme-app", "branch": "fix/copy", "head": "head44", "base": "base44" } },
+      { "service": "github", "operation": "pr.get", "target": "acme/app#44", "response": { "number": 44, "state": "OPEN", "draft": false, "head": "head44", "base": "base44" } }
+    ],
+    "assertions": [
+      { "kind": "status", "values": ["pr_created"] },
+      { "kind": "message_matches", "pattern": "suggestion" },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "task/ship-state.json" } },
+      { "kind": "service_calls_only" },
+      { "kind": "action_count", "type": "service_call", "min": 1, "match": { "service": "git", "operation": "checkout.inspect", "target": "/workspace/acme-app" } },
+      { "kind": "action_count", "type": "service_call", "min": 1, "match": { "service": "github", "operation": "pr.get", "target": "acme/app#44" } },
+      { "kind": "action_count", "type": "service_call", "max": 0, "match": { "service": "review", "operation": "start" } },
+      { "kind": "action_count", "type": "write_file", "min": 1, "match": { "path": "task/ship-state.json" } },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["status"], "value": "pr_created" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["reason"], "value": null },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["ci"], "value": "not_checked_pr_only" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["repair_budget", "used"], "value": 0 },
+      { "kind": "file_equals", "path": "src/copy.ts", "content": "export const savedMessage = 'Saved';\n" }
+    ]
+  },
+  {
+    "id": "ship-pr-exhausted-persisted-ci-wait-stops-without-repair",
+    "kind": "behavior",
+    "skill": "peaklab.ship-pr",
+    "prompt": "Livre la PR https://github.com/acme/app/pull/45 avec --pr 45 --repo acme/app --worktree /workspace/acme-app --task-state /workspace/acme-app/task/ship-state.json (les chemins de fichiers du simulateur sont relatifs à /workspace/acme-app).",
+    "files": {
+      "task/ship-state.json": "{\"repository\":\"acme/app\",\"pr_url\":\"https://github.com/acme/app/pull/45\",\"worktree_path\":\"/workspace/acme-app\",\"branch\":\"fix/format\",\"expected_head_sha\":\"head45\",\"base_branch\":\"main\",\"expected_base_sha\":\"base45\",\"scope\":[\"src/format.ts\"],\"acceptance_criteria\":[\"Format the customer reference\"],\"environment\":\"test\",\"review\":{\"verdict\":\"review_completed_no_blockers\",\"head\":\"head45\",\"base\":\"base45\",\"scope\":[\"src/format.ts\"],\"environment\":\"test\"},\"validation\":{\"head\":\"head45\",\"base\":\"base45\",\"environment\":\"test\",\"result\":\"pass\",\"command\":\"bun test\"},\"repair_budget\":{\"limit\":3,\"used\":0},\"repair_attempts\":[],\"ci_wait_seconds\":1200}\n",
+      "src/format.ts": "export const reference = (value: string) => value.trim();\n"
+    },
+    "services": [
+      { "service": "git", "operation": "checkout.inspect", "target": "/workspace/acme-app", "response": { "repository": "acme/app", "path": "/workspace/acme-app", "branch": "fix/format", "head": "head45", "base": "base45" } },
+      { "service": "github", "operation": "pr.get", "target": "acme/app#45", "response": { "number": 45, "state": "OPEN", "draft": false, "head": "head45", "base": "base45" } },
+      { "service": "github", "operation": "ci.status", "target": "acme/app#45@head45", "response": { "state": "PENDING", "url": "https://github.com/acme/app/actions/runs/815" } }
+    ],
+    "assertions": [
+      { "kind": "status", "values": ["blocked"] },
+      { "kind": "message_matches", "pattern": "ci_wait_exhausted|CI.*pending|pending" },
+      { "kind": "action_count", "type": "read_file", "min": 1, "match": { "path": "task/ship-state.json" } },
+      { "kind": "action_count", "type": "service_call", "min": 1, "match": { "service": "github", "operation": "ci.status", "target": "acme/app#45@head45" } },
+      { "kind": "service_calls_only" },
+      { "kind": "action_count", "type": "service_call", "max": 0, "match": { "service": "review", "operation": "start" } },
+      { "kind": "action_count", "type": "write_file", "min": 1, "match": { "path": "task/ship-state.json" } },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["status"], "value": "blocked" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["reason"], "value": "ci_wait_exhausted" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["ci"], "value": "pending" },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["repair_budget", "used"], "value": 0 },
+      { "kind": "file_json_value", "path": "task/ship-state.json", "keys": ["ci_wait_seconds"], "value": 1200 },
+      { "kind": "file_equals", "path": "src/format.ts", "content": "export const reference = (value: string) => value.trim();\n" }
+    ]
+  },
 
   {
     "id": "route-apex-feature",

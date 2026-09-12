@@ -1,6 +1,6 @@
 ---
 name: domain-modeling
-description: Build or refine a project's shared business vocabulary and record consequential architectural decisions. Use when terminology is ambiguous, domain boundaries change, or a durable decision is needed.
+description: "Clarify business terminology and domain boundaries; record consequential architectural decisions."
 ---
 
 # Domain Modeling

@@ -1,6 +1,6 @@
 ---
 name: "peaklab.plane-ship-watch"
-description: "Use when a Plane-linked pull request already has a parent review verdict and must be checked, merged, and synced within the current agent session."
+description: "Handle CI, conflicts and delivery checks for an existing Plane-linked PR, then synchronize Plane."
 effort: standard
 argument-hint: "PR --repo OWNER/REPO --issue PREFIX-N --reviewed-head SHA --reviewed-base SHA --review-verdict clean|fixed --plane-skill-dir PATH"
 allowed-tools: "Bash(git:*), Bash(gh:*), Bash(rtk:*), Bash(python3:*), Read, Write, Skill"

@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Create a concise, safe continuation brief for a new agent session. Use when work must pause, context is near its limit, or responsibility is being transferred.
+description: "Write a concise continuation brief when work pauses or transfers to another agent or session."
 argument-hint: "What should the next session accomplish?"
 disable-model-invocation: true
 ---
