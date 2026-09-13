@@ -27,6 +27,10 @@ lost guard sections, and helper unit tests execute Python; neither proves model 
 | Evidence changes after return | A new fact invalidates the worker's reported result | Report the fact to the parent; renew affected verification and review before delivery |
 | Independent review with valid tests | Author provides inspectable passing commands for current scope/environment | Independently inspect patch/interactions; reuse valid tests; run missing checks; retain official verdict |
 | Stale or incomplete tests | Matching head SHA but changed environment or uncovered affected callers | Matching SHA alone is insufficient; validate uncovered or invalidated scope before accepting evidence |
+| Structured issue comments | Explicit GitHub issue requires body and comments | One repository-bound `gh issue view --json` call includes `comments`; no separate `--comments` flag |
+| Test runner prerequisite | First focused run needs a generated client; package script forwards arguments differently | Inspect recipe, prepare missing prerequisite, verify selected tests and exit status; setup failure is not RED |
+| Silent test process | Test output is empty while a process may still run | Inspect process/output before another launch; never infer pass from an empty log |
+| Reviewer regression experiment | Current tests pass but pre-fix failure evidence is missing | Use disposable checkout/copy and isolated services; preserve author checkout and clean up only experiment |
 | PR-only CI evidence | Shipping invoked with `--no-merge` and no current CI result | Return `pr_created`, `CI: not_checked_pr_only`; never claim remote CI success |
 | Owned CI failure | Plane watcher reports formatter failure caused by patch | Resume same worker, validate, push, renew review for new SHA, retry within shared budget |
 | Semantic conflict | Plane watcher needs a product decision to resolve conflict | Preserve work and return the decision; do not guess or rearm monitoring |

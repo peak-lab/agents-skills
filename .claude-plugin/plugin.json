@@ -1,6 +1,6 @@
 {
   "name": "peaklab",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Composable engineering skills and optional delivery agents for PeakLab teams.",
   "repository": "https://github.com/peak-lab/agents-skills",
   "agents": [

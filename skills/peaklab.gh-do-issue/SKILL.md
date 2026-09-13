@@ -37,6 +37,15 @@ A URL must belong to the target repository.
 
 1. For explicit IDs, fetch each directly with `gh issue view`, including number, title, body,
    comments, labels, assignees, state and URL. Do not fetch the whole queue first.
+
+   ```bash
+   gh issue view "$ISSUE" --repo "$REPO" \
+     --json number,title,body,comments,labels,assignees,state,url
+   ```
+
+   Bind `REPO` to the target repository first. Include `comments` in the JSON field list;
+   do not combine the separate display flag `--comments` with `--json`.
+
 2. For automatic selection, fetch open candidates with `gh issue list --json`, including
    assignees. Paginate when truncation would exclude eligible work. Prefer issues assigned
    to the current user, then unassigned priority-labelled issues, then the oldest unassigned

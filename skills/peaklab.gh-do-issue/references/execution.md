@@ -113,6 +113,10 @@ Independence requires examining the patch and acceptance-relevant interactions, 
 every author command. Verify supplied evidence's scope, revision and environment, then run only
 missing or invalidated checks. An unsupported summary is not reusable evidence. Return one
 verdict with concrete findings and evidence gaps; avoid a second narrative of the implementation.
+Keep the author's checkout unchanged during review. If a missing regression proof requires
+running tests against pre-fix code, use a disposable checkout or copy with isolated test resources,
+then clean up only that experiment. Never temporarily revert the author's files or write to a
+shared service to obtain RED; reuse valid existing regression evidence when sufficient.
 
 Record verdict (`review_completed_no_blockers`, `review_blockers_fixed` or
 `review_blocked_do_not_merge`), head/base SHA, reviewer, scope and findings in task state.

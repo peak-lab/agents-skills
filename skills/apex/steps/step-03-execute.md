@@ -14,6 +14,15 @@ Implement the approved plan with minimal, repository-consistent changes.
 <procedure>
 Before editing, require an executable current plan: when auto mode is disabled, `{approved_plan_revision}` must equal `{plan_revision}`. Otherwise return `needs_confirmation` through Finish without changing source or tests.
 
+Before the first planned test run, use the caller's verified command or inspect the relevant
+package script and runner configuration. Confirm the working directory, argument forwarding,
+one-shot mode, and required generated clients or test services. Prepare only missing prerequisites;
+do not install or build the whole repository by default. Record the working recipe once in the
+canonical plan so RED, GREEN and final validation reuse it. Capture the process exit status and
+check that the intended tests actually ran; a skipped suite or empty log is not passing evidence.
+For a silent or failed run, inspect its process/output and setup error before launching another
+copy. Fix command/setup failures before treating the outcome as a behavior regression.
+
 For each incomplete vertical slice:
 
 1. Re-read the current target and comparable test files before editing; another actor may have changed them.

@@ -224,6 +224,9 @@ The reviewer independently examines the diff and affected interactions. It verif
 validation scope, revision and environment, rerunning only missing or invalidated checks rather
 than every author command. Unsupported summaries cannot replace evidence. Return one compact
 verdict, concrete findings and evidence gaps instead of another implementation narrative.
+Keep the author's checkout unchanged. A necessary pre-fix regression experiment belongs in a
+disposable checkout or copy with isolated test resources; clean up only that experiment. Do not
+temporarily revert the author's files or write to shared services; reuse valid regression proof.
 
 Blocking findings return to the same worker when the shared repair budget is not exhausted;
 increment it after the worker pushes a new head, then review that SHA again. Stop when two total
