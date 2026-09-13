@@ -168,6 +168,10 @@ one atomic config source. Report the state printed by `finish_issue.py`; never a
 </workflow>
 
 <session_contract>
+- When the caller supplies a canonical task artifact, take exclusive write ownership before
+  updating it and return ownership with the result. Preserve the parent's review and repair
+  counters. Return findings instead of writing to another actor's report; do not create a
+  competing status document.
 - `--wait-merge`: execute this workflow synchronously and return its terminal result.
 - `--async-merge`: valid only inside a live session worker that can complete this workflow and
   deliver its result. If that facility is unavailable, do not start; return the reviewed PR and
@@ -184,6 +188,10 @@ Return PR URL, issue, reviewed SHA, CI evidence, merge state, Plane state, and o
 `repair_disposition=worker_safe|external_or_unknown|product_or_scope_unknown` and the concrete
 evidence the parent must pass to the existing implementation worker. The watcher never performs
 the repair itself.
+After delivering the result, stop autonomous tools, messages and report edits. The parent may
+resume this worker for a specific missing proof or authorized next phase; newly discovered
+evidence invalidating the result must still be reported. Do not start report-polishing,
+acknowledgment or unsolicited memory-maintenance loops.
 </result>
 
 <acceptance_criteria>

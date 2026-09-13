@@ -21,6 +21,10 @@ default terminal state is a reviewed, unmerged PR. Merge only for an explicit
   the source checkout.
 - Keep one task artifact: `<task_dir>/analyze.md`. It holds acceptance criteria, premise and
   freshness evidence, plan, and validation results.
+- Give that artifact one writer at a time: implementer during implementation, parent during
+  review, watcher during authorized shipping. Transfer the path and current head/base explicitly;
+  the previous owner stops writing before handoff. Reviewers return findings to the owner.
+  Preserve evidence and repair counters in place; do not maintain competing status reports.
 - The implementation worker runs APEX with `-e`, cannot spawn agents, and never performs the
   official QA review or merge. A normal self-check is allowed.
 - The parent owns exactly one risk-tiered review gate. Its verdict is valid only for the reviewed
@@ -196,6 +200,12 @@ parent without editing. This is the expected approval gate for `--no-auto` / APE
 - `pr_created`: require `analyze.md`, the PR, and the reported head SHA, then review.
 
 Resume the same worker for missing evidence or requested fixes. Do not respawn equivalent work.
+After a result the worker stops autonomous tools, messages and artifact edits. Check required
+evidence once, then resume only for a specific gap, in-scope blocker or authorized next phase;
+transfer artifact ownership back when needed. Retain resumable context through review and
+release the worker at the requested terminal state. Newly discovered evidence invalidating a
+result still goes to the parent. Do not extend the task with report polishing, acknowledgment
+loops or unsolicited memory work; route required corrections once to the designated owner.
 </step>
 
 <step name="review">
@@ -210,6 +220,10 @@ boundaries, migrations, customer data, or cross-service contracts; its standard 
 otherwise. Give it the exact PR diff, acceptance criteria, validation evidence, head SHA, and
 base SHA. Require file/line findings classified blocking or non-blocking and a verdict for that
 head/base pair.
+The reviewer independently examines the diff and affected interactions. It verifies supplied
+validation scope, revision and environment, rerunning only missing or invalidated checks rather
+than every author command. Unsupported summaries cannot replace evidence. Return one compact
+verdict, concrete findings and evidence gaps instead of another implementation narrative.
 
 Blocking findings return to the same worker when the shared repair budget is not exhausted;
 increment it after the worker pushes a new head, then review that SHA again. Stop when two total

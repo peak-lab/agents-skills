@@ -29,6 +29,10 @@ Do not turn delivery into a new implementation or cleanup project.
 Only one delivery owner runs this workflow. The caller retains source selection/status and
 checkout cleanup. If nested invocation is unavailable, read this installed file and use available
 tools; do not enable it globally or start another shipping loop.
+For composed calls, take exclusive write ownership of the canonical task artifact from the
+caller before updating it. Reviewers return findings; they do not edit that shared report.
+Return ownership with the terminal result. Preserve counters/evidence in place and link long
+diagnostics instead of copying them into parallel reports.
 Never force-push, bypass protections, include unrelated edits, or add generated/co-author attribution.
 Product decisions, scope expansion and unrelated issue creation require user authorization.
 Every stop below goes through "Return and stop"; it is not an immediate unrecorded response.
@@ -217,6 +221,10 @@ not claim those identities were verified. Successful delivery always requires ta
 Persist and report PR/repository, `pr_created|merged|blocked|closed_unmerged`, verified head and
 merge commit if any, review/CI evidence, suggestions, repair count and Plane result. For a blocker,
 include its reason, last attempt and next decision. Stop at the requested terminal state.
+After returning to a caller, stop autonomous tools, messages and report edits. Resume only for
+a specific evidence gap, in-scope repair or authorized next phase; report newly discovered
+evidence that invalidates the result. Do not extend delivery with report polishing,
+acknowledgment loops or unsolicited memory maintenance.
 Do not schedule follow-up work. Explicitly requested deferred monitoring requires one bounded loop
 for all targets, `pass k/N` with N ≤ 8, backoff 1h → 3h → 12h → stop, no self-rearming, and a
 reported handle/cancellation method. Monitoring never resets repair or wait budgets.

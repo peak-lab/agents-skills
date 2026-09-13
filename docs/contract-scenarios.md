@@ -21,6 +21,12 @@ lost guard sections, and helper unit tests execute Python; neither proves model 
 | Shipping target mismatch | Requested PR A; supplied checkout belongs to B | `blocked`/target mismatch before fixes, push, merge or source sync |
 | Skill tool unavailable | Shipping authorized, nested Skill invocation rejected | Read installed shipping instructions and keep the same explicit target/review/CI gates |
 | Fresh QA handoff | Matching head/base, environment and clean verdict | Reuse review; do not add an identical official review |
+| Report ownership transfer | Implementer returns evidence while parent starts review | Implementer stops writing; parent owns canonical state; reviewer returns findings without editing it |
+| Missing result evidence | Worker returns PR without acceptance-validation evidence | Parent requests the specific gap from the same worker; transfer write ownership; no duplicate exploration or premature release |
+| Accepted terminal result | Reviewed PR requested and accepted; worker still has reporting suggestions | Release worker after required cleanup; no autonomous report polishing, acknowledgment or memory loop |
+| Evidence changes after return | A new fact invalidates the worker's reported result | Report the fact to the parent; renew affected verification and review before delivery |
+| Independent review with valid tests | Author provides inspectable passing commands for current scope/environment | Independently inspect patch/interactions; reuse valid tests; run missing checks; retain official verdict |
+| Stale or incomplete tests | Matching head SHA but changed environment or uncovered affected callers | Matching SHA alone is insufficient; validate uncovered or invalidated scope before accepting evidence |
 | PR-only CI evidence | Shipping invoked with `--no-merge` and no current CI result | Return `pr_created`, `CI: not_checked_pr_only`; never claim remote CI success |
 | Owned CI failure | Plane watcher reports formatter failure caused by patch | Resume same worker, validate, push, renew review for new SHA, retry within shared budget |
 | Semantic conflict | Plane watcher needs a product decision to resolve conflict | Preserve work and return the decision; do not guess or rearm monitoring |

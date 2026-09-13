@@ -214,6 +214,9 @@ does not infer every dependency from prose, execute the workflows or prove model
   not disable validation. Standalone APEX adapts test-first work to the behavior under change.
 - One owner records the official review with the examined revision. Delivery reuses current
   evidence and renews it after relevant changes, rather than unconditionally reviewing twice.
+- Canonical task state has one writer at a time, transferred between implementation, review
+  and delivery. Workers stop activity after returning results and resume for specific evidence
+  gaps or repairs; accepted terminal results end report and acknowledgment loops.
 - GlitchTip distinguishes reviewed PR, merged fix, deployed release and verified regression.
   Resolution requires evidence for the affected environment; merge alone is insufficient.
 - These are repository artifacts. Updating the catalogue does not overwrite installed copies

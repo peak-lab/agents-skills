@@ -42,6 +42,12 @@ owns implementation, QA and delivery, including inline execution.
 
 ## Implement
 
+Assign one writer at a time to the canonical task state: implementer during implementation,
+parent during review, delivery owner during authorized shipping. Pass ownership explicitly
+with the artifact path and current head/base; the previous writer stops editing before transfer.
+Reviewers return findings to the owner instead of editing the shared report. Preserve existing
+evidence and repair history in place; do not create competing status reports or transcript copies.
+
 Give the worker source IDs, relevant context or pointers, scope/exclusions, acceptance criteria,
 known evidence, checkout/base, task directory and modes. All repository commands run in that
 checkout. The worker is not alone: preserve others' edits and report scope expansion.
@@ -89,11 +95,24 @@ Consume results as they arrive; review ready PRs without waiting for the slowest
 For idle-without-result, inspect artifacts/git/PR state and resume the same worker. A commit
 and PR alone do not demonstrate validation.
 
+After returning a result, the worker stops autonomous tools, messages and artifact edits. The
+parent checks the required fields once and resumes the same worker only for a specific missing
+proof, in-scope blocker or authorized next phase, transferring write ownership when needed.
+Keep resumable context while review/repairs remain possible; release the worker at the requested
+terminal state. New evidence invalidating a result must still reach the parent. Do not prolong
+the task with report polishing, acknowledgment loops or unsolicited memory maintenance; apply
+any required correction once through its designated owner. Link long diagnostics from the
+compact result instead of reproducing them in every message.
+
 ## QA once
 
 Assign one reviewer appropriate to risk, or review locally if delegation is unavailable.
 Review the task patch against baseline, criteria and repository rules. GlitchTip QA explicitly
 checks every claimed ID. Add a specialist only for an independent risk that warrants it.
+Independence requires examining the patch and acceptance-relevant interactions, not rerunning
+every author command. Verify supplied evidence's scope, revision and environment, then run only
+missing or invalidated checks. An unsupported summary is not reusable evidence. Return one
+verdict with concrete findings and evidence gaps; avoid a second narrative of the implementation.
 
 Record verdict (`review_completed_no_blockers`, `review_blockers_fixed` or
 `review_blocked_do_not_merge`), head/base SHA, reviewer, scope and findings in task state.
