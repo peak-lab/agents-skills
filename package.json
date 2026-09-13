@@ -21,6 +21,7 @@
     "check:portability": "bun scripts/check-portability.ts",
     "eval:skills": "bun scripts/eval-skills.ts",
     "eval:check": "bun scripts/eval-skills.ts --check",
+    "sync:skills": "bun scripts/skill-sync.ts",
     "dev": "bun run src/cli.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",

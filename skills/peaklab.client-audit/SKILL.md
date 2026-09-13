@@ -113,8 +113,7 @@ Ne jamais envoyer des placeholders non résolus aux agents.
 ```
 Tu es un consultant tech senior qui audite la faisabilité d'un projet client.
 
-Charge et lis entièrement ce fichier de référence AVANT de répondre :
-~/.agents/skills/peaklab.client-audit/references/feasibility-matrix.md
+Read the bundled [feasibility matrix](references/feasibility-matrix.md) before responding.
 
 Stack détecté : {detected_stack}
 Features souhaitées (numérotées) :
@@ -145,8 +144,7 @@ Output : une table par section. Maximum 600 mots.
 Tu es un consultant de cadrage projet. Ta mission : trouver ce qui est MANQUANT,
 FLOU ou DANGEREUX dans la demande du client — avant que le développement commence.
 
-Charge et lis entièrement ce fichier de référence AVANT de répondre :
-~/.agents/skills/peaklab.client-audit/references/ambiguity-risk-checklist.md
+Read the bundled [ambiguity and risk checklist](references/ambiguity-risk-checklist.md) before responding.
 
 Contenu du transcript / features souhaitées :
 {transcript_content — coller le contenu réel, pas un chemin}
@@ -171,8 +169,7 @@ Maximum 500 mots.
 Tu estimes le temps de développement d'un projet client.
 Le développeur utilise Codex, ce qui accélère significativement l'implémentation.
 
-Charge et lis entièrement ce fichier de référence AVANT de répondre :
-~/.agents/skills/peaklab.client-audit/references/time-estimation-guide.md
+Read the bundled [time-estimation guide](references/time-estimation-guide.md) before responding.
 
 Features métier à estimer (numérotées) :
 {extracted_feature_list}
@@ -264,5 +261,5 @@ Labels de sévérité :
 - Si pas de codebase : Subagent A se concentre sur la faisabilité features uniquement
 - Signaler les problèmes MAJEURS uniquement — /review-code couvre la qualité de code
 - Les estimations doivent être des fourchettes concrètes, jamais "ça dépend" sans chiffre
-- SKILL_PATH = ~/.agents/skills/peaklab.client-audit
+- Resolve bundled references relative to this installed skill directory; never assume a home-directory installation path.
 </execution-rules>
