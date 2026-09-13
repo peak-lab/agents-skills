@@ -2,10 +2,11 @@
 
 ## Setup once, keep project rules local
 
-Install the complete catalogue when using composed workflows. A single selected skill does not
-automatically install `skill-dependencies.json`; that file describes dependencies for maintainers.
-For selective installation, include the transitive dependencies and their `scripts/`/`references/`.
-Loading a dependency's instructions does not mean running its entire workflow.
+Start with the `core` profile, then add the smallest applicable profile from
+[canonical skill synchronization](skill-sync.md). A single selected skill does not automatically
+install `skill-dependencies.json`; include its transitive dependencies and their
+`scripts/`/`references/`. Loading a dependency's instructions does not mean running its entire
+workflow.
 
 Use Git, authenticated GitHub CLI for GitHub operations, Node 24 for the skills installer and
 Python 3.13+ for bundled Python helpers. Project tests still use the project's own toolchain.
@@ -45,9 +46,10 @@ Then ask: “Use review-code to review these local changes, including new source
 edit.” Use `handoff` only when another session needs to continue; `tdd` is available when a
 focused test-first task needs it, not a second mandatory implementation workflow.
 
-Once this works, install the full catalogue for composed issue workflows and configure only
-the tracker you use. Native agents are optional. Add `-g` only when intentionally installing
-for all your projects; do not combine plugin and native copies of the same skills by default.
+Once this works, add the `peaklab` profile for composed issue workflows and only the service
+adapters or optional tools the project uses. Native agents are optional. Add `-g` only when
+intentionally installing for all your projects; do not combine plugin and native copies of the
+same skills by default.
 
 ## Choose one entry point
 

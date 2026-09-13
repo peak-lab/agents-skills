@@ -68,6 +68,10 @@ For shared setup, ownership and the smallest useful workflow, see the
 [team guide](docs/team-workflows.md). It explains which entry point to use, what callers pass,
 and which runtime-specific integrations are optional.
 
+For a controlled local mirror of the reviewed catalogue, profile selection, backup/restore and
+local-change intake, see [canonical skill synchronization](docs/skill-sync.md). The repository is
+the source for shared packages; a personal installation is never copied back automatically.
+
 The sync-ai-docs skill also bundles 30 reviewed stack-rule templates and a read-only TypeScript/Bun
 renderer. See [shared rule templates](docs/rule-templates.md) to regenerate project rules without
 depending on someone's global configuration.
@@ -129,6 +133,7 @@ and app scaffolding requires access to the project generator. See each package f
 | `refactor` | Apply a defined structural change across code while preserving behavior. Use clean-code for an open-ended maintainability assessment. |
 | `clean-code` | Assess maintainability or apply requested clean-code improvements. Use review-code for a patch and refactor for a defined transformation. |
 | `find-docs` | Look up authoritative documentation when library, framework, API or tool behavior requires current or version-specific verification. |
+| `optimize-prisma-query` | Audit Prisma queries for unnecessary fetched data and replace broad includes with suitable select projections. |
 | `frontend-design` | Design and implement polished web interfaces. Use shadcn for component-specific configuration and troubleshooting. |
 | `shadcn` | Build, configure or troubleshoot shadcn/ui components, registries and presets in projects using components.json. |
 | `humanize` | Edit reader-facing text to sound natural while preserving meaning and formatting. Use for stiff or AI-like prose, or literal newline escape artifacts. |
@@ -169,6 +174,11 @@ change configuration. Provision any optional harness-specific agents separately.
 `skill-dependencies.json` documents composition; it is not an installer hook. For a selective
 installation, install every dependency transitively, preserving each package's `references/`
 and `scripts/` directories alongside the other skill packages.
+
+The reviewed entry-point sets are in [`skill-profiles.json`](skill-profiles.json): begin with
+`core`, then add `development`, `peaklab`, `service-adapters` or `optional` only when their task
+fits. The [sync guide](docs/skill-sync.md) explains a safe personal mirror; the profiles do not
+activate plugins, services or agent definitions.
 
 The repository contains every skill invoked by another bundled skill. Harness agents are optional:
 the GitHub and GlitchTip workflows fall back to their documented inline mode when those definitions

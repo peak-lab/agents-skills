@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "profiles": {
+    "core": [
+      "apex",
+      "domain-modeling",
+      "handoff",
+      "review-code",
+      "tdd",
+      "to-spec",
+      "to-tickets",
+      "wayfinder"
+    ],
+    "development": [
+      "clean-code",
+      "debug-code",
+      "find-docs",
+      "optimize-prisma-query",
+      "refactor"
+    ],
+    "peaklab": [
+      "peaklab.client-audit",
+      "peaklab.fix-qa-bug",
+      "peaklab.gh-do-issue",
+      "peaklab.glitchtip-do-issue",
+      "peaklab.plane-archive",
+      "peaklab.plane-do-issue",
+      "peaklab.plane-init",
+      "peaklab.plane-status",
+      "peaklab.track-error",
+      "peaklab.update-deps"
+    ],
+    "service-adapters": [
+      "peaklab.coolify-api",
+      "peaklab.infra-config",
+      "peaklab.uptime-kuma"
+    ],
+    "optional": [
+      "computer-use",
+      "create-peaklab-app",
+      "frontend-design",
+      "grilling",
+      "humanize",
+      "orca-cli",
+      "orchestration",
+      "qa-session",
+      "shadcn",
+      "ultrathink"
+    ]
+  }
+}
