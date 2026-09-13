@@ -52,6 +52,13 @@ Give the worker source IDs, relevant context or pointers, scope/exclusions, acce
 known evidence, checkout/base, task directory and modes. All repository commands run in that
 checkout. The worker is not alone: preserve others' edits and report scope expansion.
 
+Before dispatch, include readable paths to this contract and the installed
+[APEX entrypoint](../../apex/SKILL.md), the resolved APEX arguments below, and the task-state
+writer assignment in the worker brief. A repository specialist does not implicitly inherit
+skills read by the parent. Have the worker load these instructions before implementation,
+reuse the supplied analysis, and report the workflow/arguments used with its validation.
+This needs no separate acknowledgment round trip or duplicate plan.
+
 Use APEX inline (`-e`) with supplied analysis/plan and canonical task state:
 
 | Caller setting | APEX argument |
@@ -92,8 +99,16 @@ blocker_or_next_action: ...
 
 GlitchTip adds cluster coverage and may return `stale_signal` or `noise` for triage.
 Consume results as they arrive; review ready PRs without waiting for the slowest worker.
-For idle-without-result, inspect artifacts/git/PR state and resume the same worker. A commit
-and PR alone do not demonstrate validation.
+Prefer host completion notifications or a bounded session wait over repeated status polling.
+If a wait expires or progress appears stalled, inspect the existing worker's host status,
+last completed action and any running tool once before deciding what to do. Distinguish
+running, idle, failed and unknown; silence or an old transcript timestamp alone proves none
+of these. Record an unexplained interval as unknown, not as test/CI time or model failure.
+Continue waiting for a running worker; for idle-without-result, inspect artifacts/git/PR state
+and resume the same worker for the missing result. Surface an explicit error or unavailable
+status with the existing handle and evidence. Do not resend the task or launch a replacement
+while the original may still write; replacement requires confirmed stop and ownership transfer.
+A commit and PR alone do not demonstrate validation. This does not authorize deferred monitoring.
 
 After returning a result, the worker stops autonomous tools, messages and artifact edits. The
 parent checks the required fields once and resumes the same worker only for a specific missing

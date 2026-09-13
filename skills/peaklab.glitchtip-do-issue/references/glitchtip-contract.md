@@ -11,6 +11,13 @@ the project's `.env`, then `~/.agents/.env`, without sourcing or printing files.
 values; example domains and organizations are never defaults. API base is `<URL>/api/0`.
 Use Bearer authentication and verify access with read-only `GET /projects/`.
 
+Resolve and validate configuration in the process that will make the API request. A successful
+shell check does not prove a separate evaluation kernel or worker inherited its environment.
+Before networking, check the URL's scheme/host and required nonempty values locally; report
+only missing variable names, never their secret values. Reuse the configured client for this
+task instead of reconstructing it for each endpoint; changing execution context requires the
+same credential precedence and validation again.
+
 Verify the actual project/environment against the request. Multiple plausible projects require
 a choice. Read issue details at `/issues/<id>/` and events at `/issues/<id>/events/latest/`;
 list candidates through `/projects/<org>/<project>/issues/`. Inspect pagination and state any
@@ -18,6 +25,9 @@ candidate limit; an empty filtered page is not proof that the entire inbox is em
 
 Use supported transport and inspect HTTP status/response shape. A documented Cloudflare
 403/1010 rejection of Python may justify curl; a 403 alone does not prove that cause.
+Reuse a transport already verified for this service in the current task; do not repeat a known
+failed transport merely because another workflow phase started. A generic authorization failure
+still requires diagnosis, not an assumed Cloudflare workaround.
 Build JSON through serialization, never interpolate event messages into shell payloads.
 Temporary sensitive files need a unique private directory, restrictive permissions and prompt
 cleanup. Never retain shared `/tmp/gt-*.json` dumps or print credentials.
