@@ -40,7 +40,10 @@ export class ExitError extends Error {}
 // --- output and helpers ------------------------------------------------------------------------
 
 const SECRET_PATTERNS: [RegExp, string][] = [
+  [/\b([a-z][a-z0-9+.-]*:\/\/[^\s:@\/'"]+):[^\s@\/'"]+@/gi, "$1:<redacted>@"],
   [/(https?:\/\/[^\s?#'"]+)\?[^\s'"]*/g, "$1?<redacted>"],
+  [/(\bmysql(?:dump|admin)?\b[^\n]*?\s-p)(?=[^\s-])\S+/g, "$1<redacted>"],
+  [/(\s(?:-u|--user)(?:\s+|=)["']?[^\s:"']+):[^\s"']+/g, "$1:<redacted>"],
   [/\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi, "$1 <redacted>"],
   [/((?:api[_-]?key|access[_-]?key|token|secret|password|passwd|authorization)["']?\s*[:=]\s*["']?)[^\s"',}]+/gi, "$1<redacted>"],
   [/\b(?:sk|ghp|gho|ghs|github_pat|xox[abpr])[-_][A-Za-z0-9_-]{16,}/g, "<redacted>"],

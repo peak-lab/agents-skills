@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import {
@@ -45,6 +45,20 @@ describe("redaction", () => {
       expect(redacted).not.toContain(secret);
     }
     expect(redacted).toContain("https://mcp.example.test/mcp?<redacted>");
+  });
+
+  test("redacts credentials in connection strings and command arguments", () => {
+    const cases: [string, string][] = [
+      ["3× Bash(psql postgres://app:S3cret@54.37.8.254:5432/db)", "3× Bash(psql postgres://app:<redacted>@54.37.8.254:5432/db)"],
+      ["redis://default:hunter2@cache:6379", "redis://default:<redacted>@cache:6379"],
+      ["mysql -h db -u app -pS3cret shop", "mysql -h db -u app -p<redacted> shop"],
+      ["curl -u user:pass https://api.test/x", "curl -u user:<redacted> https://api.test/x"],
+      ["curl --user=ci:tok3n https://api.test/x", "curl --user=ci:<redacted> https://api.test/x"],
+    ];
+    for (const [input, expected] of cases) expect(redact(input)).toBe(expected);
+    for (const text of ["git push -u origin main", "find . -perm 644 -print", "mysql -p shop", "https://example.test/a@b"]) {
+      expect(redact(text)).toBe(text);
+    }
   });
 
   test("keeps long readable names, including a memory name with a digit", () => {
@@ -246,5 +260,88 @@ describe("command line", () => {
     expect(missing.exitCode).toBe(2);
     expect(missing.stderr.toString()).toContain("the following arguments are required: name");
     expect(run("--help").stdout.toString()).toContain("{floor,usage,commands,restore,memory,mcp,agentburn,all}");
+  });
+});
+
+describe("command line mutations", () => {
+  const isolated = (extra: Record<string, string> = {}) => {
+    const environment: Record<string, string> = {
+      ...process.env as Record<string, string>,
+      CONTEXT_OPTIMIZER_AGENTS_HOME: join(root, "agents"),
+      CLAUDE_CONFIG_DIR: join(root, "claude"),
+      CODEX_HOME: join(root, "codex"),
+      CONTEXT_OPTIMIZER_STATE_DIR: join(root, "state"),
+      CONTEXT_OPTIMIZER_CLAUDE_JSON: join(root, "claude.json"),
+      PATH: "/usr/bin:/bin",
+      ...extra,
+    };
+    delete environment.AGENTS_SKILLS_CATALOG;
+    return environment;
+  };
+  const standalone = () => {
+    const copy = join(root, "pkg", "skills", "context-optimizer", "scripts", "context-optimizer.ts");
+    write(copy, readFileSync(script, "utf8"));
+    return copy;
+  };
+  const run = (path: string, args: string[]) => {
+    const result = Bun.spawnSync([process.execPath, path, ...args], { env: isolated() });
+    return { code: result.exitCode, stdout: result.stdout.toString() };
+  };
+
+  test("commands archives only stale, unused, unreferenced, unprotected files", () => {
+    const commands = join(root, "agents", "commands");
+    const archive = join(root, "agents", "skill-archive", "commands");
+    const catalogue = join(root, "catalogue");
+    write(join(catalogue, "skill-profiles.json"), "{}");
+    write(join(catalogue, "skills", "apex", "SKILL.md"), "apex");
+    write(join(catalogue, "skill-dependencies.json"), JSON.stringify({ caller: ["dep-target"] }));
+    const old = new Date(Date.now() - 60 * 86_400_000);
+    const names = ["apex", "dep-target", "used", "referenced", "stale", "blocked/target", "young"];
+    for (const name of names) {
+      const path = join(commands, `${name}.md`);
+      write(path, name);
+      if (name !== "young") utimesSync(path, old, old);
+    }
+    write(join(archive, "blocked", "target.md"), "earlier archive");
+    write(join(root, "agents", "rules", "routing.md"), "Run /referenced before shipping.");
+    writeJsonl(join(root, "claude", "projects", "p", "s.jsonl"), [
+      { timestamp: new Date().toISOString(), message: { role: "user", content: "<command-name>/used</command-name>" } },
+    ]);
+    const present = () => names.filter(name => existsSync(join(commands, `${name}.md`)));
+    const copy = standalone();
+
+    const dryRun = run(copy, ["commands", "--catalog", catalogue]);
+    expect(dryRun.code).toBe(0);
+    expect(dryRun.stdout.split("\n").filter(line => line.startsWith("  prune")).sort()).toEqual(["  prune blocked:target", "  prune stale"]);
+    expect(present()).toEqual(names);
+    expect(readFileSync(join(archive, "blocked", "target.md"), "utf8")).toBe("earlier archive");
+
+    const unprotected = run(copy, ["commands", "--apply"]);
+    expect(unprotected.code).toBe(2);
+    expect(unprotected.stdout).toContain("refusing --apply without catalogue protection");
+    expect(present()).toEqual(names);
+
+    const applied = run(copy, ["commands", "--apply", "--catalog", catalogue]);
+    expect(applied.code).toBe(0);
+    expect(applied.stdout).toContain("skip blocked:target: archive target exists");
+    expect(present()).toEqual(names.filter(name => name !== "stale"));
+    expect(readFileSync(join(archive, "stale.md"), "utf8")).toBe("stale");
+    expect(readFileSync(join(archive, "blocked", "target.md"), "utf8")).toBe("earlier archive");
+    const [pruning] = readdirSync(join(root, "agents", "tasks")).filter(name => name.startsWith("command-pruning-"));
+    const manifest = JSON.parse(readFileSync(join(root, "agents", "tasks", pruning, "manifest.json"), "utf8"));
+    expect(manifest.commands.map((entry: { name: string }) => entry.name)).toEqual(["stale"]);
+  });
+
+  test("mcp without --apply leaves the Claude config untouched", () => {
+    const project = join(root, "project");
+    mkdirSync(project);
+    const config = join(root, "claude.json");
+    const original = JSON.stringify({ projects: { [project]: { disabledMcpServers: ["mobbin"] }, "/other": { x: 1 } } });
+    writeFileSync(config, original);
+    const result = run(script, ["mcp", "--project", project, "--disable", "claude.ai Gmail", "--force"]);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("would disable ['claude.ai Gmail']; rerun with --apply");
+    expect(readFileSync(config, "utf8")).toBe(original);
+    expect(existsSync(join(root, "state"))).toBe(false);
   });
 });
