@@ -52,8 +52,11 @@ Each package lives in [skills/](skills/); its `SKILL.md` describes usage and pre
 | Plane | `peaklab.plane-api`, `peaklab.plane-create-issue`, `peaklab.plane-do-issue`, `peaklab.plane-init`, `peaklab.plane-status`, `peaklab.plane-archive`, `peaklab.plane-ship-watch` |
 | Errors and infrastructure | `peaklab.glitchtip-do-issue`, `peaklab.track-error`, `peaklab.coolify-api`, `peaklab.infra-config`, `peaklab.uptime-kuma` |
 | UI and scaffolding | `frontend-design`, `shadcn`, `create-peaklab-app` |
-| Documentation and context | `find-docs`, `humanize`, `handoff`, `peaklab.sync-ai-docs`, `peaklab.improve-skill` |
+| Documentation and context | `find-docs`, `humanize`, `handoff`, `peaklab.sync-ai-docs`, `peaklab.improve-skill`, `context-optimizer` |
 | Agent coordination | `orchestration`, `orca-cli`, `computer-use` |
+
+`context-optimizer` measures the per-call token floor of Claude Code and Codex, then audits
+skill usage, unused commands, memory indexes and MCP servers. It is read-only unless `--apply`.
 
 Service skills need their service credentials. Orca skills need the Orca runtime; QA skills
 need qa-tracker, and app scaffolding needs the project generator. Check the selected skill first.

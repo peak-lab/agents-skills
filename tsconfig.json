@@ -9,5 +9,5 @@
     "allowImportingTsExtensions": true,
     "types": ["bun", "node"]
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts", "skills/peaklab.sync-ai-docs/scripts/**/*.ts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts", "skills/peaklab.sync-ai-docs/scripts/**/*.ts", "skills/context-optimizer/scripts/**/*.ts"]
 }

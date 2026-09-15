@@ -37,6 +37,7 @@
     ],
     "optional": [
       "computer-use",
+      "context-optimizer",
       "create-peaklab-app",
       "frontend-design",
       "grilling",

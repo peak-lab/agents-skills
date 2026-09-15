@@ -146,7 +146,7 @@ test("JSON artifact assertions ignore whitespace but not incorrect values", asyn
 
 test("catalogue contains only skill resources and no eval answers", () => {
   const catalogue = loadCatalogue(import.meta.dir + "/..");
-  expect(catalogue.skills).toHaveLength(43);
+  expect(catalogue.skills).toHaveLength(44);
   expect(Object.keys(catalogue.files).every(path => path.startsWith("skills/"))).toBe(true);
   expect(catalogue.files).not.toHaveProperty("evals/scenarios.json");
   expect(catalogue.hash).toMatch(/^[0-9a-f]{64}$/);
