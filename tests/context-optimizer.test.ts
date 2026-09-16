@@ -49,9 +49,9 @@ describe("redaction", () => {
 
   test("redacts credentials in connection strings and command arguments", () => {
     const cases: [string, string][] = [
-      ["3× Bash(psql postgres://app:S3cret@54.37.8.254:5432/db)", "3× Bash(psql postgres://app:<redacted>@54.37.8.254:5432/db)"],
+      ["3× Bash(psql postgres://app:<password>@db.example.test:5432/db)", "3× Bash(psql postgres://app:<redacted>@db.example.test:5432/db)"],
       ["redis://default:hunter2@cache:6379", "redis://default:<redacted>@cache:6379"],
-      ["mysql -h db -u app -pS3cret shop", "mysql -h db -u app -p<redacted> shop"],
+      ["mysql -h db -u app -p<password> shop", "mysql -h db -u app -p<redacted> shop"],
       ["curl -u user:pass https://api.test/x", "curl -u user:<redacted> https://api.test/x"],
       ["curl --user=ci:tok3n https://api.test/x", "curl --user=ci:<redacted> https://api.test/x"],
     ];
