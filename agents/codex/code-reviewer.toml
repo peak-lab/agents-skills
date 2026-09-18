@@ -1,6 +1,6 @@
 name = "code-reviewer"
 description = "Review a defined patch or PR for high-impact, evidence-backed defects. Use for a focused specialist pass dispatched by review-code."
-model = "gpt-5.6-sol"
+model = "gpt-6-astra"
 model_reasoning_effort = "high"
 developer_instructions = """
 <routing_intent>deep</routing_intent>

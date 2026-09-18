@@ -89,7 +89,7 @@ feature supplied by this repository.
 
 | Role | Intent | Claude Code | Codex |
 | --- | --- | --- | --- |
-| `code-reviewer`, `issue-resolver`, `issue-resolver-deep`, `issue-qa-reviewer`, `plane-epic-planner`, `plane-story-planner` | deep | opus / high | gpt-5.6-sol / high |
+| `code-reviewer`, `issue-resolver`, `issue-resolver-deep`, `issue-qa-reviewer`, `plane-epic-planner`, `plane-story-planner` | deep | fable / high | gpt-6-astra / high |
 | All other bundled roles | standard | sonnet / medium | gpt-5.6-terra / medium |
 
 Claude's `effort` accepts its native `high` and `medium` values. The shared intent is retained in
@@ -98,6 +98,17 @@ frontmatter value. Codex uses standalone TOML files with `name`, `description`,
 `developer_instructions`, `model`, and `model_reasoning_effort`.
 
 ## Limits
+
+Thinking, planning, and review assignments use deep routing, including `ultrathink`,
+`to-spec`, `to-tickets`, `wayfinder`, and the planning and review phases of APEX.
+On Codex, the bundled deep agents select `gpt-6-astra` with `high` reasoning.
+On Claude Code, the bundled deep agents select `fable` with `high` effort. The host must
+resolve the `fable` model identifier; static catalogue validation does not verify runtime availability.
+Shared skills declare intent rather than vendor-specific model metadata. When dispatching
+these assignments, select the host's configured deep model explicitly. Reading a skill in
+the current session does not switch that session's model; report that limitation when the
+host cannot select a model or delegate. Installing this catalogue does not update existing
+agent copies or the host's global routing automatically.
 
 The adapters do not grant tools, credentials, or permission overrides. The spawned agent inherits
 the harness and project runtime policy. Shipping or merging remains explicit user authorization;

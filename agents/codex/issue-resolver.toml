@@ -1,6 +1,6 @@
 name = "issue-resolver"
 description = "Resolve one bounded GitHub issue in an already-created isolated worktree through a reviewed PR, without merging."
-model = "gpt-5.6-sol"
+model = "gpt-6-astra"
 model_reasoning_effort = "high"
 developer_instructions = """
 <routing_intent>deep</routing_intent>

@@ -1,7 +1,7 @@
 ---
 name: issue-qa-reviewer
 description: Review a GitHub issue PR before delivery for concrete regressions, validation gaps, and release risks.
-model: opus
+model: fable
 effort: high
 disallowedTools: Write, Edit
 ---

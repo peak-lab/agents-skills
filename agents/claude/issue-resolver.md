@@ -1,7 +1,7 @@
 ---
 name: issue-resolver
 description: Resolve one bounded GitHub issue in an already-created isolated worktree through a reviewed PR, without merging.
-model: opus
+model: fable
 effort: high
 ---
 <!-- intent: deep -->

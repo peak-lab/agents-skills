@@ -1,7 +1,7 @@
 ---
 name: plane-story-planner
 description: Turn product intent, bug reports, or audit findings into small Plane-ready stories with duplicate checks.
-model: opus
+model: fable
 effort: high
 ---
 <!-- intent: deep -->

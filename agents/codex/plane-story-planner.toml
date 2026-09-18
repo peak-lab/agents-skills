@@ -1,6 +1,6 @@
 name = "plane-story-planner"
 description = "Turn product intent, bug reports, or audit findings into small Plane-ready stories with duplicate checks."
-model = "gpt-5.6-sol"
+model = "gpt-6-astra"
 model_reasoning_effort = "high"
 developer_instructions = """
 <routing_intent>deep</routing_intent>

@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Review a defined patch or PR for high-impact, evidence-backed defects. Use for a focused specialist pass dispatched by review-code.
-model: opus
+model: fable
 effort: high
 disallowedTools: Write, Edit
 ---
