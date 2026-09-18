@@ -9,6 +9,9 @@ next_step: steps/step-03-execute.md
 
 <goal>
 Produce the minimum plan needed to implement and verify the requested behavior.
+This phase uses deep reasoning intent. For a delegated planning assignment, explicitly select
+the host's configured deep model and effort. Direct execution retains the current session's
+model; do not claim that reading this step switches it.
 </goal>
 
 <reuse>

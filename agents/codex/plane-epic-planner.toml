@@ -1,6 +1,6 @@
 name = "plane-epic-planner"
 description = "Split a broad Plane EPIC into ordered, independently shippable stories without implementing product code."
-model = "gpt-5.6-sol"
+model = "gpt-6-astra"
 model_reasoning_effort = "high"
 developer_instructions = """
 <routing_intent>deep</routing_intent>

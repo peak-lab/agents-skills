@@ -2,6 +2,7 @@
 name: to-spec
 description: "Turn established requirements and codebase context into an implementation-ready specification."
 disable-model-invocation: true
+effort: deep
 ---
 
 # To Spec

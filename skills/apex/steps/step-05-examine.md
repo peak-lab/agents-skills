@@ -9,6 +9,9 @@ next_step: steps/step-06-resolve.md
 
 <scope>
 Review only the owned patch derived from `{base_sha}`, `{owned_paths}`, and the initial dirty-path snapshot. Reuse a review only when its fingerprint still matches.
+This phase uses deep review intent. For a delegated review, explicitly select the host's
+configured deep model and effort. Direct execution retains the current session's model;
+do not claim that reading this step switches it.
 </scope>
 
 <procedure>

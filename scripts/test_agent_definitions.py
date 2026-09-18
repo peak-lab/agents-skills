@@ -13,15 +13,15 @@ CODEX = ROOT / "agents" / "codex"
 INTENT_PATTERN = re.compile(r"intent: (deep|standard)")
 ROUTING_PATTERN = re.compile(r"<routing_intent>(deep|standard)</routing_intent>")
 EXPECTED = {
-    "code-reviewer": ("deep", "opus", "high", "gpt-5.6-sol", "high"),
-    "issue-resolver": ("deep", "opus", "high", "gpt-5.6-sol", "high"),
-    "issue-resolver-deep": ("deep", "opus", "high", "gpt-5.6-sol", "high"),
-    "issue-qa-reviewer": ("deep", "opus", "high", "gpt-5.6-sol", "high"),
+    "code-reviewer": ("deep", "fable", "high", "gpt-6-astra", "high"),
+    "issue-resolver": ("deep", "fable", "high", "gpt-6-astra", "high"),
+    "issue-resolver-deep": ("deep", "fable", "high", "gpt-6-astra", "high"),
+    "issue-qa-reviewer": ("deep", "fable", "high", "gpt-6-astra", "high"),
     "issue-ship-watcher": ("standard", "sonnet", "medium", "gpt-5.6-terra", "medium"),
-    "plane-epic-planner": ("deep", "opus", "high", "gpt-5.6-sol", "high"),
+    "plane-epic-planner": ("deep", "fable", "high", "gpt-6-astra", "high"),
     "plane-issue-worker": ("standard", "sonnet", "medium", "gpt-5.6-terra", "medium"),
     "plane-ship-watcher": ("standard", "sonnet", "medium", "gpt-5.6-terra", "medium"),
-    "plane-story-planner": ("deep", "opus", "high", "gpt-5.6-sol", "high"),
+    "plane-story-planner": ("deep", "fable", "high", "gpt-6-astra", "high"),
     "implementer": ("standard", "sonnet", "medium", "gpt-5.6-terra", "medium"),
 }
 

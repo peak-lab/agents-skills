@@ -2,6 +2,7 @@
 name: to-tickets
 description: "Split an approved plan or specification into independently verifiable tickets with dependencies."
 disable-model-invocation: true
+effort: deep
 ---
 
 # To Tickets

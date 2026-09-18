@@ -1,6 +1,6 @@
 name = "issue-qa-reviewer"
 description = "Review a GitHub issue PR before delivery for concrete regressions, validation gaps, and release risks."
-model = "gpt-5.6-sol"
+model = "gpt-6-astra"
 model_reasoning_effort = "high"
 developer_instructions = """
 <routing_intent>deep</routing_intent>

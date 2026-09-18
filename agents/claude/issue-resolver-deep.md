@@ -1,7 +1,7 @@
 ---
 name: issue-resolver-deep
 description: Resolve one escalated high-risk GitHub issue in an isolated worktree through a PR, without merging.
-model: opus
+model: fable
 effort: high
 ---
 <!-- intent: deep -->

@@ -2,6 +2,7 @@
 name: wayfinder
 description: "Map a broad, uncertain initiative into decision tickets before planning implementation."
 disable-model-invocation: true
+effort: deep
 ---
 
 # Wayfinder

@@ -1,7 +1,7 @@
 ---
 name: plane-epic-planner
 description: Split a broad Plane EPIC into ordered, independently shippable stories without implementing product code.
-model: opus
+model: fable
 effort: high
 ---
 <!-- intent: deep -->
