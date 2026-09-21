@@ -2,27 +2,17 @@
 
 ## Setup once, keep project rules local
 
-Start with the `core` profile, then add the smallest applicable profile from
-[canonical skill synchronization](skill-sync.md). A single selected skill does not automatically
-install `skill-dependencies.json`; include its transitive dependencies and their
-`scripts/`/`references/`. Loading a dependency's instructions does not mean running its entire
-workflow.
+Start with the same four skills as the README: `apex`, `review-code`, `tdd`, and `handoff`.
+Follow the [installation guide](installation.md) for commands, verification, and prerequisites.
+Add only the workflow needed for your next task. The broader `core` synchronization profile
+also includes planning tools; it is not the starter set.
 
-Use Git, authenticated GitHub CLI for GitHub operations, Node 24 for the skills installer and
-Python 3.13+ for bundled Python helpers. Project tests still use the project's own toolchain.
-Install only the additional service/browser tools needed by the chosen workflow. RTK is an
-optional output optimization; without it, use the underlying command with the same permissions.
+For a repeatable team rollout, agree on a reviewed repository commit and use the
+[local checkout installation](distribution.md#editable-installation-all-supported-hosts).
+Record the revision and selected skills. Reinstallation can replace installed copies: keep
+team changes in version control, not only in a personal install.
 
-```bash
-# Select the harness you actually use; do not overwrite another person's local customizations.
-npx skills add peak-lab/agents-skills --skill '*' --agent codex --copy -y
-# Or:
-npx skills add peak-lab/agents-skills --skill '*' --agent claude-code --copy -y
-```
-
-For a repeatable team rollout, agree on a reviewed repository commit, check it out locally and
-install from that checkout with `npx skills add . ...`. Record the chosen revision. Reinstallation
-can replace installed copies: keep team changes in version control, not only in a personal install.
+RTK is an optional output optimization; without it, use the underlying command with the same permissions.
 
 Keep branch policy, build/test commands, package ownership and deployment rules in the project's
 `AGENTS.md`/harness instructions. No colleague needs another person's home directory, private agent names,
@@ -46,8 +36,8 @@ Then ask: “Use review-code to review these local changes, including new source
 edit.” Use `handoff` only when another session needs to continue; `tdd` is available when a
 focused test-first task needs it, not a second mandatory implementation workflow.
 
-Once this works, add the `peaklab` profile for composed issue workflows and only the service
-adapters or optional tools the project uses. Native agents are optional. Add `-g` only when
+Once this works, add the [GitHub, Plane, or GlitchTip workflow](installation.md#add-a-workflow)
+your project uses. Native agents are optional. Add `-g` only when
 intentionally installing for all your projects; do not combine plugin and native copies of the
 same skills by default.
 
@@ -98,14 +88,20 @@ available. Do not copy the same analysis into several new plans.
 - `pr_created`, `merged`, deployed and resolved are different outcomes. Missing deployment
   evidence leaves GlitchTip open. No workflow silently schedules itself for later.
 
+## Workflow options and authorization
+
+- Issue workflows stop at a reviewed PR by default. Request delivery explicitly or use
+  `--wait-merge`. `--no-merge` stops at the PR; drafts never merge.
+- Use `--no-auto` for plan approval. `--no-tdd` disables test-first work, not validation.
+- A merged fix is not proof of deployment. GlitchTip resolution needs verified deployment
+  and regression evidence in the affected environment.
+- No deferred monitoring is created implicitly. `--async-merge` uses a live session worker
+  only when the host supports it.
+- Keep credentials in environment variables or gitignored configuration, never in this catalogue.
+  Deploys, merges, deletes, restarts, and issue updates require user intent; destructive actions
+  require confirmation at the point of risk.
+
 ## Maintaining the shared version
 
-Keep service rules in their owning package: GitHub execution in
-`skills/peaklab.gh-do-issue/references/execution.md`, GlitchTip resolution in
-`skills/peaklab.glitchtip-do-issue/references/glitchtip-contract.md`, Plane configuration in
-`skills/peaklab.plane-api`, and APEX phase rules in `skills/apex/steps/`.
-
-Changing a default or result requires checking every caller, not just the edited skill. Add
-missing dependencies to the manifest, run the helper tests and recursive portability check,
-then review the [contract scenarios](contract-scenarios.md). Those scenarios are an evaluation
-checklist for agent behavior, not a claim that Python tests execute natural-language workflows.
+Follow the [contributor guide](contributing.md) to change skills, inspect callers, and run the
+required checks. Service contracts remain in their owning packages.

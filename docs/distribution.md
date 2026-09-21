@@ -1,4 +1,8 @@
-# Distribution
+# Advanced distribution channels
+
+For a first installation, use the [installation guide](installation.md). This page covers
+reviewed local checkouts, Claude plugins, and packaging. Choose one installation channel per
+project to avoid duplicate skills.
 
 The catalogue has one skill source tree, `skills/`, and paired native agent definitions under
 `agents/claude/` and `agents/codex/`. Repository scripts validate and install these artifacts;
@@ -10,15 +14,17 @@ links, but these packages target the documented native `.claude/agents/` and `.c
 
 ## Editable installation: all supported hosts
 
-From a reviewed checkout of this repository, install the skills with:
+Check out the agreed catalogue commit. Then run this from the target project, replacing the
+source path with the absolute path of that checkout:
 
 ```bash
-npx skills add . --skill '*' --agent codex claude-code
+npx skills add /absolute/path/to/agents-skills --skill apex review-code tdd handoff --agent codex
 ```
 
-This example installs into the current project. For another project, run the command there and
-replace `.` with the absolute path of the catalogue checkout. Add `-g` only when you deliberately
-want user-wide skills. The skill installer does not install custom agent definitions.
+This installs the same starter set as the README into the current project. For Claude Code,
+replace `codex` with `claude-code`. For another selection, include its full dependency closure
+as described in the [installation guide](installation.md#add-a-workflow). Add `-g` only when you
+deliberately want user-wide skills. The skill installer does not install custom agent definitions.
 
 For optional native agents, follow [the agent installation guide](agents.md). Their installer
 requires an explicit target project and refuses conflicting files. Neither installation path

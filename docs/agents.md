@@ -1,4 +1,6 @@
-# Agents
+# Optional native agents
+
+Start with the [skills installation](installation.md); these adapters are optional.
 
 This catalogue also publishes a deliberately small set of native subagent adapters. They cover
 the generic issue, review, and Plane workflows bundled here; they do not reproduce private
@@ -11,13 +13,18 @@ contract authoritative.
 
 ## Install directly into a project
 
+Run these commands from a local catalogue checkout with Bun installed, after
+`bun install --frozen-lockfile`. Install the skills used by your workflow first.
+
 The installer never writes to a global harness directory. Choose a project explicitly; preview is
 the default, and `--apply` is required to write:
 
 ```bash
 bun run src/cli.ts install --target /path/to/project --agent codex
-bun run src/cli.ts install --target /path/to/project --agent claude-code --apply
+bun run src/cli.ts install --target /path/to/project --agent codex --apply
 ```
+
+For Claude Code, replace `codex` with `claude-code` in both commands.
 
 It writes to `.codex/agents/` for Codex and `.claude/agents/` for Claude Code. It refuses missing
 targets, symlinked destination components, non-directory destination components, and any existing
@@ -39,21 +46,7 @@ bun run src/cli.ts update --target /path/to/project --agent codex --apply
 Use `--agent claude-code` for native Claude agents. Managed plugin installations use Claude's
 plugin update mechanism instead; do not combine the two installation channels.
 
-The CLI is TypeScript developed, tested and built with Bun. The distributed JavaScript executable
-runs on Node 24+, so consumers do not need Bun or Python. After the package has actually been
-published under the proposed `@peak-lab/agents` name, these commands will be available:
-
-```bash
-npx @peak-lab/agents@latest install --target /path/to/project --agent codex --apply
-npx @peak-lab/agents@latest update --target /path/to/project --agent codex
-npx @peak-lab/agents@latest update --target /path/to/project --agent codex --apply
-```
-
-Publication is a separate release step, not performed by building this repository. The package is
-currently marked `private: true` to prevent accidental publishing; choose the release name/version
-and remove that guard only as part of an explicitly authorized release. Pin a reviewed
-package version instead of `@latest` for reproducible team rollouts. The old `--update` argument is
-also accepted by the new CLI; the retired Python entrypoint is not retained.
+## Update conflicts and recovery
 
 The first installation records SHA-256 baselines in `.peaklab-agent-state.json` inside the native
 agent directory. Keep this file with the installed definitions (including in version control if
@@ -113,3 +106,22 @@ agent copies or the host's global routing automatically.
 The adapters do not grant tools, credentials, or permission overrides. The spawned agent inherits
 the harness and project runtime policy. Shipping or merging remains explicit user authorization;
 the watcher roles do not create cron jobs or deferred monitoring.
+
+## Package publication (maintainers)
+
+The CLI is TypeScript developed, tested and built with Bun. The distributed JavaScript executable
+runs on Node 24+, so consumers do not need Bun or Python. After the package has actually been
+published under the proposed `@peak-lab/agents` name, npm installation can be documented here.
+Until then, use the local checkout commands above. The following examples are for a future release:
+
+```bash
+npx @peak-lab/agents@latest install --target /path/to/project --agent codex --apply
+npx @peak-lab/agents@latest update --target /path/to/project --agent codex
+npx @peak-lab/agents@latest update --target /path/to/project --agent codex --apply
+```
+
+Publication is a separate release step, not performed by building this repository. The package is
+currently marked `private: true` to prevent accidental publishing; choose the release name/version
+and remove that guard only as part of an explicitly authorized release. Pin a reviewed
+package version instead of `@latest` for reproducible team rollouts. The old `--update` argument is
+also accepted by the new CLI; the retired Python entrypoint is not retained.

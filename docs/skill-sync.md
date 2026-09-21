@@ -1,4 +1,7 @@
-# Canonical skill synchronization
+# Advanced: skill synchronization and backups
+
+For a first installation or a normal update, use the [installation guide](installation.md).
+Use this page when maintaining a personal mirror with recorded baselines and backups.
 
 The repository is the reviewed source for distributable skill packages. A personal installation is
 a consumer copy, never an upstream. Plugins, system skills, agent definitions, secrets, hooks and
@@ -19,10 +22,9 @@ harness configuration are outside this process.
 Profiles are entry points. The sync tool adds the transitive internal dependencies declared in
 [`skill-dependencies.json`](../skill-dependencies.json).
 
-For a colleague, install selected packages from a reviewed checkout or commit with `npx skills
-add`. Do not install all skills globally by default. For example, install the core profile's entry
-points, then use `bun scripts/skill-context.ts --skill <entry>` to print the complete dependency
-closure before calling the installer.
+The `core` profile includes eight entry skills, including planning tools. It is broader than the
+four-skill starter set. Profiles are inputs to this sync tool, not flags for `npx skills add`.
+For a colleague's first setup, use the [starter installation](installation.md#install-the-starter-set).
 
 ## Synchronize a personal mirror
 

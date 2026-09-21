@@ -3,6 +3,8 @@
 Choose skills by task fit and observable behavior, not install counts. The starter set is
 deliberately small; tracker and infrastructure workflows are optional additions.
 
+See the [contributor guide](contributing.md) for checks and change-specific validation.
+
 ## Inspiration
 
 Sources inspected on 2026-09-10 through skills.sh and their upstream repositories:
@@ -43,7 +45,7 @@ that a model obeys a workflow.
 ## Maintenance gate
 
 Preserve public names, caller contracts and authorization boundaries. Add a realistic case for
-changed behavior, run the README checks, and inspect relevant callers. CI runs discovery,
+changed behavior, run the [contributor checks](contributing.md#validation), and inspect relevant callers. CI runs discovery,
 portability, helper tests and CLI packaging without service credentials; it does not execute
 natural-language workflows or prove live integrations.
 

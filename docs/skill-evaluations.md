@@ -5,6 +5,8 @@ This repository has two distinct gates:
 - Deterministic CI checks: metadata, composition, helpers, CLI packaging, evaluation schema and runner tests. No model credentials or paid calls.
 - Explicit model evaluations: Claude or Codex chooses JSON actions in a controlled simulation. The runner executes those actions against isolated in-memory project files and fixed service fixtures, then grades the resulting trace and artifacts. No GitHub, Plane or GlitchTip API is contacted.
 
+See the [contributor guide](contributing.md) for the full repository checklists.
+
 The suite has 17 behavioral cases and 20 routing queries (two positives and two near-misses for each of five workflows). The scenarios live in `evals/scenarios.json`, outside distributed skills. Runner code lives in `scripts/evals/` and is not part of the npm agent installer.
 
 ## Run
@@ -82,7 +84,7 @@ The next separate validation layer is native discovery and end-to-end runs in ex
 
 Add a realistic prompt and minimal raw fixtures, then define an observable oracle. Prefer actual read/write/service actions and parsed artifact values. Do not require exact prose, unnecessary reads or a particular coding style. Include a failing counterexample in runner tests when adding a new assertion kind. For an authorization gate, include both a permitted and forbidden action when practical.
 
-For a measured improvement, preserve the old skill snapshot, use the same host/model/tool availability, repeat the same cases, and retain unedited reports. Use held-out prompts before broad claims; do not optimize the skill solely for these 32 fixtures.
+For a measured improvement, preserve the old skill snapshot, use the same host/model/tool availability, repeat the same cases, and retain unedited reports. Use held-out prompts before broad claims; do not optimize the skill solely for these controlled fixtures.
 
 ## Sources
 
