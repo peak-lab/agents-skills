@@ -1,7 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { parseDocument } from "yaml";
+import { resolveDependencyClosure } from "./skill-dependencies.ts";
 import { validateSkillMetadata } from "./skill-metadata.ts";
+
+export { resolveDependencyClosure };
 
 export interface SkillContextMeasurement {
   name: string;
@@ -76,19 +79,6 @@ function loadSkills(root: string): Map<string, SkillContextMeasurement> {
     skills.set(measurement.name, measurement);
   }
   return skills;
-}
-
-export function resolveDependencyClosure(skills: ReadonlyMap<string, SkillContextMeasurement>, dependencies: Dependencies, requested: readonly string[]): string[] {
-  const resolved = new Set<string>();
-  const visit = (name: string): void => {
-    if (!skills.has(name)) throw new Error(`unknown skill: ${name}`);
-    if (resolved.has(name)) return;
-    resolved.add(name);
-    for (const dependency of [...(dependencies[name] ?? [])].sort((left, right) => left.localeCompare(right))) visit(dependency);
-  };
-
-  for (const name of [...requested].sort((left, right) => left.localeCompare(right))) visit(name);
-  return [...resolved].sort((left, right) => left.localeCompare(right));
 }
 
 export function createSkillContextReport(root: string, requested: readonly string[] = []): SkillContextReport {

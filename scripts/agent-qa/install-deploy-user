@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+#
+# One-time, idempotent setup on agent-qa for .github/workflows/deploy-agent-qa.yml.
+#
+#   sudo scripts/agent-qa/install-deploy-user --key /path/to/deploy.pub
+#
+# A push lands in a non-bare checkout owned by a deploy account that owns
+# nothing else. Its post-receive hook may run exactly one root-owned command
+# as the agent account: the sync-skills copy installed below. The deploy key is
+# therefore equivalent to the agent account, since the pushed skill-sync.ts
+# runs as it, and to nothing beyond.
+set -euo pipefail
+
+DEPLOY_USER='skills-deploy'
+AGENT_USER='pushrank-autofix'
+REPO='/var/www/agents-skills'
+RUNNER='/usr/local/sbin/agents-skills-sync'
+SUDOERS='/etc/sudoers.d/agents-skills-sync'
+KEY=''
+DRY_RUN=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --key) KEY="${2:?--key needs a public key file}"; shift ;;
+    --agent-user) AGENT_USER="${2:?--agent-user needs a name}"; shift ;;
+    --dry-run) DRY_RUN=1 ;;
+    *) printf 'error: unknown argument %s\n' "$1" >&2; exit 2 ;;
+  esac
+  shift
+done
+
+run() { if ((DRY_RUN)); then printf 'would: %s\n' "$*"; else "$@"; fi; }
+((DRY_RUN)) || [[ $(id -u) -eq 0 ]] || { echo 'error: run as root' >&2; exit 1; }
+[[ -n "$KEY" && -r "$KEY" ]] || { echo 'error: --key must name a readable public key' >&2; exit 2; }
+grep -Eq '^ssh-ed25519 [A-Za-z0-9+/=]+( .*)?$' "$KEY" || { echo 'error: expected one ssh-ed25519 public key' >&2; exit 2; }
+getent passwd "$AGENT_USER" >/dev/null || { echo "error: no account $AGENT_USER" >&2; exit 1; }
+SOURCE="$(cd "$(dirname "$0")" && pwd)"
+DEPLOY_HOME="/var/lib/$DEPLOY_USER"
+
+getent passwd "$DEPLOY_USER" >/dev/null \
+  || run useradd --system --home-dir "$DEPLOY_HOME" --create-home --shell /usr/bin/git-shell "$DEPLOY_USER"
+
+run install -d -m 700 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$DEPLOY_HOME/.ssh"
+if ((DRY_RUN)); then echo "would: write $DEPLOY_HOME/.ssh/authorized_keys"; else
+  (umask 077; printf 'restrict %s\n' "$(head -n1 "$KEY")" > "$DEPLOY_HOME/.ssh/authorized_keys")
+  chown "$DEPLOY_USER:$DEPLOY_USER" "$DEPLOY_HOME/.ssh/authorized_keys"
+fi
+
+if [[ ! -d "$REPO/.git" ]]; then
+  run install -d -m 755 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$REPO"
+  run runuser -u "$DEPLOY_USER" -- git init -q -b main "$REPO"
+fi
+run runuser -u "$DEPLOY_USER" -- git -C "$REPO" config receive.denyCurrentBranch updateInstead
+
+run install -m 755 -o root -g root "$SOURCE/sync-skills" "$RUNNER"
+if ((DRY_RUN)); then echo "would: write $SUDOERS"; else
+  tmp="$(mktemp)"
+  printf '%s ALL=(%s) NOPASSWD: %s\n' "$DEPLOY_USER" "$AGENT_USER" "$RUNNER" > "$tmp"
+  visudo -cqf "$tmp"
+  install -m 440 -o root -g root "$tmp" "$SUDOERS"
+  rm -f "$tmp"
+fi
+
+HOOK="$REPO/.git/hooks/post-receive"
+if ((DRY_RUN)); then echo "would: write $HOOK"; else
+  cat > "$HOOK" <<HOOK
+#!/bin/sh
+# Installed by scripts/agent-qa/install-deploy-user. Do not edit here.
+# git ignores this exit status; the deploy workflow reads the receipt instead.
+set -eu
+read -r _old new _ref
+exec sudo -n -H -u $AGENT_USER $RUNNER "\$new"
+HOOK
+  chown "$DEPLOY_USER:$DEPLOY_USER" "$HOOK"
+  chmod 755 "$HOOK"
+fi
+echo "ready: push to $DEPLOY_USER@<host>:$REPO main"
