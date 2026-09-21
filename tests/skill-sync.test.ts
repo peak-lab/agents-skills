@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { applySyncPlan, candidateReport, createSyncPlan, restoreBackup } from "../scripts/skill-sync.ts";
@@ -106,6 +107,20 @@ describe("skill synchronization", () => {
     expect(report).toContain("alpha | divergent");
     expect(report).toContain("private-tool | local-only");
     expect(existsSync(join(value.target, ".peaklab-skill-state.json"))).toBe(false);
+  });
+
+  test("runs under plain Node with no installed packages, as the agent-qa deploy hook does", () => {
+    const value = fixture();
+    value.skill("alpha", "source alpha");
+    value.skill("beta", "source beta");
+    mkdirSync(join(value.root, "scripts"));
+    for (const script of ["skill-sync.ts", "skill-dependencies.ts"]) copyFileSync(resolve(import.meta.dir, "..", "scripts", script), join(value.root, "scripts", script));
+
+    const run = spawnSync("node", [join(value.root, "scripts", "skill-sync.ts"), "apply", "--target", value.target, "--profile", "core"], { encoding: "utf8" });
+
+    expect(run.stderr).toBe("");
+    expect(run.status).toBe(0);
+    expect(readFileSync(join(value.target, "beta", "SKILL.md"), "utf8")).toContain("source beta");
   });
 
   test("every published profile resolves to bundled skills and dependencies", () => {

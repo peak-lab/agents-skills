@@ -1,0 +1,92 @@
+name: Deploy agent-qa
+
+# Pushes validated main to agent-qa, whose post-receive hook syncs the skills
+# the GlitchTip autofix account reads. Setup: docs/agent-qa-deploy.md.
+#
+# `branches: [main]` on a workflow_run matches the triggering run's branch
+# name, which a fork controls. What is trusted is checked below: a push to this
+# repository, and a revision that is the current tip of origin/main.
+
+on:
+  workflow_run:
+    workflows: [Validate catalogue]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-agent-qa
+  cancel-in-progress: false
+
+jobs:
+  host:
+    name: agent-qa
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      || (github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+      && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Environment secret: no other workflow or branch can resolve the key.
+    environment: agent-qa
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require the current tip of main
+        id: tip
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          git fetch --no-tags origin main
+          TIP="$(git rev-parse FETCH_HEAD)"
+          if [[ "$SHA" == "$TIP" ]]; then
+            echo "deploy=yes" >> "$GITHUB_OUTPUT"
+          elif git merge-base --is-ancestor "$SHA" "$TIP"; then
+            echo "deploy=no" >> "$GITHUB_OUTPUT"
+            echo "::notice::superseded by a later deploy; main is at $TIP"
+          else
+            echo "::error::$SHA is not on origin/main ($TIP) - refusing to deploy it"
+            exit 1
+          fi
+
+      - name: Authorise the deploy key
+        if: steps.tip.outputs.deploy == 'yes'
+        env:
+          KEY: ${{ secrets.AGENT_QA_DEPLOY_SSH_KEY }}
+        run: |
+          test -n "$KEY" || { echo "::error::AGENT_QA_DEPLOY_SSH_KEY is not set"; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          (umask 077; printf '%s\n' "$KEY" > ~/.ssh/deploy)
+          printf '%s\n' \
+            'agent-qa.pushrank.io ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMx0FWiMFaYP6EX2KlTZRZyWBodGzMcWSCpTgG7qEj73' \
+            > ~/.ssh/known_hosts
+
+      - name: Push and sync
+        if: steps.tip.outputs.deploy == 'yes'
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          HOST: skills-deploy@agent-qa.pushrank.io:/var/www/agents-skills
+        run: |
+          set -o pipefail
+          export GIT_SSH_COMMAND="ssh -i \"$HOME/.ssh/deploy\" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=\"$HOME/.ssh/known_hosts\" -o GlobalKnownHostsFile=/dev/null"
+          # No --force: a host revision that is not an ancestor was edited on the machine.
+          git push "$HOST" "$SHA:refs/heads/main" 2>&1 | tee push.log
+          # git ignores post-receive's exit status, so a green push proves only
+          # that the objects landed. The hook's receipt proves the sync ran.
+          grep -q "skill-sync: done [0-9]* @ $SHA" push.log || {
+            echo "::error::pushed, but the skills were not synced - read the remote: lines above"
+            exit 1
+          }
+
+      - name: Forget the key
+        if: always()
+        run: rm -f ~/.ssh/deploy

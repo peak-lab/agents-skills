@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#
+# Runs as the agent account, through the sudoers rule install-deploy-user writes.
+# post-receive calls it after a push to the deploy checkout; the last line it
+# prints is the receipt .github/workflows/deploy-agent-qa.yml greps for.
+#
+# `--all-existing` updates what the account already has, plus declared
+# dependencies. A skill edited on the machine since its last sync is a
+# conflict: skill-sync refuses the whole target and this exits non-zero,
+# which fails the deploy instead of overwriting the only copy of that edit.
+set -euo pipefail
+
+REPO="${AGENTS_SKILLS_REPO:-/var/www/agents-skills}"
+# The pushed revision, from post-receive. Not read with git: the checkout
+# belongs to the deploy account, and git refuses it to anyone else.
+REVISION="${1:-}"
+[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo 'skill-sync: expected the pushed revision' >&2; exit 2; }
+TARGETS=("$HOME/.agents/skills" "$HOME/.claude/skills")
+KEEP_BACKUPS=10
+
+applied=0
+for target in "${TARGETS[@]}"; do
+  [[ -d "$target" ]] || { printf 'skill-sync: skipped %s (absent)\n' "$target"; continue; }
+  /usr/bin/node "$REPO/scripts/skill-sync.ts" apply --target "$target" --all-existing
+  printf 'skill-sync: applied %s\n' "$target"
+  applied=$((applied + 1))
+  find "$(dirname "$target")" -mindepth 1 -maxdepth 1 -type d -name '.peaklab-skill-backup-*' -printf '%T@ %p\n' \
+    | sort -rn | tail -n +$((KEEP_BACKUPS + 1)) | cut -d' ' -f2- \
+    | while IFS= read -r old; do rm -r --one-file-system -- "$old"; done
+done
+((applied > 0)) || { echo 'skill-sync: no target directory found' >&2; exit 1; }
+printf 'skill-sync: done %s @ %s\n' "$applied" "$REVISION"

@@ -2,7 +2,8 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, 
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { createHash } from "node:crypto";
-import { resolveDependencyClosure, type SkillContextMeasurement } from "./skill-context.ts";
+import type { SkillContextMeasurement } from "./skill-context.ts";
+import { resolveDependencyClosure } from "./skill-dependencies.ts";
 
 type Command = "check" | "apply" | "restore" | "candidate";
 type Action = "current" | "install" | "update" | "adopt-current" | "replace-unmanaged" | "conflict";
@@ -240,7 +241,7 @@ function parse(args: string[]): { command: Command; target?: string; backup?: st
   return result;
 }
 
-export function main(args = process.argv.slice(2), root = resolve(import.meta.dir, ".."), write = console.log, writeError = console.error): number {
+export function main(args = process.argv.slice(2), root = resolve(import.meta.dirname, ".."), write = console.log, writeError = console.error): number {
   try {
     const options = parse(args);
     if (!options.target) fail("--target is required");

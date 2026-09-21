@@ -131,5 +131,6 @@ Changing this repository does not clean up existing personal installations.
 - [Claude plugin and distribution channels](distribution.md)
 - [Optional native agents](agents.md)
 - [Profiles, synchronization, and backups](skill-sync.md)
+- [agent-qa skill deployment](agent-qa-deploy.md)
 - [Dependencies and context measurements](context-budget.md)
 - [Team ownership and workflow options](team-workflows.md)
