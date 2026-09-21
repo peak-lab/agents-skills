@@ -1,4 +1,7 @@
-# Skill context measurements
+# Dependencies and context measurements
+
+For common workflows, use the complete commands in the [installation guide](installation.md#add-a-workflow).
+For custom selections, run `bun install --frozen-lockfile` once in a local catalogue checkout.
 
 Use the repository-only, read-only helper to inspect the source size of the
 catalogue before selecting skills:
@@ -18,11 +21,13 @@ modify any host configuration.
 
 Run the printed command from the catalogue checkout root, where `.` identifies
 the catalogue. To install into another project, run the equivalent command in
-that project and replace `.` with the absolute path to the catalogue checkout.
+that project and replace `.` with the absolute path to the catalogue checkout. The printed command
+selects both hosts; retain only the `--agent` value for the host you actually use.
 
 Install every printed package together, including its bundled `scripts/` and
-`references/`. The dependency manifest describes required composition, so a
-smaller selection that omits a transitive dependency is incomplete.
+`references/`. The current manifest conservatively includes optional
+cross-workflow references as well as required composition. Keep the complete reported selection
+until those are distinguished; it is not a minimal-dependency promise.
 
 Host behavior differs:
 
