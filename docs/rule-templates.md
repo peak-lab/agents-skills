@@ -24,6 +24,11 @@ prints to stdout only: review and apply its output with file-editing tools. This
 avoids silently overwriting local rules or personal configuration. Without Bun, the skill can
 read and adapt the same Markdown assets manually.
 
+A sync also migrates useful project `CLAUDE.md` instructions into the appropriate `AGENTS.md`
+and removes the old files, including with `--no-rules`. Audit mode reports only. Scoped syncs
+respect `--dirs`, preserve nested instruction scope, and leave global files untouched. Unresolved
+conflicts or unsafe destinations block removal of the affected source.
+
 ## This repository's generated rules
 
 | Template | Output | Scope |
@@ -35,9 +40,9 @@ These outputs use the templates' default scopes without local content overrides.
 framework is detected here; Bun tests and Python unittest do not justify Vitest or pytest rules.
 `bun test` checks that these generated files remain in sync and the copied skill runs independently.
 
-`AGENTS.md` explicitly tells agents when to read each rule. `CLAUDE.md` imports the common
-instructions, so this repository uses a symlink-free, explicit-read setup. It does not claim
-native automatic Claude path-scoping. Other projects can use `.claude/rules` for that behavior.
+`AGENTS.md` is this repository's instruction entry point and explicitly tells agents when to
+read each rule. This repository does not maintain a `CLAUDE.md` wrapper or claim native automatic
+Claude path-scoping. Other projects can use `.claude/rules` for that behavior.
 Do not place Markdown rules in `.codex/rules` and assume they are discovered: Codex's execution
 permission policies are separate from its `AGENTS.md` instructions.
 
