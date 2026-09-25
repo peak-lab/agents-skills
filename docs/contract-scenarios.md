@@ -74,3 +74,12 @@ See the [contributor guide](contributing.md) for checks to run with these scenar
 For each reviewed scenario record the revision, inspected files, actual proposed action and
 pass/fail rationale in the harness task record. Recheck affected rows after fixes; do not store
 claims of universal correctness or measured task-speed improvements without an actual benchmark.
+
+## Project instruction synchronization
+
+| Scenario | Initial state/request | Required behavior |
+|---|---|---|
+| CLAUDE migration | Sync with --no-rules; root import wrapper and nested CLAUDE.md containing unique instructions | Preserve useful content and scoped relative references in the appropriate AGENTS.md before deleting both CLAUDE.md files; no wrapper recreation on a second sync |
+| Scoped instruction audit | Audit with --dirs app; CLAUDE.md in app and outside it | Report only in-scope migration proposals; no writes or deletions |
+| Linked instruction source | Sync project CLAUDE.md symlink to an external file; safe local AGENTS.md | Read relevant instructions, preserve them locally and unlink only the project entry; leave external source unchanged |
+| Unresolved instruction migration | Contradictory instructions, unreadable source/import, or AGENTS.md destination links outside project | Preserve affected source, report the specific blocker and request a decision only for unresolved material conflicts; do not claim complete cleanup |

@@ -1,6 +1,6 @@
 ---
 name: peaklab.sync-ai-docs
-description: "Synchronize project instructions, AGENTS.md, Claude compatibility files and shared agent assets."
+description: "Synchronize AGENTS.md, migrate and remove project CLAUDE.md files, and update shared agent assets."
 effort: deep
 disable-model-invocation: true
 argument-hint: "[--commit] [--dirs <dir1,dir2,...>] [--no-rules] [--root-rules-only] [--sync-symlinks]"
@@ -27,7 +27,8 @@ someone's home directory and regenerate its contents there.
 | `--sync-symlinks` | Also inspect and repair explicitly selected shared-asset directory links; default is audit only |
 
 Replacing real files/directories with imports or links, changing a link's target, and moving
-existing instruction ownership require approval. Do not modify provider settings or command
+existing instruction ownership require approval, except the CLAUDE.md migration explicitly included
+in a sync request below. Do not modify provider settings or command
 permission policies as part of Markdown rule generation.
 
 ## 1. Inspect the project
@@ -46,9 +47,12 @@ do not impose a new architecture, runtime version, test framework or directory t
 ## 2. Update project guides
 
 Read [guide content](references/guides-content.md). Keep shared project conventions in `AGENTS.md`
-and add targeted guides only where they provide distinct local knowledge. Preserve existing
-host-only content. For instruction migrations, monorepos or shared links, read
-[topology and migration policy](references/monorepo-and-symlinks.md).
+and add targeted guides only where they provide distinct local knowledge. A sync includes migrating
+useful instructions from project `CLAUDE.md` files into the corresponding `AGENTS.md`, then
+removing those `CLAUDE.md` files. This also applies with `--no-rules`; never recreate wrappers.
+Read [topology and migration policy](references/monorepo-and-symlinks.md) before this migration.
+Preserve nested scope, useful host-specific instructions and relative references. Audit mode only
+reports proposed migrations. Respect `--dirs`; do not touch global or out-of-scope files.
 
 ## 3. Regenerate applicable rules
 
@@ -70,9 +74,10 @@ an optional path-scoped reference.
 - Codex: use root/nested `AGENTS.md`. Include an explicit instruction to read each applicable
   rule by relative path; a Markdown link or `Scope:` line is not automatic loading. Keep
   critical invariants directly in `AGENTS.md` when they must always be present.
-- Claude Code: a new `CLAUDE.md` can import `@AGENTS.md`. For native path-scoped rules, a
-  project-local `.claude/rules` link to `../.agents/rules` is supported; use the migration
-  policy before changing an existing path. A documented read instruction is a portable fallback.
+- Do not create or retain project `CLAUDE.md` wrappers after a completed migration. Do not
+  assume that Claude automatically loads `AGENTS.md`; report unverified host loading separately.
+  If Claude rules setup is explicitly selected, use the topology policy for `.claude/rules`;
+  it does not authorize restoring a `CLAUDE.md` file.
 - Do not create `.codex/rules` links for Markdown loading. Codex execution `.rules` policies
   are a different feature and are outside this workflow.
 
@@ -80,7 +85,9 @@ an optional path-scoped reference.
 
 Check selected templates exist after installation, generated paths match actual sources, guide
 commands exist, local links resolve, and no private configuration or duplicate contradictory
-rules were introduced. Re-run generation to check stable output. Verify host loading separately
+rules were introduced. Verify each removed `CLAUDE.md` has its useful content preserved at the
+correct scope and no active project instruction references point to the removed path. Report any
+blocked migration with its reason; do not claim complete cleanup while it remains. Re-run generation to check stable output. Verify host loading separately
 when the host is available; filesystem checks alone do not prove instructions were loaded.
 
 Report files changed, templates selected/skipped, meaningful rule changes, validation and any

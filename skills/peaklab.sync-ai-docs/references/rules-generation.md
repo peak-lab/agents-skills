@@ -98,8 +98,9 @@ selected. Keep critical invariants directly in always-read project instructions 
 
 Add an explicit rule-reading instruction in `AGENTS.md` for each applicable rule, using a
 relative Markdown link and the condition under which it must be read. This is a deliberate agent
-read, not automatic Markdown expansion. Claude can import the common instructions via
-`CLAUDE.md`; native path-scoped loading uses `.claude/rules` when configured.
+read, not automatic Markdown expansion. Do not generate a `CLAUDE.md` import wrapper.
+Native Claude path-scoped loading uses `.claude/rules` when explicitly configured; keeping
+AGENTS.md alone does not prove Claude has loaded it.
 
 Use [topology and migration policy](monorepo-and-symlinks.md) before wiring links or migrating
 files. Never create `.codex/rules` symlinks as a substitute for instruction discovery; Codex

@@ -2,25 +2,44 @@
 
 ## Ownership and approvals
 
-Project `AGENTS.md` is the preferred common source; `CLAUDE.md` may import it and retain
-Claude-only additions. Shared project Markdown rules live in a real `.agents/rules/` directory.
+Project `AGENTS.md` is the canonical instruction source. An authorized sync migrates useful
+content from project `CLAUDE.md` files and removes them; do not create replacement wrappers.
+Shared project Markdown rules live in a real `.agents/rules/` directory.
 Do not assume a user's global layout or a private topology guide exists.
 
-| Existing state | Action |
+| Existing state | Action during sync (audit only reports) |
 |---|---|
-| `AGENTS.md` exists, `CLAUDE.md` absent | During an authorized Claude setup, create a wrapper with `@AGENTS.md` |
-| Only `CLAUDE.md` exists | Propose separating common and host-specific instructions; obtain approval before moving/replacing content |
-| Both exist and differ | Preserve both; identify contradictions and propose a scoped merge |
-| Both duplicate common content | Propose canonicalization; do not replace either without approval |
-| Existing valid file/directory symlink | Resolve and verify its actual target; preserve unless a change was requested |
-| Broken or unexpected symlink | Report the target and obtain approval before retargeting |
+| `AGENTS.md` exists, `CLAUDE.md` absent | Update AGENTS.md as needed; do not create CLAUDE.md |
+| Only `CLAUDE.md` exists | Write its useful instructions into AGENTS.md at the same project/package scope, verify preservation, then remove CLAUDE.md |
+| Both exist with compatible content | Merge unique useful instructions into AGENTS.md, remove duplication, verify, then remove CLAUDE.md |
+| Both contradict each other | Ask only about unresolved material conflicts; preserve the source until resolved, and report this migration as blocked |
+| CLAUDE.md is only an import wrapper | Verify its referenced content remains available through explicit AGENTS.md instructions, then remove the wrapper |
+| CLAUDE.md is a symlink | Inspect the target read-only; preserve relevant instructions in a real in-scope AGENTS.md, then unlink only the project CLAUDE.md entry, never its target |
+| CLAUDE.md is unreadable or its link/import cannot be resolved | Preserve it and report a blocked migration rather than deleting unverified instructions |
+| Existing valid non-CLAUDE file/directory symlink | Resolve and verify its actual target; preserve unless a change was requested |
+| Broken or unexpected non-CLAUDE symlink | Report the target and obtain approval before retargeting |
 | Real rules directory where a link is desired | Compare contents and collisions; approval before migration or replacement |
+
+Inventory root and nested project-owned `CLAUDE.md` files, including project `.claude/CLAUDE.md`
+when present. Respect `--dirs`; exclude dependencies, generated output and unrelated fixtures.
+`--root-rules-only` changes rule placement, not the scope of nested instructions. For a file under
+`.claude/`, migrate to the containing project's AGENTS.md. Do not follow directory symlinks outside
+the selected project, modify global instruction files or write through a symlinked AGENTS.md.
+If its destination is unsafe, preserve the source and report the blocker.
+
+Write and verify the destination before removing the source. Preserve useful host-only content
+with explicit host labels. Convert relevant `@` imports into explicit read instructions with
+correct relative links: AGENTS.md does not expand Claude imports. Rebase relative paths when
+moving content, avoid self-imports, and update active project references to deleted files.
+Historical records need not be rewritten. A second sync must not recreate CLAUDE.md or duplicate
+migrated content. This migration is included in sync authorization, including `--no-rules`, and
+does not need a separate routine approval; audit mode never writes or deletes files.
 
 Creating a missing project-local `.claude/rules -> ../.agents/rules` is a normal part of
 authorized Claude rules setup. Do not create it when no rules were generated or Claude was
 not selected. Never write through a link to global configuration. On platforms without
-symlink support, keep explicit rule-reading instructions in `AGENTS.md`, imported by Claude;
-report that this is not native automatic path scoping.
+symlink support, keep explicit rule-reading instructions in `AGENTS.md`;
+report that this does not establish automatic Claude loading or native path scoping.
 
 Codex loads `AGENTS.md` through its instruction discovery mechanism. `.codex/rules` contains
 execution-policy files when configured; a Markdown symlink there is not a loading mechanism.
