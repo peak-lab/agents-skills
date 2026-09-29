@@ -71,8 +71,8 @@ quality analytics reads them:
   `source/qa` (qa-tracker, recette), `source/glitchtip` (production error), `source/interne` (found by the
   team, audit, review). Infer it from the request; ask only when nothing indicates the origin.
 - A calibrated `priority`, never `none`:
-  - `urgent`: production blocked, data loss or leak, payment broken, no workaround. Target fix < 48 h.
-  - `high`: a main flow broken for some users, or a workaround exists but is costly. Target < 14 days.
+  - `urgent`: production blocked, data loss or leak, payment broken, no workaround. Target fix within 48 h.
+  - `high`: a main flow broken for some users, or a workaround exists but is costly. Target within 14 days.
   - `medium`: degraded but usable, secondary flow, cosmetic on a main screen.
   - `low`: cosmetic, edge case, internal tooling.
 </step_1_intake>
