@@ -138,6 +138,28 @@ gh pr merge "$PR_NUMBER" --repo "$REPO" "$MERGE_FLAG" \
 The fresh base comparison closes the normal base race; when atomic base freshness is mandatory,
 repository branch protection must also require the branch to be up to date before merge.
 
+When the base branch has a merge queue, `gh pr merge` only enqueues; the queue owns the merge
+strategy and ignores `$MERGE_FLAG`, `--subject` and `--body`. Detect it before merging:
+
+```bash
+gh api graphql -f query='query($o:String!,$r:String!,$b:String!){repository(owner:$o,name:$r){mergeQueue(branch:$b){url}}}' \
+  -f o="${REPO%%/*}" -f r="${REPO#*/}" -f b="$BASE" --jq '.data.repository.mergeQueue.url'
+```
+
+A non-empty URL means queued delivery. The squash subject comes from the single commit's subject or,
+with several commits, the PR title; confirm the required ticket suffix is there before enqueueing.
+After `gh pr merge`, poll with a bounded, blocking wait (20 s interval, at most 60 min, no deferred
+monitor):
+
+```bash
+gh api graphql -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){state isInMergeQueue mergeQueueEntry{state position}}}}' \
+  -f o="${REPO%%/*}" -f r="${REPO#*/}" -F n="$PR_NUMBER" --jq '.data.repository.pullRequest'
+```
+
+`state=MERGED` is `merged`. `isInMergeQueue=false` on an open PR means the queue removed it: read the
+failing `merge_group` run and treat it as a current-head CI failure, never re-enqueue blindly.
+Wait exhaustion returns `blocked: merge_queue_wait_exhausted` with the queue URL and entry state.
+
 Leave issue branch/worktree cleanup to the caller. Always re-read
 `gh pr view "$PR_NUMBER" --repo "$REPO" --json state,url`
 before deciding. Continue only when GitHub proves `state=MERGED`; otherwise return the exact

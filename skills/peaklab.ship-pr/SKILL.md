@@ -143,6 +143,31 @@ After clean local validation/review, `--no-merge` returns `pr_created` with
 `CI: not_checked_pr_only`. Drafts also stop at `pr_created` without automatic readiness or merge.
 These outcomes are not CI success or delivery evidence.
 
+### Auto-merge when available
+
+After a clean review, enable GitHub auto-merge when the repository allows it and the base enforces
+known, non-empty required status checks. Without them, `--auto` merges immediately, so use the
+manual merge in section 5 instead. Skip auto-merge for `--no-merge`, drafts and merge-queue bases.
+
+```bash
+gh api "repos/$REPO" --jq .allow_auto_merge
+gh api "repos/$REPO/rules/branches/$BASE" --jq '[.[] | select(.type == "required_status_checks")] | length'
+gh api "repos/$REPO/branches/$BASE/protection/required_status_checks" --jq '.checks | length'
+```
+
+Proceed only when a lookup shows required checks. A denied or failed lookup is unknown, not
+absence: skip auto-merge unless the other source confirms them. Enable it with the approved
+strategy, pinned to the reviewed head, and record `auto_merge: enabled` with that SHA:
+
+```bash
+gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash --match-head-commit "$HEAD_SHA"
+```
+
+GitHub waits only for required checks, so this section still applies to every workflow. Disable
+auto-merge before any repair (`gh pr merge "$PR_NUMBER" --repo "$REPO" --disable-auto`) and on
+any current-head failure; re-enable only for a newly reviewed head. At wait exhaustion keep it
+enabled only when every pending check is required; otherwise disable it before returning.
+
 Inspect current-head checks, Actions runs and repository-required status checks:
 
 ```bash
@@ -178,12 +203,36 @@ the new pair. If the base moves again before merge, return `blocked: moving_base
 chasing it. Any needed repair still uses section 3.
 Never merge a draft or bypass branch protections, approvals or the repository's merge strategy.
 
-Use the approved strategy (`--squash` below is an example), pinning the verified head:
+With auto-merge enabled, do not send a second merge command: poll the PR state with section 4's
+bounded wait until GitHub merges it, then verify it below.
+Otherwise use the approved strategy (`--squash` below is an example), pinning the verified head:
 
 ```bash
 gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --match-head-commit "$HEAD_SHA"
 gh pr view "$PR_NUMBER" --repo "$REPO" --json state,url,mergeCommit
 ```
+
+When the base branch has a merge queue, `gh pr merge` only enqueues; the queue owns the merge
+strategy and ignores `--squash`, `--subject` and `--body`. Detect it before merging:
+
+```bash
+gh api graphql -f query='query($o:String!,$r:String!,$b:String!){repository(owner:$o,name:$r){mergeQueue(branch:$b){url}}}' \
+  -f o="${REPO%%/*}" -f r="${REPO#*/}" -f b="$BASE" --jq '.data.repository.mergeQueue.url'
+```
+
+A non-empty URL means queued delivery. The squash subject comes from the single commit's subject or,
+with several commits, the PR title; confirm the required ticket suffix is there before enqueueing.
+After `gh pr merge`, poll with a bounded, blocking wait (20 s interval, at most 60 min, no deferred
+monitor):
+
+```bash
+gh api graphql -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){state isInMergeQueue mergeQueueEntry{state position}}}}' \
+  -f o="${REPO%%/*}" -f r="${REPO#*/}" -F n="$PR_NUMBER" --jq '.data.repository.pullRequest'
+```
+
+`state=MERGED` is `merged`. `isInMergeQueue=false` on an open PR means the queue removed it: read the
+failing `merge_group` run and treat it as a current-head CI failure, never re-enqueue blindly.
+Wait exhaustion returns `blocked: merge_queue_wait_exhausted` with the queue URL and entry state.
 
 Verify state even if the merge command errors. Only `state=MERGED` yields `merged`; otherwise
 report the actual blocker without blindly retrying merge. Head pinning does not atomically pin
@@ -219,8 +268,9 @@ state, preserving counters/history and other fields. If that write fails, report
 failure; never claim a saved result. A safe refusal can stop before remote verification, but must
 not claim those identities were verified. Successful delivery always requires target verification.
 Persist and report PR/repository, `pr_created|merged|blocked|closed_unmerged`, verified head and
-merge commit if any, review/CI evidence, suggestions, repair count and Plane result. For a blocker,
-include its reason, last attempt and next decision. Stop at the requested terminal state.
+merge commit if any, `auto_merge` state, review/CI evidence, suggestions, repair count and Plane
+result. For a blocker, include its reason, last attempt and next decision.
+Stop at the requested terminal state.
 After returning to a caller, stop autonomous tools, messages and report edits. Resume only for
 a specific evidence gap, in-scope repair or authorized next phase; report newly discovered
 evidence that invalidates the result. Do not extend delivery with report polishing,
