@@ -25,6 +25,10 @@
 
 ## Common Issues
 [Real gotchas encountered]
+
+## Agent Communication
+- Reply in the user's language, even when instructions, skills or tool output are in English.
+- Keep code, identifiers, commits and PR titles in [the project's language, usually English].
 ```
 
 Update rules:
@@ -33,6 +37,7 @@ Update rules:
 2. Use concrete examples only when they clarify a non-obvious convention
 3. Document the "why" behind non-obvious rules
 4. Keep it scannable — read at the start of a task
+5. Keep an existing language convention; add the reply-language line only when none exists
 
 ## Targeted guide candidates
 
