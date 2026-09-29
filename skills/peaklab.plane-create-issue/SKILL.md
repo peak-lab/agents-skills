@@ -63,6 +63,18 @@ Useful but optional:
 - Requested state, labels, assignees, parent, estimate, type, module, or dates.
 
 Default `priority` to `none`. Omit other optional fields so Plane project defaults remain effective.
+
+When the issue is a bug (`fix(...)` title or a defect report), two extra fields are mandatory because
+quality analytics reads them:
+
+- One origin label, resolved by name through step 4: `source/client` (reported by a customer or support),
+  `source/qa` (qa-tracker, recette), `source/glitchtip` (production error), `source/interne` (found by the
+  team, audit, review). Infer it from the request; ask only when nothing indicates the origin.
+- A calibrated `priority`, never `none`:
+  - `urgent`: production blocked, data loss or leak, payment broken, no workaround. Target fix < 48 h.
+  - `high`: a main flow broken for some users, or a workaround exists but is costly. Target < 14 days.
+  - `medium`: degraded but usable, secondary flow, cosmetic on a main screen.
+  - `low`: cosmetic, edge case, internal tooling.
 </step_1_intake>
 
 <step_2_analysis>
