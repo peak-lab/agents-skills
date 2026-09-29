@@ -150,7 +150,7 @@ known, non-empty required status checks. Without them, `--auto` merges immediate
 manual merge in section 5 instead. Skip auto-merge for `--no-merge`, drafts and merge-queue bases.
 
 ```bash
-gh repo view "$REPO" --json autoMergeAllowed --jq .autoMergeAllowed
+gh api "repos/$REPO" --jq .allow_auto_merge
 gh api "repos/$REPO/rules/branches/$BASE" --jq '[.[] | select(.type == "required_status_checks")] | length'
 gh api "repos/$REPO/branches/$BASE/protection/required_status_checks" --jq '.checks | length'
 ```

@@ -45,7 +45,8 @@ test("no-CI classification cannot be created by deleting the base workflow", () 
 });
 
 test("auto-merge requires known required checks and never replaces full CI verification", () => {
-  expect(skill).toContain("gh repo view \"$REPO\" --json autoMergeAllowed");
+  expect(skill).toContain('gh api "repos/$REPO" --jq .allow_auto_merge');
+  expect(skill).not.toContain("--json autoMergeAllowed");
   expect(skill).toContain('--auto --squash --match-head-commit "$HEAD_SHA"');
   expect(skill).toContain("A denied or failed lookup is unknown, not\nabsence: skip auto-merge");
   expect(skill).toContain("Disable\nauto-merge before any repair");
