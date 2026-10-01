@@ -13,6 +13,7 @@
     ],
     "development": [
       "clean-code",
+      "clean-worktree",
       "debug-code",
       "find-docs",
       "optimize-prisma-query",
