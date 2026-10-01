@@ -31,6 +31,7 @@ Install the linked workflow first; its installation guide lists service prerequi
 | Plane issue | [Plane](installation.md#plane-issues) | Use peaklab.plane-do-issue for [issue URL]. Stop at a reviewed PR. |
 | GlitchTip error | [GlitchTip](installation.md#glitchtip-errors) | Use peaklab.glitchtip-do-issue for [error URL]. Stop at a reviewed PR. |
 | Existing PR ready to finalize | [GitHub](installation.md#github-issues) | Use peaklab.ship-pr to review and merge [PR URL] once the required checks pass. |
+| Finished worktrees | [Custom selection](installation.md#other-selections) | Use clean-worktree --all-merged to remove merged worktrees, their branches and Docker resources. |
 
 The last example explicitly authorizes merging. Issue workflows stop at a reviewed PR by default;
 see [workflow options and authorization](team-workflows.md#workflow-options-and-authorization).
