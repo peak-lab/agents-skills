@@ -22,7 +22,9 @@ plan below proves belongs only to the selected worktrees; anything uncertain is 
 ## 1. Inventory
 
 Run from the repository's main checkout (`git rev-parse --path-format=absolute --git-common-dir`,
-then its parent). Never select the main checkout or the default branch.
+then its parent) as `MAIN_CHECKOUT`. Resolve `DEFAULT` from
+`git symbolic-ref --short refs/remotes/origin/HEAD` (strip `origin/`). Never select the main
+checkout or the default branch.
 
 ```bash
 git worktree list --porcelain
@@ -86,10 +88,23 @@ and the parent worktrees directory only when empty (`rmdir`, never `rm -rf`).
   A remote branch already deleted by the merge needs no action.
 - Never delete an unmerged branch, another person's branch, or a branch used by another worktree.
 
-If the main checkout was on a removed branch, switch it to the default branch and `git pull --ff-only`.
+## 5. Return to the default branch
 
-## 5. Report
+Always finish in the main checkout on the default branch (usually `main`), up to date:
+
+```bash
+cd "$MAIN_CHECKOUT"
+git switch "$DEFAULT"
+git pull --ff-only
+```
+
+Do this even when the main checkout was on another branch. If it has uncommitted changes, or the
+switch or fast-forward is refused, leave it as is and report why; never stash, reset or merge.
+When the session ran inside a removed worktree, continue from the main checkout.
+
+## 6. Report
 
 List per worktree: removed path, branches deleted (local/remote), Docker projects, volumes and images
-removed, processes stopped, and everything skipped with its reason and the decision needed.
+removed, processes stopped, the final branch of the main checkout, and everything skipped with its
+reason and the decision needed.
 `--dry-run` reports the same plan with nothing executed.
