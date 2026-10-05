@@ -21,7 +21,8 @@ the plan below proves belongs only to the selected targets; anything uncertain i
 | `--keep-volumes` | Keep the Docker volumes of the selected worktrees |
 
 A target is either a linked worktree with its branch, or a branch checked out in the main checkout
-(no worktree to remove: steps 2 and 3 do not apply, step 5 switches it back to the default branch).
+(no worktree to remove: steps 2 and 3 do not apply). Git refuses to delete a checked-out branch, so
+run step 5 before step 4 for such a target.
 
 ## 1. Inventory
 
