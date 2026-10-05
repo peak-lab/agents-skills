@@ -1,4 +1,7 @@
 {
+  "clean-worktree": [
+    "peaklab.ship-pr"
+  ],
   "peaklab.client-audit": [
     "review-code"
   ],
