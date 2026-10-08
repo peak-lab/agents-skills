@@ -221,7 +221,7 @@ def run_candidate(
     return subprocess.run(
         [
             "claude", "-p", prompt, "--model", "sonnet", "--max-turns", "60",
-            "--max-budget-usd", "12", "--permission-mode", "auto",
+            "--max-budget-usd", "12", "--permission-mode", "bypassPermissions",
             "--output-format", "stream-json", "--verbose", "--no-session-persistence",
         ],
         cwd=cwd,
