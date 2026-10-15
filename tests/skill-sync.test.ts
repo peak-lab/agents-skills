@@ -134,4 +134,27 @@ describe("skill synchronization", () => {
       expect(plan.items.every(item => item.action === "install")).toBe(true);
     }
   });
+
+  test("leaves an excluded skill to another owner, even when it is installed locally", () => {
+    const value = fixture();
+    value.skill("alpha", "source alpha");
+    value.skill("beta", "source beta");
+    value.skill("gamma", "source gamma");
+    value.local("gamma", "installed by another tool");
+
+    const plan = createSyncPlan(value.root, value.target, { skills: ["alpha"], allExisting: true, excluded: ["gamma"] });
+
+    expect(plan.items.map(item => item.name)).toEqual(["alpha", "beta"]);
+    applySyncPlan(value.root, plan);
+    expect(readFileSync(join(value.target, "gamma", "SKILL.md"), "utf8")).toContain("installed by another tool");
+  });
+
+  test("refuses to exclude an unknown skill or a dependency of a selected skill", () => {
+    const value = fixture();
+    value.skill("alpha", "source alpha");
+    value.skill("beta", "source beta");
+
+    expect(() => createSyncPlan(value.root, value.target, { skills: ["alpha"], excluded: ["gama"] })).toThrow("unknown skill: gama");
+    expect(() => createSyncPlan(value.root, value.target, { skills: ["alpha"], excluded: ["beta"] })).toThrow("cannot exclude a dependency of a selected skill: beta");
+  });
 });
