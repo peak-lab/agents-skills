@@ -1,27 +1,19 @@
 #!/usr/bin/env python3
 import os, json, re, sys, time, datetime, urllib.request
+from pathlib import Path
 
-def _load(path):
-    try:
-        for k, v in json.load(open(path)).get('env', {}).items():
-            if k in ('PLANE_TOKEN', 'PLANE_PROJECT'): os.environ.setdefault(k, v)
-    except Exception: pass
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "peaklab.plane-api"))
+from plane_client import PlaneConfigError, PlaneConfigLoader  # noqa: E402
 
-_load('.claude/settings.local.json')
-if not (os.environ.get('PLANE_TOKEN') and os.environ.get('PLANE_PROJECT')):
-    if os.path.exists('.env'):
-        for line in open('.env'):
-            if line.startswith('PLANE_') and '=' in line:
-                k, _, v = line.strip().partition('=')
-                os.environ.setdefault(k.strip(), v.strip().strip('"\''))
-if not (os.environ.get('PLANE_TOKEN') and os.environ.get('PLANE_PROJECT')):
-    _load(os.path.expanduser('~/.claude/settings.local.json'))
+try:
+    _config = PlaneConfigLoader().load()
+except PlaneConfigError as e:
+    sys.exit(str(e))
 
-url       = os.environ['PLANE_PROJECT']
-TOKEN     = os.environ['PLANE_TOKEN']
-HOST      = re.search(r'https://([^/]+)/', url).group(1)
-WORKSPACE = re.search(r'https://[^/]+/([^/]+)/', url).group(1)
-PROJECT_ID = re.search(r'/projects/([^/]+)/', url).group(1)
+TOKEN     = _config.token
+HOST      = _config.project.host
+WORKSPACE = _config.project.workspace
+PROJECT_ID = _config.project.project_id
 BASE      = f'https://{HOST}/api/v1'
 WP        = f'/workspaces/{WORKSPACE}/projects/{PROJECT_ID}'
 

@@ -256,8 +256,8 @@ Handle watcher results against the same shared repair budget:
   determined by the issue intent and repository rules. Require rebase completion, validation, a
   new push, and a new parent review.
 - Infrastructure failures, flaky or third-party failures, broad conflicts, product-semantic
-  uncertainty, policy failures, missing CI, and issue mismatches remain terminal blockers. Do not
-  mutate code or Plane for them.
+  uncertainty, policy failures, missing CI, merge-queue wait exhaustion, and issue mismatches
+  remain terminal blockers. Do not mutate code or Plane for them.
 
 Every resumed worker mutation that produces a new head increments the shared repair counter.
 Stop after two total cycles with the exact evidence and decision needed; never reset the budget

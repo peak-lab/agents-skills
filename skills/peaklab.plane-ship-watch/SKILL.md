@@ -143,7 +143,7 @@ strategy and ignores `$MERGE_FLAG`, `--subject` and `--body`. Detect it before m
 
 ```bash
 gh api graphql -f query='query($o:String!,$r:String!,$b:String!){repository(owner:$o,name:$r){mergeQueue(branch:$b){url}}}' \
-  -f o="${REPO%%/*}" -f r="${REPO#*/}" -f b="$BASE" --jq '.data.repository.mergeQueue.url'
+  -f o="${REPO%%/*}" -f r="${REPO#*/}" -f b="$BASE_BRANCH" --jq '.data.repository.mergeQueue.url'
 ```
 
 A non-empty URL means queued delivery. The squash subject comes from the single commit's subject or,
@@ -158,7 +158,7 @@ gh api graphql -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$
 
 `state=MERGED` is `merged`. `isInMergeQueue=false` on an open PR means the queue removed it: read the
 failing `merge_group` run and treat it as a current-head CI failure, never re-enqueue blindly.
-Wait exhaustion returns `blocked: merge_queue_wait_exhausted` with the queue URL and entry state.
+Wait exhaustion returns `blocked_merge_queue_wait_exhausted` with the queue URL and entry state.
 
 Leave issue branch/worktree cleanup to the caller. Always re-read
 `gh pr view "$PR_NUMBER" --repo "$REPO" --json state,url`
@@ -205,7 +205,8 @@ one atomic config source. Report the state printed by `finish_issue.py`; never a
 <result>
 Return PR URL, issue, reviewed SHA, CI evidence, merge state, Plane state, and one status:
 `merged`, `blocked_review_required`, `blocked_rebase_required`, `blocked_conflict`,
-`blocked_issue_mismatch`, `blocked_policy`, `blocked_ci`, `blocked_missing_ci`, or
+`blocked_issue_mismatch`, `blocked_policy`, `blocked_ci`, `blocked_missing_ci`,
+`blocked_merge_queue_wait_exhausted`, or
 `closed_unmerged`. For `blocked_ci` and `blocked_conflict`, also return
 `repair_disposition=worker_safe|external_or_unknown|product_or_scope_unknown` and the concrete
 evidence the parent must pass to the existing implementation worker. The watcher never performs
