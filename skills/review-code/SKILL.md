@@ -6,8 +6,8 @@ argument-hint: "[PR number or file paths]"
 ---
 
 <objective>
-Review the exact requested patch, loading the relevant domain references. Use independent
-specialists when distinct risks justify them; consolidate one explicit verdict for the caller.
+Review the exact requested patch. Use independent specialists when distinct risks justify them;
+consolidate one explicit verdict for the caller.
 </objective>
 
 <constraints>
@@ -18,59 +18,36 @@ specialists when distinct risks justify them; consolidate one explicit verdict f
 </constraints>
 
 <workflow>
-## Phase 1: SCOPE - Analyze changes and determine review domains
+## Phase 1: SCOPE
 
-1. **Get the diff.** Determine what to review:
-   - If user provided a PR number: bind its repository and use `gh pr diff {number} --repo {owner/repo}`; do not replace it with local changes.
-   - If user provided file paths: inspect their relevant diff and current contents; an explicitly requested file can need review even when unchanged or untracked.
-   - If nothing specified: use `git status --short`, `git diff` (unstaged), `git diff --cached` (staged), and `git ls-files --others --exclude-standard` (untracked). Read in-scope new source files directly; Git diffs alone omit them. Do not open unrelated secrets, ignored files or generated artifacts merely because they exist.
+1. **Get the diff.**
+   - PR number: bind its repository and use `gh pr diff {number} --repo {owner/repo}`; do not replace it with local changes. If the diff cannot be accessed, report INCOMPLETE; never approve a substituted local checkout.
+   - File paths: inspect their relevant diff and current contents; an explicitly requested file can need review even when unchanged or untracked.
+   - Nothing specified: use `git status --short`, `git diff`, `git diff --cached` and `git ls-files --others --exclude-standard`. Read in-scope new source files directly; Git diffs alone omit them. Do not open unrelated secrets, ignored files or generated artifacts merely because they exist.
    - A caller-provided PR or commit range remains the target even with a clean worktree. Ask only when no target can be established.
    - Record head/base for committed changes. For local changes, also record the reviewed file set and content snapshot/digests: HEAD alone cannot identify a dirty or untracked patch. Recheck relevant contents before reusing a verdict.
 
-2. **Categorize changed files** into domains by scanning extensions and paths:
+2. **Pick review domains** from changed paths: security-sensitive (auth, middleware, API routes, env, crypto, payments), backend/database (services, queries, migrations, schemas), frontend (components, styles, accessibility), tests, config/CI. Maintainability counts only where complexity obscures correctness or safe maintenance.
 
-| Domain | Signals |
-|--------|---------|
-| **frontend** | `.tsx`, `.jsx`, `.css`, `.scss`, `components/`, `pages/`, `app/`, `ui/` |
-| **backend** | `.ts`/`.js` in `api/`, `server/`, `routes/`, `middleware/`, `lib/`, `services/`, `prisma/`, `drizzle/` |
-| **security-sensitive** | Auth files, middleware, API routes, env handling, crypto, payments |
-| **database** | Migration files, schema files, ORM models, raw SQL |
-| **tests** | `.test.`, `.spec.`, `__tests__/`, `vitest`, `jest` |
-| **config** | `.config.`, `package.json`, `tsconfig`, CI/CD files |
+3. **Scale.** Small focused changes usually need one general review. Add an independent specialist only for a distinct material risk, respecting host capacity; file count alone imposes no reviewer quota. Keep the final verdict under one owner.
 
-3. **Determine review agents to launch** based on domains detected:
+## Phase 2: DISPATCH
 
-| Condition | Agent | Focus | Reference to load |
-|-----------|-------|-------|-------------------|
-| Maintainability risk in changed code | **Clean Code** | Complexity obscuring correctness or safe maintenance | Relevant parts of `references/clean-code-principles.md` and `references/code-quality-metrics.md` |
-| Backend or security-sensitive files | **Security** | OWASP, auth, injection, secrets | `references/security-checklist.md` |
-| Frontend files (.tsx/.jsx/.css) | **UX/UI** | Accessibility, responsive, UX patterns | `references/ux-ui-checklist.md` |
-| Backend files (API, DB, services) | **Backend** | API design, DB patterns, error handling | `references/backend-patterns.md` |
-| Test files changed | **Tests** | Coverage gaps, test quality | (inline guidance) |
+Launch independent assignments in parallel, named `review-{domain}` (labels, not agent types).
+Prefer the `code-reviewer` native agent (read-only, deep) or another repository-declared reviewer;
+if delegation is unavailable, perform the same review locally with the same reporting standard.
+Always include the actual diff context, not just file paths. Assignments do not communicate.
 
-4. **Determine review scale:** one reviewer may cover several domains. Add an independent
-   specialist for a distinct material risk, respecting host capacity; file count alone does
-   not impose a reviewer quota. Keep the final verdict under one owner.
-
-## Phase 2: DISPATCH - Launch parallel specialized review agents
-
-Launch independent review assignments in parallel using the host's available agent tools and
-deep review intent. Use repository-declared reviewers when present; if delegation is unavailable,
-read the same references and perform an explicit local review with the same reporting standard.
-
-Each agent gets a structured prompt following this template:
+Each assignment gets this request:
 
 ```xml
 <review_request>
   <focus_area>{domain}</focus_area>
-  <reference_files>
-    <file>{SKILL_PATH}/references/{reference-file}.md</file>
-  </reference_files>
   <changed_files>
     <file path="src/example.ts" />
   </changed_files>
   <diff_context>
-{paste relevant portions of the diff for this domain's files}
+{relevant portions of the diff for this domain's files}
   </diff_context>
   <pr_context>
     <title>{PR title if available}</title>
@@ -79,26 +56,24 @@ Each agent gets a structured prompt following this template:
 </review_request>
 
 INSTRUCTIONS:
-1. Read EACH reference file listed in <reference_files> - these contain your domain-specific checklists
-2. Read EACH file listed in <changed_files> completely
-3. Apply the checklist from the reference against the actual code
-4. For EACH issue found, provide: Severity | Issue | Location (file:line) | Why It Matters | Concrete Fix
-5. Report findings supported by a concrete affected path, plausible triggering condition and observable consequence. Mark uncertain hypotheses as unverified; no invented numerical confidence, style-only nitpicks or speculative refactors.
-6. Use severity labels: BLOCKING (must fix) | CRITICAL (high-impact, must fix) | SUGGESTION (optional improvement). Reference-guide priority is not automatically a defect severity: justify impact in this patch.
+1. Read EACH file listed in <changed_files> completely and inspect the patch in context.
+2. For EACH issue found, provide: Severity | Issue | Location (file:line) | Why It Matters | Concrete Fix
+3. Apply the confidence threshold and severity labels from review-code's SKILL.md.
 ```
 
-**Review task names:** `review-{domain}` (e.g., `review-security`, `review-ux-ui`). These label assignments, not agent types. Use a repository-declared reviewer or the host's available review capability; keep the local fallback when delegation is unavailable.
+If a best-practice skill exists for the detected stack (e.g. `vercel-react-best-practices`), tell
+the reviewer to load it through the host's facility. It is optional, not a required dependency.
 
-**If a best-practice skill exists** for the detected tech stack (e.g., `vercel-react-best-practices` for Next.js/React), include it in the prompt: tell the agent to load its installed instructions through the host's available facility for additional framework-specific checks. This is optional, not an undeclared required dependency.
+## Confidence threshold and severity
 
-## Phase 3: CONSOLIDATE - Merge and present findings
+- Report only findings supported by a concrete affected path, a plausible triggering condition and an observable consequence. Mark uncertain hypotheses as unverified; no invented numerical confidence, style-only nitpicks or speculative refactors.
+- Flag only code the patch changes or directly breaks; linter-covered style and pre-existing issues outside the diff are not findings.
+- Labels: BLOCKING (must fix) | CRITICAL (high-impact, must fix) | SUGGESTION (optional). Checklist priority is not a defect severity: justify impact in this patch.
 
-After the review assignments complete (or the equivalent local review):
+## Phase 3: CONSOLIDATE
 
-1. **Collect all findings** from each agent
-2. **Deduplicate**: If multiple agents flagged the same issue, keep the most detailed one
-3. **Sort by severity**: BLOCKING first, then CRITICAL, then SUGGESTION
-4. **Present the unified report:**
+Collect all findings, deduplicate (keep the most detailed), sort BLOCKING → CRITICAL → SUGGESTION,
+then present:
 
 ```markdown
 # Code Review Report
@@ -120,32 +95,9 @@ After the review assignments complete (or the equivalent local review):
 {Verdict: APPROVE / APPROVE WITH COMMENTS / REQUEST CHANGES / INCOMPLETE}
 ```
 
-5. **Verdict logic:**
-   - Any BLOCKING or CRITICAL issue → REQUEST CHANGES
-   - Only non-blocking SUGGESTIONS → APPROVE WITH COMMENTS
-   - No findings after a completed review → APPROVE
-   - Missing target, inaccessible evidence or an incomplete review → report INCOMPLETE with the missing evidence, never APPROVE. State which checks were inspected versus actually run.
+**Verdict logic:**
+- Any BLOCKING or CRITICAL issue → REQUEST CHANGES
+- Only non-blocking SUGGESTIONS → APPROVE WITH COMMENTS
+- No findings after a completed review → APPROVE
+- Missing target, inaccessible evidence or an incomplete review → report INCOMPLETE with the missing evidence, never APPROVE. State which checks were inspected versus actually run.
 </workflow>
-
-<execution_rules>
-- Perform at least one explicit review; do not require an unavailable agent to complete it
-- Resolve deep review model/effort through the repository and host routing policy
-- ALWAYS pass the relevant reference file paths so agents can Read them
-- ALWAYS include the actual diff context in the agent prompt (not just file paths)
-- NEVER skip the scoping phase - it determines which agents are needed
-- Small focused changes usually need one general review, not multiple specialist passes
-- Each agent should complete independently - they don't need to communicate with each other
-</execution_rules>
-
-<reference_files>
-Domain-specific checklists loaded by sub-agents:
-
-| Reference | Domain | Content |
-|-----------|--------|---------|
-| `references/security-checklist.md` | Security | OWASP Top 10, auth, injection, input validation, secrets |
-| `references/clean-code-principles.md` | Clean Code | SOLID, code smells, function design, naming |
-| `references/code-quality-metrics.md` | Clean Code | Complexity metrics, maintainability index, thresholds |
-| `references/ux-ui-checklist.md` | UX/UI | Accessibility (WCAG), responsive design, UX patterns, loading states |
-| `references/backend-patterns.md` | Backend | API design, database, error handling, concurrency, observability |
-| `references/feedback-patterns.md` | All | How to structure feedback (What + Why + Fix), priority labels |
-</reference_files>
