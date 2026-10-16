@@ -119,7 +119,7 @@ NAME = 'soowe'   # substring to search (case-insensitive); change before running
 
 FIND = """
 monitors = api.get_monitors()
-matches = [m for m in monitors if '""" + NAME + """' in m.get('name', '').lower()]
+matches = [m for m in monitors if """ + repr(NAME.lower()) + """ in m.get('name', '').lower()]
 for m in matches:
     print(m.get('id'), m.get('name'), 'active' if m.get('active') else 'paused')
 """

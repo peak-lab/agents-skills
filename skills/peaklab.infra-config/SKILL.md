@@ -33,23 +33,23 @@ Auto-discover deployment and integration credentials from all available sources,
 ### Step 1 — Auto-discover from all sources (run in parallel)
 
 ```bash
-# Source 1: .zshrc — richest, has all PeakLab tokens
-grep -E "^export (COOLIFY|PLANE|GLITCHTIP|DATABASE|APP_|OPENROUTER|HCLOUD)" ~/.zshrc 2>/dev/null
+# Source 1: .zshrc — richest, has all PeakLab tokens (names only, never values)
+grep -oE "^export (COOLIFY|PLANE|GLITCHTIP|DATABASE|APP_|OPENROUTER|HCLOUD)[A-Z_]*" ~/.zshrc 2>/dev/null
 
-# Source 2: shared global agent env
-grep -E "^(COOLIFY|PLANE|GLITCHTIP|DATABASE|APP_|OPENROUTER|HCLOUD)" ~/.agents/.env.local 2>/dev/null
+# Source 2: shared global agent env (names only)
+grep -oE "^(COOLIFY|PLANE|GLITCHTIP|DATABASE|APP_|OPENROUTER|HCLOUD)[A-Z_]*" ~/.agents/.env 2>/dev/null
 
 # Source 3: existing infra.md (already configured?)
 cat .codex/rules/infra.md 2>/dev/null
 
 # Source 4: project .env
-grep -E "^[A-Z_]+=.+" .env 2>/dev/null | grep -v "^#"
+grep -oE "^[A-Z_]+=" .env 2>/dev/null
 
 # Source 5: sibling projects
 ls ../*/.env 2>/dev/null | head -10
 ```
 
-For each sibling `.env` found, read and extract relevant infra vars — projects in the same family often share `COOLIFY_URL`, `PLANE_TOKEN`, `GLITCHTIP_URL`, etc. Never print secret values directly.
+For each sibling `.env` found, read and extract relevant infra vars — projects in the same family often share `COOLIFY_URL`, `PLANE_TOKEN`, `GLITCHTIP_URL`, etc. Read values in a script; never print secret values to the terminal.
 
 ### Step 2 — Auto-detect Coolify APP UUID + FQDN
 
@@ -72,7 +72,7 @@ def load_env(path):
     return env
 
 env = {}
-env.update(load_env("~/.agents/.env.local"))
+env.update(load_env("~/.agents/.env"))
 env.update(load_env(".env"))  # project overrides global
 
 # Also check zshrc as fallback
@@ -82,10 +82,10 @@ if 'COOLIFY_TOKEN' not in env:
     if m: env['COOLIFY_TOKEN'] = m.group(1)
 
 TOKEN = env.get('COOLIFY_TOKEN', '')
-URL = env.get('COOLIFY_URL', 'https://coolify.example.com/api/v1').rstrip('/')
+URL = env.get('COOLIFY_URL', '').rstrip('/')
 
-if not TOKEN:
-    print("COOLIFY_TOKEN not found — skip UUID detection")
+if not TOKEN or not URL:
+    print("COOLIFY_TOKEN or COOLIFY_URL not found — skip UUID detection")
 else:
     # Derive app name from git remote
     try:
@@ -247,10 +247,10 @@ Re-run /peaklab.infra-config to update any value.
 - Scan all sources before asking anything — never ask for something already discoverable
 - Auto-detect `COOLIFY_APP_UUID` via API (match git repo name) — never ask manually
 - Auto-fill `APP_URL_PROD` from Coolify FQDN — take first value if comma-separated
-- Default `COOLIFY_URL` for PeakLab projects: `https://coolify.example.com/api/v1`
+- Never default `COOLIFY_URL` to the placeholder host: use a discovered value or ask
 - Load credentials in Python directly from `.env` files, not from `os.environ` only (bash grep doesn't export)
 - `.env` → all project vars needed by Claude, Codex, app scripts, and skills (tokens + URLs + UUIDs)
-- `~/.agents/.env.local` → optional global fallback for shared agent/service tokens
+- `~/.agents/.env` → optional global fallback for shared agent/service tokens
 - `infra.md` → human-readable context only, no tokens
 - Always mask tokens to `••••••<last6>` in output
 - Always merge (not overwrite) `.env` — preserve comments and unrelated variables

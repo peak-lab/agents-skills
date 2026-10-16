@@ -66,8 +66,6 @@ Then:
 
 Minor and patch bumps only — no major version changes.
 
-Generated with \`pnpm update\`.
-
 ## Test plan
 - [ ] CI green
 - [ ] No runtime regressions

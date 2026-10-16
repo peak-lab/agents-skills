@@ -17,11 +17,18 @@ Archive completed Plane issues to clean up the board.
 /peaklab.plane-archive --days 30    # Archive only issues created > 30 days ago
 ```
 
+Run the bundled script from the project; `SKILL_DIR` is this skill's installed directory:
+
+```bash
+bash "$SKILL_DIR/plane-archive.sh" --dry-run --days 14
+```
+
+Show the dry-run list and archive only after the user confirms it.
+
 ## Configuration
 
-Load [peaklab.plane-api](../peaklab.plane-api/SKILL.md) for its shared client and atomic
-configuration. It resolves `PLANE_TOKEN` and `PLANE_PROJECT` from the configured project/global
-sources; do not implement another credential loader here.
+The script loads `PLANE_TOKEN` and `PLANE_PROJECT` atomically through the shared client of
+[peaklab.plane-api](../peaklab.plane-api/SKILL.md); do not implement another credential loader.
 
 ## Behavior
 

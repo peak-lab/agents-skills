@@ -27,7 +27,7 @@ Related script: [sync_issue_link.py](sync_issue_link.py) links a Plane issue wit
 
 <constraints>
 - Always run `<bootstrap>` before any API call
-- Never hardcode state IDs — always resolve dynamically via `<state-resolution>`
+- Never hardcode state IDs — always resolve dynamically via the state resolution in `<full-context>`
 - Use Python for all API calls — never bash curl chains for JSON/HTML payloads
 - Store `PLANE_TOKEN` in `~/.agents/.env` (global, chmod 600) or a gitignored project `.env` — never commit it
 - Load `PLANE_TOKEN` and `PLANE_PROJECT` atomically from the same source; never combine a token from one source with a project host from another
