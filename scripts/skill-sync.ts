@@ -97,7 +97,7 @@ function readState(target: string): State | undefined {
   return value as State;
 }
 
-function selectedSkills(root: string, target: string, options: { profiles: string[]; skills: string[]; allExisting: boolean }): string[] {
+function selectedSkills(root: string, target: string, options: { profiles: string[]; skills: string[]; allExisting: boolean; excluded: string[] }): string[] {
   const source = sourceSkills(root);
   const requested = new Set<string>(options.skills);
   const profileData = profiles(root);
@@ -110,13 +110,20 @@ function selectedSkills(root: string, target: string, options: { profiles: strin
     if (!existsSync(target)) fail("--all-existing requires an existing target directory");
     for (const name of source.keys()) if (existsSync(join(target, name, "SKILL.md"))) requested.add(name);
   }
+  for (const name of options.excluded) {
+    if (!source.has(name)) fail(`unknown skill: ${name}`);
+    requested.delete(name);
+  }
   if (requested.size === 0) fail("select skills with --profile, --skill, or --all-existing");
-  return resolveDependencyClosure(source, dependencies(root), [...requested]);
+  const selected = resolveDependencyClosure(source, dependencies(root), [...requested]);
+  const required = options.excluded.filter(name => selected.includes(name));
+  if (required.length > 0) fail(`cannot exclude a dependency of a selected skill: ${required.join(", ")}`);
+  return selected;
 }
 
-export function createSyncPlan(root: string, targetInput: string, options: { profiles?: string[]; skills?: string[]; allExisting?: boolean; adoptRepository?: boolean } = {}): SyncPlan {
+export function createSyncPlan(root: string, targetInput: string, options: { profiles?: string[]; skills?: string[]; allExisting?: boolean; adoptRepository?: boolean; excluded?: string[] } = {}): SyncPlan {
   const target = safeTarget(targetInput);
-  const selected = selectedSkills(root, target, { profiles: options.profiles ?? [], skills: options.skills ?? [], allExisting: options.allExisting ?? false });
+  const selected = selectedSkills(root, target, { profiles: options.profiles ?? [], skills: options.skills ?? [], allExisting: options.allExisting ?? false, excluded: options.excluded ?? [] });
   const state = existsSync(target) ? readState(target) : undefined;
   const items = selected.map(name => {
     const source = join(root, "skills", name);
@@ -221,19 +228,20 @@ function formatPlan(plan: SyncPlan, heading = "Skill synchronization plan (read-
   return [heading, "Skill | Action | Reason", "--- | --- | ---", ...plan.items.map(item => `${item.name} | ${item.action} | ${item.reason}`)].join("\n");
 }
 
-function parse(args: string[]): { command: Command; target?: string; backup?: string; profiles: string[]; skills: string[]; allExisting: boolean; adoptRepository: boolean } {
+function parse(args: string[]): { command: Command; target?: string; backup?: string; profiles: string[]; skills: string[]; excluded: string[]; allExisting: boolean; adoptRepository: boolean } {
   const [command, ...rest] = args;
   if (!(["check", "apply", "restore", "candidate"] as const).includes(command as Command)) fail("usage: skill-sync <check|apply|restore|candidate> --target /absolute/path/skills [options]");
-  const result: { command: Command; target?: string; backup?: string; profiles: string[]; skills: string[]; allExisting: boolean; adoptRepository: boolean } = { command: command as Command, profiles: [], skills: [], allExisting: false, adoptRepository: false };
+  const result: { command: Command; target?: string; backup?: string; profiles: string[]; skills: string[]; excluded: string[]; allExisting: boolean; adoptRepository: boolean } = { command: command as Command, profiles: [], skills: [], excluded: [], allExisting: false, adoptRepository: false };
   for (let index = 0; index < rest.length; index += 1) {
     const option = rest[index];
-    if (option === "--target" || option === "--backup" || option === "--profile" || option === "--skill") {
+    if (option === "--target" || option === "--backup" || option === "--profile" || option === "--skill" || option === "--exclude") {
       const value = rest[++index];
       if (!value || value.startsWith("--")) fail(`${option} requires a value`);
       if (option === "--target") result.target = value;
       else if (option === "--backup") result.backup = value;
       else if (option === "--profile") result.profiles.push(value);
-      else result.skills.push(value);
+      else if (option === "--skill") result.skills.push(value);
+      else result.excluded.push(value);
     } else if (option === "--all-existing") result.allExisting = true;
     else if (option === "--adopt-repository") result.adoptRepository = true;
     else fail(`unknown option: ${option}`);

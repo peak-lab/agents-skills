@@ -43,6 +43,17 @@ bun run sync:skills -- check --target "$HOME/.agents/skills" --profile core --pr
 bun run sync:skills -- apply --target "$HOME/.agents/skills" --profile core --profile peaklab
 ```
 
+Exclude a skill that another tool owns on this machine, such as the Orca skills that
+`orca skills update` installs. Repeat `--exclude` per skill; it also applies to `--all-existing`:
+
+```bash
+bun run sync:skills -- apply --target "$HOME/.agents/skills" --all-existing \
+  --exclude orca-cli --exclude orchestration --exclude computer-use
+```
+
+An excluded skill is neither installed, updated nor recorded. Excluding a dependency of a selected
+skill fails instead of leaving that skill incomplete.
+
 The initial adoption flag is intentionally required for an installation with no recorded baseline.
 Every replacement is copied to a sibling `.peaklab-skill-backup-*` directory first. The tool refuses
 to overwrite a skill changed locally after its recorded baseline. Inspect that divergence and either
