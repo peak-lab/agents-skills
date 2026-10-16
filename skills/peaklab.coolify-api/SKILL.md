@@ -17,9 +17,8 @@ Never reimplement in REST something MCP already exposes. When the helper lacks a
 
 <constraints>
 - Check the routing table before writing any REST call — MCP wins wherever it is listed
-- REST path only: load credentials via the bootstrap block before any API call
-- Credential priority: project `.env` → `~/.agents/.env` → legacy project `settings.local.json`
-- Confirm destructive operations (delete, stop) with user before executing — MCP `control` also requires `confirm=true` to stop
+- REST path only: load credentials via the bootstrap block before any API call. Source precedence and discovery rules belong to [peaklab.infra-config](../peaklab.infra-config/SKILL.md#credential-sources); run it when `COOLIFY_URL` or `COOLIFY_TOKEN` is missing
+- Confirm destructive operations (delete, stop, restart) with the user before executing — MCP `control` also requires `confirm=true` to stop
 - Never hardcode UUIDs — resolve them via `mcp__coolify__search_resources` or a list endpoint
 - Never print secret values, tokenized Git URLs, private keys, or full env var payloads. MCP redaction is best-effort, not a guarantee — `get_logs` and `get_deployment(include_log_summary)` can still leak free-form log text
 - For deploy/status/env workflows on the REST path, resolve `COOLIFY_SKILL_DIR` from the filesystem directory containing this loaded skill and use `python3 "$COOLIFY_SKILL_DIR/scripts/coolify.py" ...`. This scopes approval to the real helper path instead of broad `python3 *`.
@@ -54,26 +53,16 @@ Never reimplement in REST something MCP already exposes. When the helper lacks a
 | Secondary example | `COOLIFY_TOKEN_SECONDARY` | `COOLIFY_URL_SECONDARY` | no | Optional second instance |
 | Monitoring example | `COOLIFY_TOKEN_MONITORING` | `COOLIFY_URL_MONITORING` | no | Optional monitoring instance |
 
-**One MCP server = one URL + one token = one team.** The MCP protocol has no notion of switching
-credentials per project; whatever token the header resolves to at session start is the only team the
-tools can see. `get_current_team` names it.
+**One MCP server = one URL + one token = one team.** The `coolify` server is registered at user scope
+with the header `Authorization: Bearer ${COOLIFY_TOKEN}`, expanded from the session environment, so it
+follows whatever `COOLIFY_TOKEN` the project resolves; rotating a token never touches the MCP config.
+MCP must also be enabled per team on the Coolify side (`is_mcp_server_enabled`).
 
-The `coolify` server is registered at user scope in `~/.claude.json` with the header
-`Authorization: Bearer ${COOLIFY_TOKEN}` — the variable is expanded from the session environment, so the
-server follows whatever `COOLIFY_TOKEN` the current project resolves (project `.env`, then
-`~/.agents/.env`, then shell). Rotating a token only needs the env var updated, never the MCP config.
-
-Two limits this does not solve:
-
-- The **URL stays fixed** on the MCP server configured in the current session. A project on another instance needs its own server:
+- The **URL is fixed** per server. Another instance needs its own server:
   `claude mcp add --scope local --transport http coolify-secondary https://coolify-secondary.example.com/mcp --header 'Authorization: Bearer ${COOLIFY_TOKEN_SECONDARY}'`
-- A project with **no `COOLIFY_TOKEN` override** inherits the shell-level one. The
-  tools then answer for the wrong team without erroring. When the target project matters, confirm with
-  `get_current_team` before acting.
-
-MCP also has to be enabled per team on the Coolify side (`is_mcp_server_enabled`) on top of a valid token.
-
-Project `.env` (or legacy `.claude/settings.local.json`) pins the instance per project — set `COOLIFY_URL` and `COOLIFY_TOKEN` there to avoid specifying them manually.
+- A project with **no `COOLIFY_TOKEN` override** inherits the shell-level one and the tools silently
+  answer for that team. Confirm with `get_current_team` before acting; pin `COOLIFY_URL` and
+  `COOLIFY_TOKEN` in the project `.env`.
 
 </instances>
 
@@ -114,31 +103,17 @@ def api(method, path, data=None):
 
 <quick_start>
 
-Quick reference:
+REST-only operations (everything else: use the MCP tool from the routing table):
 
-On `coolify.example.com`, every row marked *(MCP)* has a first-class MCP tool — use it instead. The REST
-form stays documented for the other instances and for scripts that cannot call MCP.
+| Operation | Call |
+|-----------|------|
+| List env vars with values | `api('GET', f'/applications/{uuid}/envs')` |
+| Create env var | `api('POST', f'/applications/{uuid}/envs', {'key':'K','value':'V','is_preview':False})` |
+| Update env var | `api('PATCH', f'/applications/{uuid}/envs', {'key':'K','value':'new','is_preview':False})` |
+| Delete env var | `api('DELETE', f'/applications/{uuid}/envs/{env_uuid}')` |
+| Deploy on a non-MCP instance | `api('GET', f'/deploy?uuid={uuid}&force=false')` |
 
-| Operation | Call | MCP equivalent |
-|-----------|------|----------------|
-| List apps | `api('GET', '/applications')` | `list_applications` |
-| Get app | `api('GET', f'/applications/{uuid}')` | `get_application` |
-| Deploy | `api('GET', f'/deploy?uuid={uuid}&force=false')` | `deploy` |
-| Start | `api('GET', f'/applications/{uuid}/start')` | `control action=start` |
-| Stop | `api('GET', f'/applications/{uuid}/stop')` | `control action=stop confirm=true` |
-| Restart | `api('GET', f'/applications/{uuid}/restart')` | `control action=restart` |
-| Logs | `api('GET', f'/applications/{uuid}/logs?lines=100')` | `get_logs` |
-| List servers | `api('GET', '/servers')` | `list_servers` |
-| List databases | `api('GET', '/databases')` | `list_databases` |
-| List services | `api('GET', '/services')` | `list_services` |
-| List deployments | `api('GET', '/deployments')` | `list_deployments` |
-| List projects | `api('GET', '/projects')` | `list_projects` |
-| List env vars | `api('GET', f'/applications/{uuid}/envs')` | keys only via `list_env_keys` — REST for values |
-| Create env var | `api('POST', f'/applications/{uuid}/envs', {'key':'K','value':'V','is_preview':False})` | none — REST only |
-| Update env var | `api('PATCH', f'/applications/{uuid}/envs', {'key':'K','value':'new','is_preview':False})` | none — REST only |
-| Delete env var | `api('DELETE', f'/applications/{uuid}/envs/{env_uuid}')` | none — REST only |
-
-For full endpoint reference, see [references/endpoints.md](references/endpoints.md).
+Creation payloads and services env endpoints: [references/endpoints.md](references/endpoints.md).
 
 Safe helper:
 
@@ -161,14 +136,9 @@ App aliases come from `COOLIFY_APP_ALIASES`, a JSON object such as `{ "web": "my
 
 | Trap | Fix |
 |------|-----|
-| Wrong instance targeted | MCP always hits `coolify.example.com`. For another instance, drop to REST and check `COOLIFY_URL` |
-| `COOLIFY_TOKEN` is team-scoped | Both MCP and REST see one team only. `get_current_team` before acting on an unfamiliar project |
-| MCP answers for the wrong team | The project has no `COOLIFY_TOKEN` override and inherited the shell one. Set it in the project `.env` |
-| REST used where MCP exists | Costs a bootstrap and handles the token by hand for nothing — re-read the routing table |
+| Wrong instance targeted | MCP always hits its registered host. For another instance, drop to REST and check `COOLIFY_URL` |
 | Env values wanted from MCP | `list_env_keys` returns key names only, by design. Values need REST |
-| UUID unknown | `mcp__coolify__search_resources query=…`, or REST `api('GET', '/applications')` by `name` |
-| Destructive without confirm | Always ask user before `stop`, `delete`, or `restart` |
-| MCP tools absent from the session | The server is registered at user scope; a session started before registration must be restarted |
+| MCP tools absent from the session | A session started before registration must be restarted |
 
 **Companion skills:** project bootstrap, registry-driven deploys and server patching live in the
 `coolify-create-project`, `coolify-deploy` and `coolify-server-update` skills. They carry

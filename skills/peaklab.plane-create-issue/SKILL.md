@@ -7,19 +7,17 @@ allowed-tools: "Bash(rtk :*), Read, Write, Edit, Skill"
 ---
 
 <objective>
-Create one clear, actionable Plane work item from the current request and return its human-readable identifier and URL.
+Create one clear, actionable Plane work item from the current request and return its `PREFIX-SEQ_ID` and URL. This skill is the only path for creating Plane issues.
 
-Keep issue creation focused and safe: reuse `peaklab.plane-api` for configuration and authentication, resolve project-specific metadata dynamically, validate the payload before mutation, and never create a duplicate while recovering from an uncertain API response.
+Configuration, credentials, the shared client, state resolution and name-to-ID resolution are owned by [peaklab.plane-api](../peaklab.plane-api/SKILL.md); load it and follow its rules rather than restating them here.
 </objective>
 
 <quick_start>
-Resolve `PLANE_CREATE_SKILL_DIR` to the absolute directory containing this loaded `SKILL.md`.
-Verify [scripts/create_issue.py](scripts/create_issue.py) exists and the declared sibling API
-package is installed. Run commands from the target project's checkout, not the skill directory.
+Resolve `PLANE_CREATE_SKILL_DIR` to the absolute directory of this loaded `SKILL.md` and check that [scripts/create_issue.py](scripts/create_issue.py) and the sibling plane-api package exist. Run commands from the target project's checkout.
 
-1. Load `peaklab.plane-api` only for its shared configuration, client, and metadata lookup facilities. Creation remains owned by this skill.
-2. Build a fresh JSON payload from the current request. At minimum it needs `name`; use `description_html` and `priority` when known.
-3. Choose a unique `SESSION_ID`, run `rtk mkdir -p /private/tmp/plane-create-issue/SESSION_ID`, then write the payload with the file-editing tool. Never reuse a payload from an earlier request.
+1. Load `peaklab.plane-api` for configuration, client and metadata lookup only.
+2. Search existing issues for a duplicate (step 2) before drafting.
+3. Choose a unique `SESSION_ID`, run `rtk mkdir -p /private/tmp/plane-create-issue/SESSION_ID`, and write a fresh `payload.json` there with the file-editing tool (never interpolate JSON or HTML into a shell command, never reuse an earlier payload). `name` is required.
 4. Validate without contacting Plane:
 
 ```bash
@@ -32,59 +30,39 @@ rtk python3 "$PLANE_CREATE_SKILL_DIR/scripts/create_issue.py" --dry-run /private
 rtk python3 "$PLANE_CREATE_SKILL_DIR/scripts/create_issue.py" --request-id SESSION_ID /private/tmp/plane-create-issue/SESSION_ID/payload.json
 ```
 
-6. Return `PREFIX-SEQ_ID`, the title, priority, and `URL`, then run `rtk rm -f` on the temporary payload and `rtk rmdir` on its now-empty session directory.
+6. Report the result (step 6), then `rtk rm -f` the payload and `rtk rmdir` its session directory.
 </quick_start>
 
-<scope>
-This skill owns creation of one Plane work item. Use `peaklab.plane-api` for metadata lookups or later updates, and `peaklab.plane-do-issue` when the user wants the ticket implemented through PR delivery.
-
-Attachments, comments, and cycle assignment are follow-up operations on the returned `ISSUE_ID`; they must never trigger another work-item creation. The current Plane create-work-item schema has no cycle field, so do not invent one.
-</scope>
-
 <mutation_gate>
-- Create an issue only when the user explicitly asks to create, file, open, or add it to Plane.
-- If the user asks for a draft, preview, or wording only, stop after payload validation and show the draft without calling Plane.
-- Do not add a redundant confirmation when creation is already explicit and the available context is sufficient.
-- Ask one concise question only when a missing fact would materially change the issue. Infer formatting, issue type, and sensible acceptance criteria from the request and repository evidence.
+- Create only when the user explicitly asks to create, file, open or add the issue to Plane. For a draft, preview or wording request, stop after the dry run and show the draft.
+- Do not add a redundant confirmation when creation is explicit and context is sufficient. Ask one concise question only when a missing fact would materially change the issue.
+- Attachments, comments and cycle assignment are follow-ups on the returned `ISSUE_ID`; they never trigger another creation. The create schema has no cycle field. Use `peaklab.plane-do-issue` when the user wants the ticket implemented.
 </mutation_gate>
 
 <workflow>
 <step_1_intake>
-Extract the current request only. Ignore stale payloads and issue JSON from previous sessions.
+Use the current request only. A concrete title, or enough to derive one, is required; outcome, acceptance criteria, priority, scope, links and requested metadata are optional. Default `priority` to `none` and omit other unset fields so project defaults apply.
 
-Required:
-- A concrete title or enough information to derive one.
+For a bug (`fix(...)` title or defect report), two fields are mandatory because quality analytics reads them:
 
-Useful but optional:
-- Problem or desired outcome.
-- Acceptance criteria.
-- Priority.
-- Known scope, files, links, or reproduction steps.
-- Requested state, labels, assignees, parent, estimate, type, module, or dates.
-
-Default `priority` to `none`. Omit other optional fields so Plane project defaults remain effective.
-
-When the issue is a bug (`fix(...)` title or a defect report), two extra fields are mandatory because
-quality analytics reads them:
-
-- One origin label, resolved by name through step 4: `source/client` (reported by a customer or support),
-  `source/qa` (qa-tracker, recette), `source/glitchtip` (production error), `source/interne` (found by the
-  team, audit, review). Infer it from the request; ask only when nothing indicates the origin.
+- One origin label: `source/client` (customer or support), `source/qa` (qa-tracker, recette), `source/glitchtip` (production error), `source/interne` (team, audit, review). Infer it; ask only when nothing indicates the origin.
 - A calibrated `priority`, never `none`:
   - `urgent`: production blocked, data loss or leak, payment broken, no workaround. Target fix within 48 h.
-  - `high`: a main flow broken for some users, or a workaround exists but is costly. Target within 14 days.
+  - `high`: a main flow broken for some users, or a costly workaround. Target within 14 days.
   - `medium`: degraded but usable, secondary flow, cosmetic on a main screen.
   - `low`: cosmetic, edge case, internal tooling.
 </step_1_intake>
 
-<step_2_analysis>
-For a simple self-contained request, create a concise issue directly. When the request references current code, an error, or a feature area, inspect the smallest relevant repository scope with `rg` and file reads before writing technical context.
-
-Do not invent a root cause, implementation, affected file, or acceptance criterion. Label uncertain implementation guidance as a proposal or omit it.
-</step_2_analysis>
+<step_2_duplicate_check>
+Before drafting, list open issues with the plane-api client and compare titles and intent. If a likely duplicate exists, show its identifier and link and ask whether to create anyway, update it, or stop.
+</step_2_duplicate_check>
 
 <step_3_description>
-Use semantic HTML in `description_html`. Include only sections that add value:
+Title: `type(scope): description` when the repository uses that convention; preserve a clear user-supplied title when normalizing would change its meaning.
+
+When the request references code, an error or a feature area, read the smallest relevant scope first. Never invent a root cause, affected file or acceptance criterion; label uncertain guidance as a proposal or omit it.
+
+`description_html` uses semantic HTML with only the sections that add value:
 
 ```html
 <h2>Objectif</h2>
@@ -99,98 +77,48 @@ Use semantic HTML in `description_html`. Include only sections that add value:
 <p>Evidence-backed implementation context, when useful.</p>
 ```
 
-HTML-escape literal user-provided text, URLs, logs, and code before embedding them. Only the structural tags generated by this workflow should remain active HTML.
-
-Prefer a conventional `type(scope): summary` title when the repository uses that convention. Preserve a clear user-supplied title when normalization would change its meaning.
+HTML-escape literal user text, URLs, logs and code before embedding them.
 </step_3_description>
 
 <step_4_metadata>
-The helper accepts the current Plane work-item fields:
-
-- `name`, `description_html`, `priority`
-- `state`, `assignees`, `labels`, `parent`
-- `estimate_point`, `type`, `module`
-- `start_date`, `target_date`
-
-Fields that refer to Plane resources must contain IDs, not guessed names. When the user supplies a name:
-
-1. Use the shared `peaklab.plane-api` client to list the relevant project resources.
-2. Match case-insensitively by exact name or exact readable identifier.
-3. If no match or multiple matches exist, report the available candidates and ask the user instead of silently dropping or guessing.
-
-Never hardcode IDs. Never create missing labels, modules, states, types, members, parents, or cycles unless the user separately requests that mutation.
+Supported fields: `name`, `description_html`, `priority`, `state`, `assignees`, `labels`, `parent`, `estimate_point`, `type`, `module`, `start_date`, `target_date`. Resource fields take IDs: resolve user-supplied names through the plane-api ID resolution rules (ask on zero or several matches; never create missing resources unless separately requested).
 </step_4_metadata>
 
-<step_5_validation>
-Write a new payload file using the available file-editing tool; do not interpolate JSON or HTML into a shell command. Run the helper with `--dry-run` and fix every validation error before continuing.
+<step_5_creation>
+Fix every dry-run error first; the dry run never loads credentials or contacts Plane.
 
-Dry-run validation checks required fields, supported fields, priority, ID arrays, estimate range, and ISO dates. It does not load credentials or contact Plane.
-</step_5_validation>
+The helper probes with GET, prefers the `/work-items/` collection and falls back to `/issues/` only on 404/405; auth, rate-limit and server errors stop discovery. It performs exactly one POST. `--request-id SESSION_ID` writes an atomic pending receipt under `${XDG_STATE_HOME:-~/.local/state}/plane-create-issue/attempts/` before the POST: replaying the same ID and payload after success returns the stored result, while pending or uncertain receipts block replay.
 
-<step_6_creation>
-After a successful dry run and explicit user authorization, run the helper once without `--dry-run`.
+After `CREATED=1`, reuse the returned `ISSUE_ID` for every follow-up and never call the creation helper again for this request.
+</step_5_creation>
 
-The helper probes the collection with safe GET requests and prefers the 2026 `/work-items/` endpoint. When that endpoint returns 404 or 405, it confirms the legacy `/issues/` collection with another GET before creation. Authentication, authorization, rate-limit, and server errors stop discovery immediately. It performs exactly one POST.
-
-`--request-id SESSION_ID` creates and synchronizes an atomic pending receipt under `${XDG_STATE_HOME:-~/.local/state}/plane-create-issue/attempts/` before POST. Reusing the same request ID and payload after success returns the stored result without another POST; pending or uncertain receipts block replay.
-
-Capture the command output immediately. After `CREATED=1`, reuse the returned `ISSUE_ID` for every follow-up operation and never invoke the creation helper again for the same request.
-</step_6_creation>
-
-<step_7_result>
-Report:
-
-- `PREFIX-SEQ_ID` and title.
-- Direct Plane URL.
-- Priority and any optional metadata actually applied.
-- Any requested metadata omitted because it could not be resolved.
-
-Remove only the temporary payload created for this request. Do not delete user files or unrelated Plane runtime state.
-</step_7_result>
+<step_6_result>
+Reply with `PREFIX-SEQ_ID`, the title, the direct Plane URL, the priority and any metadata applied, plus any requested metadata omitted because it could not be resolved. Remove only this request's temporary payload.
+</step_6_result>
 </workflow>
 
 <duplicate_safety>
-- One invocation creates at most one work item.
-- Validation may be repeated; creation may not.
-- Every creation must pass the same unique `SESSION_ID` through `--request-id`; never generate a new ID merely to bypass a pending or uncertain receipt.
-- Never retry a POST after a timeout, connection drop, invalid response, or server error because Plane may already have created the work item.
-- For an uncertain outcome, stop and use `peaklab.plane-api` to search by the exact title and recent creation time. Resume only after proving no item was created.
-- A failed attachment, comment, label update, or cycle assignment must be retried against the existing `ISSUE_ID`, never by creating a replacement issue.
+- One invocation creates at most one work item; validation may repeat, creation may not.
+- Pass the same `SESSION_ID` through `--request-id`; never mint a new ID to bypass a pending or uncertain receipt.
+- Never retry a POST after a timeout, connection drop, invalid response or server error. Search Plane read-only by exact title and recent creation time, and resume only after proving nothing was created.
+- If Plane rejects the POST with a 4xx, correct the payload and use a new request ID (the rejected receipt is immutable).
+- Retry a failed follow-up (attachment, comment, label, cycle) against the existing `ISSUE_ID`, never with a replacement issue.
 </duplicate_safety>
 
-<error_recovery>
-- **Payload validation fails:** fix the payload and rerun `--dry-run`; this is non-mutating.
-- **Configuration is missing:** report that `PLANE_TOKEN` and `PLANE_PROJECT` must be configured through `peaklab.plane-api`; do not expose values.
-- **Metadata cannot be resolved:** show exact candidates and request the missing choice.
-- **No supported collection is available:** discovery checks `/work-items/` and then `/issues/` without posting; if neither exists, report the error and stop.
-- **Plane rejects the POST with a 4xx response:** correct the payload, then use a new request ID because the rejected receipt is intentionally immutable.
-- **Creation outcome is uncertain after POST:** do not retry automatically; search Plane read-only first.
-</error_recovery>
-
-<anti_patterns>
-- Raw `curl` calls containing Plane credentials.
-- Hardcoded workspace, project, state, label, member, module, type, or cycle IDs.
-- Reusing `.claude/plane` or `.codex/plane` payloads from previous requests.
-- Creating a second issue because a follow-up operation failed.
-- Adding speculative technical detail merely to make the issue longer.
-- Silently ignoring an unknown label or assignee.
-</anti_patterns>
-
 <validation>
-For skill maintenance, run:
+For skill maintenance:
 
 ```bash
 rtk python3 -m unittest discover -s "$PLANE_CREATE_SKILL_DIR/scripts" -p 'test_*.py'
 ```
 
-The unit tests cover helper behavior, atomic configuration loading, replay protection, skill structure, canonical creation routing, and RTK compliance. They and the helper dry run must not load Plane credentials or make network calls.
+The tests cover helper behavior, atomic configuration loading, replay protection, skill structure, canonical creation routing and RTK compliance, without credentials or network calls.
 </validation>
 
 <success_criteria>
-- Exactly one work item is created when mutation is explicitly requested, or zero for draft-only requests.
-- The payload passes dry-run validation before creation.
-- Project-specific metadata is resolved dynamically without guessed IDs.
-- The issue title and HTML description accurately reflect the current request and include verifiable acceptance criteria when appropriate.
-- The helper returns `CREATED=1`, `ISSUE_ID`, `SEQ_ID`, and a direct `URL`.
-- No credential, stale payload, duplicate issue, or unrelated filesystem change is introduced.
+- Exactly one work item is created when explicitly requested, zero for drafts, and no likely duplicate was ignored.
+- The payload passed the dry run, and metadata IDs were resolved, not guessed.
+- The title and description reflect the current request with verifiable acceptance criteria when appropriate.
+- The helper returned `CREATED=1`, `ISSUE_ID`, `SEQ_ID` and `URL`, reported as issue number plus link.
+- No credential, stale payload, duplicate issue or unrelated file change was introduced.
 </success_criteria>

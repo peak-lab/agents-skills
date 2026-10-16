@@ -59,5 +59,11 @@
   "peaklab.fix-qa-bug": [
     "peaklab.gh-do-issue",
     "qa-session"
+  ],
+  "peaklab.coolify-api": [
+    "peaklab.infra-config"
+  ],
+  "peaklab.uptime-kuma": [
+    "peaklab.infra-config"
   ]
 }

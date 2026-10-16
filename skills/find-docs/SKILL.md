@@ -6,128 +6,31 @@ effort: standard
 
 # Documentation Lookup
 
-Retrieve current documentation and code examples with an available Context7 integration. Prefer an installed `ctx7` CLI; otherwise run it without a global installation:
+## Tool precedence
 
-```bash
-npx ctx7@latest <command>
-```
+1. Context7 through an installed `ctx7` CLI.
+2. Otherwise Context7 without a global installation: `npx ctx7@latest <command>`.
+3. If Context7 is unavailable, has no suitable library, or still fails after 3 attempts, consult the library's official documentation and state that fallback. Do not silently fall back from Context7.
+
+Do not run Context7 commands more than 3 times per question.
 
 ## Workflow
 
-Two-step process: resolve the library name to an ID, then query docs with that ID.
-
 ```bash
-# Step 1: Resolve library ID
-ctx7 library <name> <query>
-
-# Step 2: Query documentation
-ctx7 docs <libraryId> <query>
+ctx7 library <name> "<query>"   # resolve the library ID
+ctx7 docs <libraryId> "<query>" # query its documentation
 ```
 
-You MUST call `ctx7 library` first to obtain a valid library ID UNLESS the user explicitly provides a library ID in the format `/org/project` or `/org/project/version`.
+- Call `ctx7 library` first unless the user supplies an ID as `/org/project` or `/org/project/version`. IDs keep the leading `/`.
+- Always pass a query built from the user's full intent; it drives ranking and disambiguation. One-word queries return generic results.
+- Never put API keys, passwords, credentials, personal data or proprietary code in a query.
+- Pick the result by name match, intent relevance, snippet count, source reputation (High/Medium) and benchmark score. If several fit, say so and use the best; if none fit, say so and suggest a refined query; if the request is ambiguous, ask before guessing.
+- When the user names a version, use the closest version-specific ID listed by `ctx7 library` (for example `/vercel/next.js/v14.3.0-canary.87`).
 
-IMPORTANT: Do not run these commands more than 3 times per question. If Context7 is unavailable or cannot provide a suitable result after 3 attempts, consult the library's official documentation and state that fallback.
+## Current versions
 
-## Step 1: Resolve a Library
+Never assert a latest, current or supported version from memory. Verify it from a primary source (official docs, release notes, registry or changelog) and cite it.
 
-Resolves a package/product name to a Context7-compatible library ID and returns matching libraries.
+## Authentication and quota
 
-```bash
-ctx7 library react "How to clean up useEffect with async operations"
-ctx7 library nextjs "How to set up app router with middleware"
-ctx7 library prisma "How to define one-to-many relations with cascade delete"
-```
-
-Always pass a `query` argument — it is required and directly affects result ranking. Use the user's intent to form the query, which helps disambiguate when multiple libraries share a similar name. Do not include any sensitive or confidential information such as API keys, passwords, credentials, personal data, or proprietary code in your query.
-
-### Result fields
-
-Each result includes:
-
-- **Library ID** — Context7-compatible identifier (format: `/org/project`)
-- **Name** — Library or package name
-- **Description** — Short summary
-- **Code Snippets** — Number of available code examples
-- **Source Reputation** — Authority indicator (High, Medium, Low, or Unknown)
-- **Benchmark Score** — Quality indicator (100 is the highest score)
-- **Versions** — List of versions if available. Use one of those versions if the user provides a version in their query. The format is `/org/project/version`.
-
-### Selection process
-
-1. Analyze the query to understand what library/package the user is looking for
-2. Select the most relevant match based on:
-   - Name similarity to the query (exact matches prioritized)
-   - Description relevance to the query's intent
-   - Documentation coverage (prioritize libraries with higher Code Snippet counts)
-   - Source reputation (consider libraries with High or Medium reputation more authoritative)
-   - Benchmark score (higher is better, 100 is the maximum)
-3. If multiple good matches exist, acknowledge this but proceed with the most relevant one
-4. If no good matches exist, clearly state this and suggest query refinements
-5. For ambiguous queries, request clarification before proceeding with a best-guess match
-
-### Version-specific IDs
-
-If the user mentions a specific version, use a version-specific library ID:
-
-```bash
-# General (latest indexed)
-ctx7 docs /vercel/next.js "How to set up app router"
-
-# Version-specific
-ctx7 docs /vercel/next.js/v14.3.0-canary.87 "How to set up app router"
-```
-
-The available versions are listed in the `ctx7 library` output. Use the closest match to what the user specified.
-
-## Step 2: Query Documentation
-
-Retrieves up-to-date documentation and code examples for the resolved library.
-
-```bash
-ctx7 docs /facebook/react "How to clean up useEffect with async operations"
-ctx7 docs /vercel/next.js "How to add authentication middleware to app router"
-ctx7 docs /prisma/prisma "How to define one-to-many relations with cascade delete"
-```
-
-### Writing good queries
-
-The query directly affects the quality of results. Be specific and include relevant details. Do not include any sensitive or confidential information such as API keys, passwords, credentials, personal data, or proprietary code in your query.
-
-| Quality | Example |
-|---------|---------|
-| Good | `"How to set up authentication with JWT in Express.js"` |
-| Good | `"React useEffect cleanup function with async operations"` |
-| Bad | `"auth"` |
-| Bad | `"hooks"` |
-
-Use the user's full question as the query when possible, vague one-word queries return generic results.
-
-The output contains two types of content: **code snippets** (titled, with language-tagged blocks) and **info snippets** (prose explanations with breadcrumb context).
-
-## Authentication
-
-Works without authentication. For higher rate limits:
-
-```bash
-# Option A: environment variable
-export CONTEXT7_API_KEY=your_key
-
-# Option B: OAuth login
-ctx7 login
-```
-
-## Error Handling
-
-If a command fails with a quota error ("Monthly quota reached" or "quota exceeded"):
-1. Inform the user their Context7 quota is exhausted
-2. Suggest they authenticate for higher limits: `ctx7 login`
-3. If they cannot or choose not to authenticate, consult the library's official documentation and identify it as the fallback
-
-Do not silently fall back from Context7 — identify the official documentation used instead.
-
-## Common Mistakes
-
-- Library IDs require a `/` prefix — `/facebook/react` not `facebook/react`
-- Always run `ctx7 library` first — `ctx7 docs react "hooks"` will fail without a valid ID
-- Use descriptive queries, not single words — `"React useEffect cleanup function"` not `"hooks"`
-- Do not include sensitive information (API keys, passwords, credentials) in queries
+Context7 works without authentication; `CONTEXT7_API_KEY` or `ctx7 login` raises rate limits. On a quota error ("Monthly quota reached", "quota exceeded"), tell the user their Context7 quota is exhausted, suggest `ctx7 login`, and if they decline, use the official documentation and identify it as the fallback.
