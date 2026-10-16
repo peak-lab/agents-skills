@@ -14,8 +14,6 @@ Auto-discover deployment and integration credentials from all available sources,
 | `.env` | Machine-readable project config — shared by Claude, Codex, local app scripts, and skills. Contains project infra vars including tokens. | ✅ Yes — never committed |
 | `.codex/rules/infra.md` | Human-readable context — auto-loaded by Codex each session so it knows where to look for deployments, logs, monitoring. No tokens. | ❌ No — versioned |
 
-**Key distinction**: `.env` is the shared source of truth for project/service variables used by both Claude and Codex. `infra.md` is context only. Both are needed — one makes tools work, the other tells agents where to look without exposing secrets.
-
 ## Known Infrastructure (PeakLab)
 
 | Instance | Token Var | URL | Notes |
@@ -27,6 +25,20 @@ Auto-discover deployment and integration credentials from all available sources,
 | Uptime Kuma | — | `http://uptime-kuma.internal:3001` (SSH: `ubuntu@monitoring.example.com`) | Uptime monitoring |
 | Umami | — | `https://analytics.example.com` | Analytics |
 | Plane | — | `https://plane.example.com` | Project management |
+
+## Credential sources
+
+This skill owns credential discovery for the infrastructure skills (`peaklab.coolify-api`,
+`peaklab.uptime-kuma`). Precedence, first match wins:
+
+1. project `.env`
+2. `~/.agents/.env` (shared global fallback)
+3. legacy `.claude/settings.local.json` / `.codex/settings.local.json` `env` block
+4. `~/.zshrc` exports (discovery only)
+
+Discovery prints variable **names** only (`grep -oE`), never values. Scripts read values from files
+directly (shell `grep` does not export them) and never print secrets or tokens; masked display is
+`••••••<last6>`. Never default `COOLIFY_URL` to the placeholder host: use a discovered value or ask.
 
 ## Workflow
 
@@ -49,11 +61,11 @@ grep -oE "^[A-Z_]+=" .env 2>/dev/null
 ls ../*/.env 2>/dev/null | head -10
 ```
 
-For each sibling `.env` found, read and extract relevant infra vars — projects in the same family often share `COOLIFY_URL`, `PLANE_TOKEN`, `GLITCHTIP_URL`, etc. Read values in a script; never print secret values to the terminal.
+Sibling projects often share `COOLIFY_URL`, `PLANE_TOKEN`, `GLITCHTIP_URL`: read their values in a script, never in the terminal.
 
 ### Step 2 — Auto-detect Coolify APP UUID + FQDN
 
-If `COOLIFY_TOKEN` is known but `COOLIFY_APP_UUID` is missing, query the API. Read credentials directly from env files (not from `os.environ` only — shell grep doesn't export):
+If `COOLIFY_TOKEN` and `COOLIFY_URL` are known but `COOLIFY_APP_UUID` is missing, query the API:
 
 ```python
 import os, re, subprocess, urllib.request, json
@@ -75,8 +87,7 @@ env = {}
 env.update(load_env("~/.agents/.env"))
 env.update(load_env(".env"))  # project overrides global
 
-# Also check zshrc as fallback
-if 'COOLIFY_TOKEN' not in env:
+if 'COOLIFY_TOKEN' not in env:  # zshrc fallback
     zshrc = open(os.path.expanduser('~/.zshrc')).read()
     m = re.search(r'^export COOLIFY_TOKEN="?([^"\n]+)"?', zshrc, re.MULTILINE)
     if m: env['COOLIFY_TOKEN'] = m.group(1)
@@ -131,8 +142,8 @@ Auto-discovered:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `COOLIFY_URL` | API base URL | `https://coolify.example.com/api/v1` |
-| `COOLIFY_TOKEN` | Bearer token | From gitignored environment source |
+| `COOLIFY_URL` | API base URL | Discovered, else ask |
+| `COOLIFY_TOKEN` | Bearer token | Discovered |
 | `COOLIFY_PROJECT` | Project UUID | Auto-detected |
 | `COOLIFY_APP_UUID` | App UUID | Auto-detected via API |
 
@@ -173,7 +184,7 @@ If `COOLIFY_URL` is unknown, offer:
 
 Show summary (mask tokens: `••••••<last6chars>`). Ask "Save? [Y/n]".
 
-**File 1 — `.env`** (all project infra vars, read by Claude, Codex, local app scripts, and skills; gitignored):
+**File 1 — `.env`**:
 
 ```dotenv
 COOLIFY_URL=https://coolify.example.com/api/v1
@@ -190,11 +201,9 @@ APP_URL_PROD=https://...
 APP_NAME=...
 ```
 
-Merge with existing `.env` — update or append only the relevant keys. Preserve comments, unrelated app variables, quoting style where practical, and existing values not part of this workflow.
+Merge, never overwrite: update or append only these keys; preserve comments, unrelated variables and quoting style.
 
-**File 2 — `.codex/rules/infra.md`** (no tokens, auto-loaded by Codex as context):
-
-Create directory first: `mkdir -p .codex/rules/`
+**File 2 — `.codex/rules/infra.md`** (no tokens; `mkdir -p .codex/rules/` first):
 
 ```markdown
 # Infrastructure & Déploiement
@@ -229,30 +238,11 @@ grep -q "^\\.env$" .gitignore 2>/dev/null || echo ".env" >> .gitignore
 
 ### Step 6 — Final output
 
-```
-✅ infra-config complete
-
-  .env                    — 10 vars (Claude/Codex/app ready)
-  .codex/rules/infra.md   — context written (auto-loaded by Codex)
-
-  peaklab.coolify-api / deploy-check   ✅  example-app-lp → https://app.example.com
-  peaklab.plane-api / peaklab.ship-pr  ✅ / ❌
-  GlitchTip configuration      ✅ / ❌
-
-Re-run /peaklab.infra-config to update any value.
-```
+Report the files written (`.env` var count, `infra.md`), which consumer skills are now ready
+(`peaklab.coolify-api`, `peaklab.plane-api`, GlitchTip) with ✅/❌, and that re-running this skill updates values.
 
 ## Rules
 
-- Scan all sources before asking anything — never ask for something already discoverable
-- Auto-detect `COOLIFY_APP_UUID` via API (match git repo name) — never ask manually
-- Auto-fill `APP_URL_PROD` from Coolify FQDN — take first value if comma-separated
-- Never default `COOLIFY_URL` to the placeholder host: use a discovered value or ask
-- Load credentials in Python directly from `.env` files, not from `os.environ` only (bash grep doesn't export)
-- `.env` → all project vars needed by Claude, Codex, app scripts, and skills (tokens + URLs + UUIDs)
-- `~/.agents/.env` → optional global fallback for shared agent/service tokens
-- `infra.md` → human-readable context only, no tokens
-- Always mask tokens to `••••••<last6>` in output
-- Always merge (not overwrite) `.env` — preserve comments and unrelated variables
-- Create `.codex/rules/` with `mkdir -p` before writing `infra.md`
-- Always enforce `.env` in `.gitignore`
+- Scan every source before asking — never ask for something discoverable
+- Auto-detect `COOLIFY_APP_UUID` (git repo name match) and `APP_URL_PROD` (first FQDN) — never ask manually
+- `infra.md` holds context only, never tokens; `.env` stays gitignored and merged, never overwritten
