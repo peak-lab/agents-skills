@@ -6,122 +6,58 @@ argument-hint: "[error description or context] [-a for auto mode]"
 ---
 
 <objective>
-Debug errors systematically through a 5-step workflow: analyze the error, find potential solutions, propose options to the user, implement the fix, and verify it works through multi-layer verification.
+Debug an error through a gated workflow: analyze and reproduce, find solutions, let the user choose, implement, then prove the fix by executing the real code path.
 </objective>
 
-<quick_start>
-**Debug an error (interactive):**
-```bash
-/debug-code login page crashes on submit
-```
-
-**Auto mode (fully automatic, use recommended solutions):**
-```bash
-/debug-code -a API returning 500 on POST
-```
-
-**What it does:**
-1. **Analyze**: Reproduce error, identify root cause → **ask if you have more context**
-2. **Log Technique** (if needed): Add debug logs → **user runs & shares output** → analyze
-3. **Find Solutions**: Research 2-3+ potential fixes with pros/cons
-4. **Propose**: Present options → **you choose which solution**
-5. **Fix**: Implement solution with strategic logging
-6. **Verify**: Multi-layer verification (Static → Build → Runtime)
-
-**Key principle**: Tests passing ≠ fix working. Always execute the actual code path.
-
-**Log Technique**: When the error can't be reproduced, strategic debug logs are added. The user runs the app and shares the console output for analysis.
-</quick_start>
-
-<methodology>
-<core_principles>
-**Battle-Tested Principles:**
-
-1. **Reproduce Before Anything Else** - If you can't reproduce it, you can't verify the fix
-2. **Hypothesis-Driven Analysis** - List 3-5 causes ranked by likelihood, test systematically
-3. **Multi-Layer Verification** - Tests alone do not prove that the real code path works
-</core_principles>
-
-<verification_pyramid>
-**Verification Pyramid:**
-
-```
-        ┌─────────────┐
-        │   Manual    │  ← User confirms
-        └──────┬──────┘
-     ┌─────────┴─────────┐
-     │ Runtime Execution │  ← CRITICAL: Real execution
-     └─────────┬─────────┘
-   ┌───────────┴───────────┐
-   │   Automated Checks    │  ← Build, Types, Lint, Tests
-   └───────────┬───────────┘
- ┌─────────────┴─────────────┐
- │     Static Analysis       │  ← Syntax, Imports
- └───────────────────────────┘
-```
-
-**Key Insight**: Tests passing ≠ fix working. ALWAYS execute the actual code path.
-</verification_pyramid>
-</methodology>
-
 <parameters>
-**Flags:**
+| Input | Effect |
+|-------|--------|
+| `-a`, `--auto` | `{auto_mode}` = true: skip questions, use the recommended option at each gate |
+| Everything else | `{error_context}`; if empty, ask for symptoms during analysis |
 
-| Flag | Name | Description |
-|------|------|-------------|
-| `-a`, `--auto` | Auto mode | Full automatic mode - don't ask the user, use recommended solutions |
-
-**Arguments:**
-- Everything after flags = `{error_context}` - Description of the error or context about what's failing
+Parse flags before any other action. Do not analyze while parsing.
 </parameters>
 
 <state_variables>
-**Persist throughout all steps:**
+Persist across steps:
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `{error_context}` | string | User's description of the error |
-| `{auto_mode}` | boolean | Skip confirmations, use recommended options |
-| `{error_analysis}` | object | Detailed analysis from step 1 |
-| `{debug_logs}` | list | Debug logs added for cleanup (file, line, prefix) |
-| `{solutions}` | list | Potential solutions found in step 2 |
-| `{selected_solution}` | object | User's chosen solution from step 3 |
-| `{files_modified}` | list | Files changed during the fix |
-| `{verification_result}` | object | Results from verification step |
+| Variable | Set in | Content |
+|----------|--------|---------|
+| `{error_context}` | init | User's description of the error |
+| `{auto_mode}` | init | Skip confirmations, use recommended options |
+| `{error_analysis}` | 1 / 1b | Root cause, reproduction steps, affected files, verification method |
+| `{debug_logs}` | 1b / 4 | Temporary logs to remove (file, line, prefix) |
+| `{solutions}` | 2 | Candidate fixes with trade-offs, one recommended |
+| `{selected_solution}` | 3 | Chosen solution and files to modify |
+| `{files_modified}` | 4 | Files changed by the fix |
+| `{verification_result}` | 5 | Result of each verification layer |
 </state_variables>
 
 <entry_point>
-Load [steps/step-00-init.md](./steps/step-00-init.md)
+Parse the parameters above, then load [steps/step-01-analyze.md](./steps/step-01-analyze.md).
 </entry_point>
 
 <step_files>
-| Step | File | Description |
-|------|------|-------------|
-| 0 | [step-00-init.md](./steps/step-00-init.md) | Parse flags, setup state |
-| 1 | [step-01-analyze.md](./steps/step-01-analyze.md) | Reproduce error, form hypotheses, identify root cause |
-| 1b | [step-01b-log-instrumentation.md](./steps/step-01b-log-instrumentation.md) | *Optional*: Add debug logs, user runs & shares output |
-| 2 | [step-02-find-solutions.md](./steps/step-02-find-solutions.md) | Research 2-3+ solutions with pros/cons |
-| 3 | [step-03-propose.md](./steps/step-03-propose.md) | Present solutions for user selection |
-| 4 | [step-04-fix.md](./steps/step-04-fix.md) | Implement with strategic logging |
-| 5 | [step-05-verify.md](./steps/step-05-verify.md) | Multi-layer verification (Static → Build → Runtime → User) |
+| Step | File | Purpose |
+|------|------|---------|
+| 1 | [step-01-analyze.md](./steps/step-01-analyze.md) | Reproduce, test hypotheses, identify root cause |
+| 1b | [step-01b-log-instrumentation.md](./steps/step-01b-log-instrumentation.md) | *Optional*: add debug logs, user runs and shares output |
+| 2 | [step-02-find-solutions.md](./steps/step-02-find-solutions.md) | Find 2+ solutions with trade-offs |
+| 3 | [step-03-propose.md](./steps/step-03-propose.md) | User selects a solution |
+| 4 | [step-04-fix.md](./steps/step-04-fix.md) | Implement the selected solution, remove debug logs |
+| 5 | [step-05-verify.md](./steps/step-05-verify.md) | Multi-layer verification (Static → Automated → Runtime → Regression) |
 </step_files>
 
-<references>
-| File | Description |
-|------|-------------|
-| [references/log-technique.md](./references/log-technique.md) | Log placement patterns, prefixes, security guidelines |
-</references>
+<rules>
+- No code changes before step 4, except temporary debug logs in step 1b.
+- Do not implement before the user selects a solution, unless `{auto_mode}`.
+- Tests passing ≠ fix working. Never claim success without executing the original failing code path.
+</rules>
 
 <success_criteria>
-- Error successfully reproduced
-- Root cause identified through hypothesis testing
-- 2-3+ potential solutions researched with pros/cons
-- Solution selected (by user or auto mode)
-- Fix implemented with strategic logging
-- Static analysis passes (syntax, imports)
-- Build completes successfully
-- Tests pass (if tests exist)
-- **Runtime execution verified** (actual code path executed)
-- User confirms fix resolves the original issue
-- No regressions introduced
+- Error reproduced, or instrumented when reproduction is impossible
+- Root cause backed by tested hypotheses
+- Solution selected by the user (or auto mode) before implementation
+- All debug logs removed
+- Static, automated and runtime verification passed; no regressions
 </success_criteria>

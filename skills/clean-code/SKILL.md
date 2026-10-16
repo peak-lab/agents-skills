@@ -2,130 +2,62 @@
 name: clean-code
 description: "Assess maintainability or apply requested clean-code improvements. Use review-code for a patch and refactor for a defined transformation."
 effort: standard
-argument-hint: "[-a] [-e] [-s] [-r <id>] <feature/file>"
+argument-hint: "[-a] [-e] [-s] [-r <id>] [--react] [--nextjs] [--zustand] [--query] <feature/file>"
 ---
 
-<objective>
-Fast, systematic clean code improvements using parallel agents.
-</objective>
+# Clean code
 
-<quick_start>
-**Basic usage (analyze and apply clean code principles):**
-```bash
-/clean-code auth feature
-```
+Scan a feature or file, apply clean-code improvements, then verify: `SCAN → APPLY → VERIFY`.
 
-**Auto mode (skip confirmations):**
-```bash
-/clean-code -a dashboard
-```
+## Flags
 
-**With save (output to a host task-output directory):**
-```bash
-/clean-code -s -a refactor api
-```
+| Flag | Effect |
+|------|--------|
+| `-a` | Auto mode: skip confirmations (`{auto_mode}`) |
+| `-e` | Economy mode: no subagents, direct tools only (`{economy_mode}`) |
+| `-s` | Save mode: write outputs to a host task-output directory under `clean-code/{task_id}/` (`{save_mode}`) |
+| `-r <id>` | Resume: restore state from `clean-code/{id}*/00-context.md` in the host task-output directory and continue at the right step |
+| `--react` / `--nextjs` / `--zustand` / `--query` | Force the matching rules below even if not detected |
 
-**What it does:**
-1. Scans codebase for issues (React, Next.js, Zustand, TanStack Query)
-2. Loads relevant best practices docs
-3. Applies clean code improvements
-4. Verifies with build and tests
-5. Offers to commit the changes after verification
-</quick_start>
+Parse flags first; the remainder is `{task_description}`; derive a kebab-case `{task_id}`.
 
-<parameters>
+## 1. Scan (read-only)
 
-| Flag | Description |
-|------|-------------|
-| `-a` | Auto mode: skip confirmations |
-| `-e` | Economy mode: no subagents, direct tools only |
-| `-s` | Save mode: output to a host task-output directory |
-| `-r` | Resume mode: continue from previous task |
-| `--react` | Force load React 19 patterns |
-| `--nextjs` | Force load Next.js 15/16 patterns |
-| `--zustand` | Force load Zustand v5 patterns |
-| `--query` | Force load TanStack Query v5 patterns |
+- Do not modify files in this step.
+- Run `git status --short` and `git diff --cached --name-only`; record already-staged paths in `{initial_staged_changes}`. Never modify the existing index during this workflow.
+- Read `package.json` first to detect technologies (`{detected_tech}`).
+- Economy mode: direct tools only. Otherwise launch 3 `explore-codebase` agents in one message: detect technologies, find anti-patterns in `{task_description}`, find good patterns to preserve.
+- Report detected technologies and `{issues}` as `file:line | issue | priority`, distinguishing "missing" from "incorrectly used".
+- Without `-a`, confirm with the user before applying.
 
-<examples>
-```bash
-/clean-code auth feature          # Basic
-/clean-code -a dashboard          # Auto mode
-/clean-code -e -a fix types       # Economy + auto
-/clean-code -s refactor api       # Save outputs in a host task-output directory
-/clean-code -r auth-feature       # Resume
-/clean-code --nextjs --query data # Force docs
-```
-</examples>
+## 2. Apply
 
-</parameters>
+Apply the rules for each detected or forced technology; do not invent other patterns:
 
-<workflow>
-```
-SCAN → APPLY → VERIFY
-  │       │       │
-  │       │       └─ Build, test, then offer a commit
-  │       └─ Load docs, recommend, apply
-  └─ Parse flags, detect tech, find issues
-```
-</workflow>
+- **Always**: no `any` (use `unknown`, generics or discriminated unions); remove stray `console.log`.
+- **React** (`--react`): no manual `useMemo`/`useCallback`/`memo` (React Compiler); `ref` as prop instead of `forwardRef`; `useActionState` for form state; add error boundaries; server state → TanStack Query, global UI state → Zustand, local state → `useState`/`useReducer`.
+- **Next.js** (`--nextjs`): default to Server Components, `'use client'` only where needed; add `loading.tsx` and `error.tsx`; `await` async `params`; Server Actions + `useActionState` for forms.
+- **Zustand** (`--zustand`): client/UI state only, never server data; always subscribe through selectors, `useShallow` for several values; one store per domain; never in Server Components.
+- **TanStack Query** (`--query`, or the project has no data-fetching library): replace `useEffect` fetching and `useState` server data with TanStack Query; per-request `QueryClient` on the server, singleton in the browser; defaults `staleTime: 60_000`, `retry: 1`, `refetchOnWindowFocus: false`; query key factories; invalidate after every mutation; prefer `useSuspenseQuery` under Suspense and `HydrationBoundary` for server prefetch; `maxPages` on infinite queries.
 
-<state_variables>
+Then:
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `{task_description}` | string | What to analyze |
-| `{task_id}` | string | Kebab-case identifier |
-| `{auto_mode}` | boolean | Skip confirmations |
-| `{economy_mode}` | boolean | No subagents |
-| `{save_mode}` | boolean | Save outputs |
-| `{detected_tech}` | object | Technologies found |
-| `{issues}` | array | Issues found |
-| `{initial_staged_changes}` | list | Paths already staged before this workflow |
+1. Present recommendations grouped High / Medium / Quick wins. Without `-a`, ask: **Apply all (recommended)** or **High priority only**.
+2. If a recommendation needs a new library, use only the package manager declared by `packageManager` and its lockfile; never create a second lockfile.
+3. Apply changes: sequentially in economy mode, otherwise parallel Snipper agents when 4+ files. Track `file | status | change`.
+4. In save mode, write `02-apply.md`.
 
-</state_variables>
+## 3. Verify
 
-<reference_files>
+Use the repository's package manager and scripts from `package.json`; skip TypeScript checks for non-TypeScript projects. Loop fix → re-run until each passes:
 
-| File | When Loaded |
-|------|-------------|
-| [references/general-clean-code.md](./references/general-clean-code.md) | Always |
-| [references/react-clean-code.md](./references/react-clean-code.md) | React detected / `--react` |
-| [references/nextjs-clean-code.md](./references/nextjs-clean-code.md) | Next.js detected / `--nextjs` |
-| [references/zustand-best-practices.md](./references/zustand-best-practices.md) | Zustand detected / `--zustand` |
-| [references/tanstack-query-best-practices.md](./references/tanstack-query-best-practices.md) | No data fetching / `--query` |
+1. Type check: the repository's type-check script, else local `tsc --noEmit` through the package manager.
+2. `<package-manager> run lint` (use a documented lint-fix script only; never invent `--fix`).
+3. `<package-manager> run build`. Never complete with a failing build.
+4. `<package-manager> run test` when configured.
 
-</reference_files>
+Summarize checks, before/after metrics and files changed; in save mode, write `03-verify.md`.
 
-<entry_point>
+### Commit (ask first)
 
-Load [steps/step-01-scan.md](./steps/step-01-scan.md)
-
-</entry_point>
-
-<step_files>
-
-| Step | File | Purpose |
-|------|------|---------|
-| 01 | [step-01-scan.md](./steps/step-01-scan.md) | Init + analyze |
-| 02 | [step-02-apply.md](./steps/step-02-apply.md) | Load docs + apply |
-| 03 | [step-03-verify.md](./steps/step-03-verify.md) | Build + commit |
-
-</step_files>
-
-<execution_rules>
-- Load one step at a time
-- Use parallel agents in step-01 (unless economy mode)
-- Always run build before completing
-- Follow patterns from reference files exactly
-</execution_rules>
-
-<success_criteria>
-- Technologies correctly detected (React, Next.js, Zustand, TanStack Query)
-- Issues identified and documented
-- Relevant reference docs loaded
-- Clean code improvements applied
-- Build passes without errors
-- Tests pass (if tests exist)
-- Changes committed with a clear message when requested
-- No hacks or shortcuts used
-</success_criteria>
+Ask: **Create commit (recommended)** or **Done**. If `{initial_staged_changes}` was non-empty, leave the index untouched, do not commit, and report the verified changes as uncommitted. Otherwise stage only files owned by this run (`git add -- <file>`, or `git add -p` for files with unrelated hunks), never `git add -A`; check `git diff --cached` contains exactly this run's hunks, then `git commit -m "refactor: apply clean code improvements"`.
