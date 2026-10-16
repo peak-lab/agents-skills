@@ -31,6 +31,9 @@
   "peaklab.plane-init": [
     "peaklab.plane-api"
   ],
+  "peaklab.plane-intake-ideas": [
+    "peaklab.plane-api"
+  ],
   "peaklab.plane-ship-watch": [
     "peaklab.plane-do-issue",
     "peaklab.plane-api"
