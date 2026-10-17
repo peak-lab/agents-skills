@@ -1,8 +1,7 @@
 ---
 name: "peaklab.gh-create-issue"
-description: "Draft or create a GitHub issue from a bug report, feature request, code or image."
+description: "Draft or create a GitHub issue from a bug report, feature request, code or image, checking for duplicates first. Use peaklab.plane-create-issue for Plane."
 effort: standard
-disable-model-invocation: true
 allowed-tools: Read, Bash(gh :*), Bash(git :*)
 argument-hint: <issue-description> [--remote <name>] [--assignee <user>] [--code]
 ---
@@ -29,7 +28,7 @@ Read only those keys from `.env`; never print other values. Resolve the reposito
 3. Search for duplicates first: `gh issue list -R "$REPO" --state all --search "<keywords>"`. If a matching open issue exists, report it and do not create another; mention close matches that are closed.
 4. Upload images, if any (see `<image_handling>`).
 5. Draft the issue (see `<issue_format>`). Pick labels only from `gh label list -R "$REPO"`; never invent labels. Add `--assignee` only when one is configured or passed. Do not set a milestone unless the user asks.
-6. Create when the user asked to create; when they asked for a draft or the scope is materially ambiguous, show the draft and wait. Never create more than one issue per request without explicit authorization.
+6. Create when the user asked to create, directly or through a calling workflow they invoked to file and deliver the issue; when they asked for a draft or the scope is materially ambiguous, show the draft and wait. Never create more than one issue per request without explicit authorization.
 7. Reply with the issue number and URL.
 </process>
 
