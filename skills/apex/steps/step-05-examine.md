@@ -8,15 +8,14 @@ next_step: steps/step-06-resolve.md
 # Step 5: Examine
 
 <scope>
-Review only the owned patch derived from `{base_sha}`, `{owned_paths}`, and the initial dirty-path snapshot. Reuse a review only when its fingerprint still matches.
-This phase uses deep review intent. For a delegated review, explicitly select the host's
-configured deep model and effort. Direct execution retains the current session's model;
-do not claim that reading this step switches it.
+Review only the owned patch scoped in validation. Reuse a review only when its fingerprint still matches.
+This phase uses deep review intent: a delegated review explicitly selects the host's configured
+deep model and effort. Direct execution keeps the current session's model.
 </scope>
 
 <procedure>
-1. Inspect correctness, acceptance-criteria coverage, error paths, boundary validation, security exposure, and maintainability in proportion to the change.
-2. Use direct review by default. Delegate a bounded specialist review only when patch risk justifies it and delegation is allowed—for example authorization or injection risk, concurrency, migrations, public contracts, or framework-specific performance. No fixed reviewer quota applies.
+1. Inspect correctness, acceptance-criteria coverage, error paths, boundary validation, security, and maintainability in proportion to the change.
+2. Review directly by default. Delegate a bounded specialist review only when delegation is allowed and patch risk justifies it (authorization, injection, concurrency, migrations, public contracts, framework-specific performance).
 3. Validate every proposed finding against the current code and classify it as blocking, important, minor, noise, or uncertain.
 4. Report actionable findings with `file:line`, impact, evidence, and the smallest appropriate correction. Do not create todos for noise.
 </procedure>

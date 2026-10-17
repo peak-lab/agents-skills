@@ -14,19 +14,17 @@ Implement the approved plan with minimal, repository-consistent changes.
 <procedure>
 Before editing, require an executable current plan: when auto mode is disabled, `{approved_plan_revision}` must equal `{plan_revision}`. Otherwise return `needs_confirmation` through Finish without changing source or tests.
 
-Before the first planned test run, use the caller's verified command or inspect the relevant
-package script and runner configuration. Confirm the working directory, argument forwarding,
-one-shot mode, and required generated clients or test services. Prepare only missing prerequisites;
-do not install or build the whole repository by default. Record the working recipe once in the
-canonical plan so RED, GREEN and final validation reuse it. Capture the process exit status and
-check that the intended tests actually ran; a skipped suite or empty log is not passing evidence.
-For a silent or failed run, inspect its process/output and setup error before launching another
-copy. Fix command/setup failures before treating the outcome as a behavior regression.
+Before the first planned test run, use the caller's verified command or confirm the runner's
+working directory, argument forwarding, one-shot mode, and required generated clients or test
+services. Prepare only missing prerequisites; do not install or build the whole repository by
+default. Record the working recipe once in the canonical plan for reuse. Check the exit status and
+that the intended tests actually ran; a skipped suite or empty log is not passing evidence. Fix
+command/setup failures before treating the outcome as a behavior regression.
 
 For each incomplete vertical slice:
 
 1. Re-read the current target and comparable test files before editing; another actor may have changed them.
-2. Mark the slice in progress in the existing task state, if any. Do not recreate it as a todo.
+2. Mark the slice in progress in the existing task state, if any; do not recreate it as a todo.
 3. Follow the plan's test mode:
    - If tests are disabled, do not create or modify tests and do not perform RED/GREEN. Implement the behavior, record the explicit test skip, and leave repository-mandated checks to validation.
    - Otherwise, every test must exercise the highest practical public observable seam, use expected values derived independently of production logic, and mock only genuine external boundaries.
@@ -38,7 +36,7 @@ For each incomplete vertical slice:
 </procedure>
 
 <change_control>
-Follow the approved behavior and scope, but adapt implementation details when current code disproves the plan. If the correction changes product behavior, public contracts, acceptance criteria, material scope, slice boundaries, or test strategy, update the canonical plan and recompute `{plan_revision}`. In non-auto mode, when `{approved_plan_revision}` no longer matches it, route through `step-02-plan.md` and return `needs_confirmation` before further edits. Progress, ownership-status, validation metadata, and implementation details that leave the executable intent unchanged do not invalidate approval.
+Adapt implementation details when current code disproves the plan. If the correction changes product behavior, public contracts, acceptance criteria, material scope, slice boundaries, or test strategy, update the canonical plan and recompute `{plan_revision}`. In non-auto mode, when `{approved_plan_revision}` no longer matches it, route through `step-02-plan.md` and return `needs_confirmation` before further edits. Progress, ownership-status, validation metadata, and implementation details that leave the executable intent unchanged do not invalidate approval.
 </change_control>
 
 After all slices are complete, load `step-04-validate.md`. Do not run a duplicate full validation suite here.

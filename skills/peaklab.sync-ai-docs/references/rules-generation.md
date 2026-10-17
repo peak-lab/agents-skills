@@ -1,7 +1,7 @@
 # Rules Generation — Templates, Detection, Format
 
-The catalogue is bundled in `../assets/templates/`, relative to this reference. It travels with
-the installed skill. Do not read or modify global templates unless separately requested.
+The catalogue is bundled in `../assets/templates/` and travels with the installed skill. Do not
+read or modify global templates unless separately requested.
 The mapping below suggests candidates; validate actual version and code usage before selection.
 A dependency alone does not justify every rule, nor permission to change application code.
 
@@ -68,10 +68,9 @@ bun "$SKILL_ROOT/scripts/render-rule.ts" --template languages/typescript
 bun "$SKILL_ROOT/scripts/render-rule.ts" --template languages/typescript --path 'src/**/*.ts' --path 'tests/**/*.ts'
 ```
 
-The renderer prints Markdown to stdout, never writes or installs anything. `--path` replaces
-both YAML paths and the readable Scope line for a scoped template. It rejects path overrides
-for unscoped security templates. Unknown IDs/flags fail. Without Bun, read the asset directly
-and adapt it with the same review process.
+The renderer only prints Markdown to stdout. `--path` replaces both YAML paths and the readable
+Scope line of a scoped template and is rejected for unscoped security templates. Unknown IDs or
+flags fail.
 
 For each selected rule:
 
@@ -96,12 +95,9 @@ is descriptive, not executable scoping. Use real project globs and verify repres
 match. Better Auth, multi-tenant and server-action security templates remain unscoped when
 selected. Keep critical invariants directly in always-read project instructions as well.
 
-Add an explicit rule-reading instruction in `AGENTS.md` for each applicable rule, using a
-relative Markdown link and the condition under which it must be read. This is a deliberate agent
-read, not automatic Markdown expansion. Do not generate a `CLAUDE.md` import wrapper.
-Native Claude path-scoped loading uses `.claude/rules` when explicitly configured; keeping
-AGENTS.md alone does not prove Claude has loaded it.
+Add an explicit rule-reading instruction in `AGENTS.md` for each applicable rule, with a relative
+Markdown link and the condition under which it must be read. Do not generate a `CLAUDE.md` import
+wrapper. Native Claude path-scoped loading uses `.claude/rules` only when explicitly configured.
 
 Use [topology and migration policy](monorepo-and-symlinks.md) before wiring links or migrating
-files. Never create `.codex/rules` symlinks as a substitute for instruction discovery; Codex
-execution policies are unrelated to these Markdown templates.
+files.

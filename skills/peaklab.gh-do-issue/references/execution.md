@@ -10,9 +10,9 @@ owns implementation, QA and delivery, including inline execution.
 - A single bounded task may run inline. Parallel tasks need distinct branches/checkouts and
   explicit file ownership. Delegate only within available host capacity; no forced agent quota.
 - Use repository ownership agents where available. Auth, billing, tenant isolation, migrations,
-  privacy, security, infrastructure and cross-service changes require corresponding expertise.
-  If no named agent exists, use a capable available worker or execute locally under the same
-  gates. Report a missing capability rather than inventing tools or weakening the review.
+  privacy, security, infrastructure and cross-service changes require corresponding expertise;
+  without a named agent, use a capable worker or execute locally under the same gates. Report a
+  missing capability rather than inventing tools or weakening the review.
 - Resolve model/effort from the agent definition and host routing policy. Pass explicit values
   when required by the host; a Claude model field does not automatically configure Codex.
 - Stop after a reviewed PR by default. Delivery intent or `--wait-merge` authorizes shipping;
@@ -43,21 +43,20 @@ owns implementation, QA and delivery, including inline execution.
 ## Implement
 
 Assign one writer at a time to the canonical task state: implementer during implementation,
-parent during review, delivery owner during authorized shipping. Pass ownership explicitly
-with the artifact path and current head/base; the previous writer stops editing before transfer.
-Reviewers return findings to the owner instead of editing the shared report. Preserve existing
-evidence and repair history in place; do not create competing status reports or transcript copies.
+parent during review, delivery owner during authorized shipping. Transfer ownership explicitly
+with the artifact path and current head/base; the previous writer stops editing first.
+Reviewers return findings instead of editing the shared report. Preserve evidence and repair
+history in place; no competing status reports or transcript copies.
 
-Give the worker source IDs, relevant context or pointers, scope/exclusions, acceptance criteria,
-known evidence, checkout/base, task directory and modes. All repository commands run in that
-checkout. The worker is not alone: preserve others' edits and report scope expansion.
+Give the worker source IDs, context pointers, scope/exclusions, acceptance criteria, known
+evidence, checkout/base, task directory and modes. All repository commands run in that checkout;
+preserve others' edits and report scope expansion.
 
-Before dispatch, include readable paths to this contract and the installed
-[APEX entrypoint](../../apex/SKILL.md), the resolved APEX arguments below, and the task-state
-writer assignment in the worker brief. A repository specialist does not implicitly inherit
-skills read by the parent. Have the worker load these instructions before implementation,
-reuse the supplied analysis, and report the workflow/arguments used with its validation.
-This needs no separate acknowledgment round trip or duplicate plan.
+The worker brief includes readable paths to this contract and the installed
+[APEX entrypoint](../../apex/SKILL.md), the resolved APEX arguments below and the task-state
+writer assignment; a repository specialist does not inherit skills read by the parent. The worker
+loads them before implementation, reuses the supplied analysis and reports the workflow/arguments
+used with its validation, without a separate acknowledgment round trip or duplicate plan.
 
 Use APEX inline (`-e`) with supplied analysis/plan and canonical task state:
 
@@ -100,48 +99,42 @@ blocker_or_next_action: ...
 GlitchTip adds cluster coverage and may return `stale_signal` or `noise` for triage.
 Consume results as they arrive; review ready PRs without waiting for the slowest worker.
 Prefer host completion notifications or a bounded session wait over repeated status polling.
-If a wait expires or progress appears stalled, inspect the existing worker's host status,
-last completed action and any running tool once before deciding what to do. Distinguish
-running, idle, failed and unknown; silence or an old transcript timestamp alone proves none
-of these. Record an unexplained interval as unknown, not as test/CI time or model failure.
-Continue waiting for a running worker; for idle-without-result, inspect artifacts/git/PR state
-and resume the same worker for the missing result. Surface an explicit error or unavailable
-status with the existing handle and evidence. Do not resend the task or launch a replacement
-while the original may still write; replacement requires confirmed stop and ownership transfer.
-A commit and PR alone do not demonstrate validation. This does not authorize deferred monitoring.
+If a wait expires or progress stalls, inspect the worker's host status, last action and running
+tool once. Silence or an old transcript timestamp alone does not prove running, idle or failed;
+record an unexplained interval as unknown. Keep waiting for a running worker; for
+idle-without-result, inspect artifacts/git/PR state and resume the same worker. Surface an
+explicit error with the existing handle and evidence. Never resend the task or launch a
+replacement while the original may still write; replacement requires confirmed stop and
+ownership transfer. A commit and PR alone do not demonstrate validation. This does not
+authorize deferred monitoring.
 
 After returning a result, the worker stops autonomous tools, messages and artifact edits. The
 parent checks the required fields once and resumes the same worker only for a specific missing
 proof, in-scope blocker or authorized next phase, transferring write ownership when needed.
-Keep resumable context while review/repairs remain possible; release the worker at the requested
-terminal state. New evidence invalidating a result must still reach the parent. Do not prolong
-the task with report polishing, acknowledgment loops or unsolicited memory maintenance; apply
-any required correction once through its designated owner. Link long diagnostics from the
-compact result instead of reproducing them in every message.
+Release the worker at the requested terminal state; new evidence invalidating a result must still
+reach the parent. No report polishing or acknowledgment loops; link long diagnostics instead of
+repeating them.
 
 ## QA once
 
 Assign one reviewer appropriate to risk, or review locally if delegation is unavailable.
 Review the task patch against baseline, criteria and repository rules. GlitchTip QA explicitly
 checks every claimed ID. Add a specialist only for an independent risk that warrants it.
-Independence requires examining the patch and acceptance-relevant interactions, not rerunning
-every author command. Verify supplied evidence's scope, revision and environment, then run only
-missing or invalidated checks. An unsupported summary is not reusable evidence. Return one
-verdict with concrete findings and evidence gaps; avoid a second narrative of the implementation.
-Keep the author's checkout unchanged during review. If a missing regression proof requires
-running tests against pre-fix code, use a disposable checkout or copy with isolated test resources,
-then clean up only that experiment. Never temporarily revert the author's files or write to a
-shared service to obtain RED; reuse valid existing regression evidence when sufficient.
+Examine the patch and acceptance-relevant interactions rather than rerunning every author
+command: verify supplied evidence's scope, revision and environment, then run only missing or
+invalidated checks. An unsupported summary is not reusable evidence. Return one verdict with
+concrete findings and evidence gaps, not a second narrative of the implementation.
+Keep the author's checkout unchanged. If regression proof needs pre-fix code, use a disposable
+checkout or copy with isolated test resources and clean up only that experiment. Never revert the
+author's files or write to a shared service to obtain RED.
 
 Record verdict (`review_completed_no_blockers`, `review_blockers_fixed` or
 `review_blocked_do_not_merge`), head/base SHA, reviewer, scope and findings in task state.
 In-scope fixes are authorized work: resume the same worker, validate affected paths and review
 the changed patch. Use the [shipping correction contract](../../peaklab.ship-pr/SKILL.md#3-one-correction-loop)
 for QA repairs: persist `repair_budget: {limit: 3, used: N}` and `repair_attempts` in the canonical
-task state, increment before each hypothesis-driven repair batch, and retain failed attempts.
-Initialize zero only for fresh work; reconstruct legacy history or ask when unknown. A repeated
-failure without new evidence or a supported new hypothesis stops with `no_progress`.
-At the shared limit, report any remaining blocker; do not hand unresolved QA to shipping to
+task state, increment before each hypothesis-driven repair batch, and retain failed attempts;
+its initialization and `no_progress` rules apply. At the shared limit, report any remaining blocker; do not hand unresolved QA to shipping to
 obtain another budget. Successful QA carries all used attempts into delivery.
 
 Reuse validation only while code, dependencies, configuration and relevant environment remain
@@ -157,17 +150,16 @@ peaklab.ship-pr --pr <PR_URL> --repo <OWNER/REPO> --worktree <ABSOLUTE_PATH> --t
 
 Pass the task-state path, expected branch/head/base, QA verdict, validation evidence and persisted
 `repair_budget`, `repair_attempts`, `ci_wait_seconds` (zero before any CI wait). The delivery owner
-continues these counters; a new worker, invocation or push never resets them. Reuse a current
-clean review without another full review; only changed evidence requires delta review.
+continues these counters; a new worker, invocation or push never resets them. A current clean
+review is reused; only changed evidence requires delta review.
 All local shipping commands run in that task's checkout, never the parent's by inference;
 GitHub calls use the explicit repository and PR. A target mismatch blocks that delivery.
 If the host has no Skill tool or rejects `disable-model-invocation`, the shipping owner reads
 the installed `peaklab.ship-pr/SKILL.md` and follows its same target/review/CI/merge gates
 directly. Tool availability grants no extra authority. No alternate, weaker shipping loop.
 
-It consumes current evidence and renews stale/missing checks. Return the verified `merged`,
-`pr_created` or `blocked` status with PR/repository/head; callers must not infer merge from return.
-One owner handles shipping; do not assign another reviewer/watcher the same responsibility.
+Shipping returns the verified `merged`, `pr_created` or `blocked` status with PR/repository/head;
+callers must not infer merge from return. One owner handles shipping; no second reviewer/watcher.
 
 Merge batches sequentially. Synchronization with a moving base requires renewed checks.
 Require successful configured CI on the current head and merge with `--match-head-commit`.

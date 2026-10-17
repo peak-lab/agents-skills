@@ -1,6 +1,6 @@
 # Chat Surfaces
 
-Use this guidance for WhatsApp, Slack, Discord, Teams, SMS, and DMs. It overrides the general tell catalogue where necessary.
+For WhatsApp, Slack, Discord, Teams, SMS, and DMs. Overrides the general tell catalogue where they conflict.
 
 ## What to preserve
 
@@ -20,8 +20,8 @@ Avoid headings or lists for one-line answers; corporate acknowledgements; servic
 | Teams | `**bold**` | `*italic*` | fenced | `-` | Limited |
 | SMS | None | None | None | None | None |
 
-Use Slack links as `<https://url|label>`. Preserve existing mentions and never invent one. Do not emit Markdown headings or tables into WhatsApp, Slack, or SMS.
+Use Slack links as `<https://url|label>`. Preserve existing mentions and never invent one.
 
 ## Length and register
 
-Match the recent thread before choosing language, formality, or French `tu` versus `vous`. Send one idea per message. Over roughly five WhatsApp lines, consider whether a call, document, or thread is a better home and say so. Put the answer first in a Slack channel or thread, then detail.
+Match the recent thread before choosing language, formality, or French `tu` versus `vous`. Over roughly five WhatsApp lines, consider whether a call, document, or thread is a better home and say so.

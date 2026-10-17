@@ -2,7 +2,7 @@
 
 These templates support APEX v1 multi-file saved runs and `-r` compatibility. Modern runs treat `.claude/output/apex/` as read-only and keep canonical state in the caller's harness task artifact.
 
-On resume, legacy boolean TDD values are normalized by initialization: `true` means forced TDD and `false` means strict TDD disabled. A legacy `test_mode=false` remains authoritative and suppresses APEX test-writing/TDD phases.
+Initialization normalizes legacy TDD and test values on resume (see `../steps/step-00-init.md`).
 
 ## Legacy initialization
 
@@ -23,7 +23,7 @@ bash ../scripts/update-progress.sh TASK_ID STEP_NUMBER STEP_NAME in_progress
 bash ../scripts/update-progress.sh TASK_ID STEP_NUMBER STEP_NAME complete
 ```
 
-The updater modifies the progress table in the legacy `00-context.md`. New runs should update their single state artifact at phase boundaries instead.
+The updater modifies the progress table in the legacy `00-context.md`; modern runs do not use it.
 
 ## Compatibility rules
 

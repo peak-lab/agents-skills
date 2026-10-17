@@ -26,16 +26,15 @@ Do not turn delivery into a new implementation or cleanup project.
 | `--auto-fix` | Compatibility flag; in-scope blocking fixes are already part of delivery |
 | `--plane` | After merge, sync confirmed Plane tickets; offer missing tickets |
 
-Only one delivery owner runs this workflow. The caller retains source selection/status and
+Only one delivery owner runs this workflow; the caller keeps source selection/status and
 checkout cleanup. If nested invocation is unavailable, read this installed file and use available
 tools; do not enable it globally or start another shipping loop.
-For composed calls, take exclusive write ownership of the canonical task artifact from the
-caller before updating it. Reviewers return findings; they do not edit that shared report.
-Return ownership with the terminal result. Preserve counters/evidence in place and link long
-diagnostics instead of copying them into parallel reports.
+For composed calls, take exclusive write ownership of the canonical task artifact before updating
+it and return it with the terminal result. Reviewers return findings and never edit that report.
+Preserve counters/evidence in place; link long diagnostics instead of copying them.
 Never force-push, bypass protections, include unrelated edits, or add generated/co-author attribution.
 Product decisions, scope expansion and unrelated issue creation require user authorization.
-Every stop below goes through "Return and stop"; it is not an immediate unrecorded response.
+Every stop below goes through "Return and stop".
 Notation `blocked: reason` means separate fields `status: blocked` and `reason`, not a combined status.
 
 ## 1. Bind the target and resume state
@@ -57,8 +56,7 @@ Fetch PR state, head/base and draft flag. A merged PR returns its verified resul
 explicitly requested sync; a closed unmerged PR returns `closed_unmerged`.
 Without an explicit PR, find one for the bound branch; multiple matches need disambiguation.
 If absent, create it following repository conventions with an explicit resolved base and any
-requested draft flag. Preserve a policy-valid existing base. Retarget only with authority and
-invalidate affected evidence. Never substitute another PR for an explicit target.
+requested draft flag. Retarget only with authority and invalidate affected evidence. Never substitute another PR for an explicit target.
 
 Persist recovery state before corrections:
 
@@ -67,10 +65,10 @@ Persist recovery state before corrections:
 - `ci_wait_seconds`: accumulated pending-CI wait, initially zero; default allowance 1200 seconds.
 - Current review verdict, covered head/base/scope, validation evidence and terminal reason.
 
-Reuse counters across phase changes, workers, pushes and invocations. For legacy state reconstruct
-prior attempts from recorded history; unknown history requires clarification, not a guessed zero.
-Initialize zero only for a confirmed fresh task with no previous corrections. Only an explicit
-user grant extends exhausted budgets; record it. Do not automatically restart after a terminal blocker.
+Reuse counters across phases, workers, pushes and invocations. Reconstruct legacy attempts from
+recorded history; unknown history requires clarification, not a guessed zero. Initialize zero only
+for a confirmed fresh task. Only an explicit, recorded user grant extends exhausted budgets.
+Do not automatically restart after a terminal blocker.
 
 ## 2. Validate and review once
 
@@ -86,7 +84,7 @@ Compare that set with task scope and any incoming review scope. A reusable revie
 changed path and the acceptance-relevant interactions between them; matching head/base SHAs do not
 make a partial scope complete. Review uncovered or unexpected paths and renew the combined verdict.
 
-Discover applicable checks from repository instructions/scripts. Reuse results only when their
+Discover checks from repository instructions/scripts. Reuse results only when their
 recorded commands cover the checks applicable to the complete changed-path set and code, dependencies,
 configuration and relevant environment still match. A matching revision does not broaden narrow
 validation evidence. Otherwise run affected checks, including appropriate structural checks for
@@ -95,9 +93,9 @@ separate local-fix loop.
 
 An explicit review is mandatory before merge; CI success is not a review. Reuse a valid incoming
 verdict for the exact head/base, scope and environment: do not launch another full review.
-If absent, review the task diff against criteria and policy. Delegate when useful, adding a specialist
-only for a distinct risk; otherwise write findings locally. Cover applicable logic, authorization,
-tenant boundaries, failure modes, tests and unrelated changes.
+If absent, review the task diff against criteria and policy: logic, authorization, tenant
+boundaries, failure modes, tests and unrelated changes. Delegate only when useful, adding a
+specialist only for a distinct risk.
 
 - **Blocking**: demonstrated correctness/security regression, unmet acceptance criterion or required
   repository gate. Record file/line or check, impact and a reproducible case or concrete code-path
@@ -133,8 +131,8 @@ Use this loop for local-check, review and current-head CI failures:
    On verification failure return to step 1 with the same counter, never a nested fix loop.
 
 Leave the loop immediately when blockers clear. Exhaustion prohibits more repairs, not successful
-verification or delivery of the last allowed repair. Suggestions consume no attempts because they
-are not implemented. At the recorded limit with a remaining blocker, stop with evidence and the
+verification or delivery of the last allowed repair. Suggestions consume no attempts.
+At the recorded limit with a remaining blocker, stop with evidence and the
 specific decision needed; never reset the counter implicitly.
 
 ## 4. Check CI within a bounded wait
@@ -230,7 +228,7 @@ gh api graphql -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$
   -f o="${REPO%%/*}" -f r="${REPO#*/}" -F n="$PR_NUMBER" --jq '.data.repository.pullRequest'
 ```
 
-`state=MERGED` is `merged`. `isInMergeQueue=false` on an open PR means the queue removed it: read the
+`isInMergeQueue=false` on an open PR means the queue removed it: read the
 failing `merge_group` run and treat it as a current-head CI failure, never re-enqueue blindly.
 Wait exhaustion returns `blocked: merge_queue_wait_exhausted` with the queue URL and entry state.
 
@@ -245,7 +243,7 @@ Only `--plane`, verified merge into the permitted default branch, and no caller-
 this step. Otherwise report a skip. A merge does not necessarily mean Done or deployed.
 
 1. Load [the Plane API](../peaklab.plane-api/SKILL.md) for atomic `PLANE_TOKEN`/`PLANE_PROJECT`
-   configuration and paginated metadata. Resolve resources from installed skill directories.
+   configuration and paginated metadata.
 2. Extract exact source identifiers, verify project and acceptance coverage. Title/file similarity
    supplies candidates only; confirm inferred matches before updates.
 3. Use [the merge-state helper](../peaklab.plane-do-issue/scripts/finish_issue.py), resolving
@@ -255,7 +253,7 @@ this step. Otherwise report a skip. A merge does not necessarily mean Done or de
    python3 "$PLANE_DO_ISSUE_DIR/scripts/finish_issue.py" --merged --issue "$ISSUE" --pr-url "$PR_URL"
    ```
 
-   The helper owns dynamic states and atomic `PLANE_MERGED_STATE` overrides. Report its actual result.
+   The helper owns dynamic states and `PLANE_MERGED_STATE` overrides; report its actual result.
 4. Offer one ticket per coherent untracked behavior; after confirmation use
    `peaklab.plane-create-issue` with evidence and an explicitly resolved requested state.
 5. Sync failure returns `merged` with `plane_sync=failed` and a recoverable error; never restart
@@ -270,11 +268,9 @@ not claim those identities were verified. Successful delivery always requires ta
 Persist and report PR/repository, `pr_created|merged|blocked|closed_unmerged`, verified head and
 merge commit if any, `auto_merge` state, review/CI evidence, suggestions, repair count and Plane
 result. For a blocker, include its reason, last attempt and next decision.
-Stop at the requested terminal state.
-After returning to a caller, stop autonomous tools, messages and report edits. Resume only for
-a specific evidence gap, in-scope repair or authorized next phase; report newly discovered
-evidence that invalidates the result. Do not extend delivery with report polishing,
-acknowledgment loops or unsolicited memory maintenance.
+Stop at the requested terminal state, then stop autonomous tools, messages and report edits.
+Resume only for a specific evidence gap, in-scope repair or authorized next phase; still report
+new evidence that invalidates the result. No report polishing or acknowledgment loops.
 Do not schedule follow-up work. Explicitly requested deferred monitoring requires one bounded loop
 for all targets, `pass k/N` with N ≤ 8, backoff 1h → 3h → 12h → stop, no self-rearming, and a
 reported handle/cancellation method. Monitoring never resets repair or wait budgets.

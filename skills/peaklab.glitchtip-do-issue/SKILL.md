@@ -7,15 +7,14 @@ argument-hint: "[id|url...] [--project SLUG] [--level fatal|error|warning|info|d
 
 # GlitchTip Issue Delivery
 
-One demonstrated root cause covering one or more GlitchTip IDs is one unit of work.
-This is the single entrypoint for isolated fixes and bounded inbox passes. Isolation is the
-default; use `--inline` for the current checkout. `peaklab.track-error` remains distinct:
-it creates or reuses a GitHub issue as the error's permanent record.
+One demonstrated root cause covering one or more GlitchTip IDs is one unit of work, for
+isolated fixes and bounded inbox passes alike. Isolation is the
+default; use `--inline` for the current checkout. `peaklab.track-error` instead keeps a GitHub
+issue as the error's permanent record.
 
-Before implementation, read the installed `peaklab.gh-do-issue` skill's
-[shared execution contract](../peaklab.gh-do-issue/references/execution.md).
-It owns worktrees, APEX, QA and requested delivery. This adapter owns GlitchTip evidence
-and resolution. Dependencies: `peaklab.gh-do-issue`, `apex`, `peaklab.ship-pr`.
+Before implementation, read the
+[shared execution contract](../peaklab.gh-do-issue/references/execution.md): it owns worktrees,
+APEX, QA and requested delivery. This adapter owns GlitchTip evidence and resolution. Dependencies: `peaklab.gh-do-issue`, `apex`, `peaklab.ship-pr`.
 
 ## Inputs and modes
 
@@ -37,35 +36,33 @@ and resolution. Dependencies: `peaklab.gh-do-issue`, `apex`, `peaklab.ship-pr`.
 | `--wait-merge` / `--async-merge` | Explicit delivery with the shared contract's session limits |
 | `--no-resolve` | No GlitchTip mutation, including comments |
 
-Validate options before mutation. Numeric option values are not IDs; seeds and `--swarm`
-and `--all` are alternative selectors. Reject conflicting modes and nonpositive limits;
+Validate options before mutation. Numeric option values are not IDs; seeds, `--swarm` and
+`--all` are alternative selectors. Reject conflicting modes and nonpositive limits;
 `--inline` conflicts with `--swarm` and `--async-merge`, and `--no-subagent` conflicts with
-batch selectors unless using sequential `--inline --all`. Automatic execution
-and adaptive testing are defaults. Fatal errors need deeper investigation/review; ask only for
-new authority or an unresolved product decision. Drafts are never merged.
+batch selectors except sequential `--inline --all`. Fatal errors need deeper
+investigation/review; ask only for new authority or an unresolved product decision. Drafts are
+never merged.
 
 ## Shared service contract
 
 Read [the GlitchTip evidence and resolution contract](references/glitchtip-contract.md) before
-API access. It owns credentials, transport, data minimization and all resolution gates used
-by this skill's modes and `peaklab.track-error`.
+API access. It owns credentials, transport, data minimization, clustering evidence and all
+resolution gates, shared with `peaklab.track-error`.
 
 ## Select and prove clusters
 
 1. For seeds, fetch `/issues/<id>/` and use the actual project; verify any explicit project
    matches. Otherwise map configured/repository metadata to the projects endpoint; ask when
    several projects are plausible.
-2. Fetch unresolved candidates from `/projects/<org>/<project>/issues/`. Rank considered
-   candidates by severity then count. State limits/pagination truncation; a bounded ranking
-   or empty page does not establish a globally empty inbox.
-3. Read relevant events, including `/issues/<id>/events/latest/`. Retain only sanitized
-   exception type/message, culprit, in-app frames, release, environment and diagnostic context.
-   For issues spanning environments, inspect enough evidence to isolate them.
+2. Fetch unresolved candidates from `/projects/<org>/<project>/issues/`, ranked by severity
+   then count, stating limits/pagination truncation per the contract.
+3. Read relevant events, including `/issues/<id>/events/latest/`, retaining only the sanitized
+   evidence the contract allows. For issues spanning environments, inspect enough to isolate them.
 4. Group only when exception, normalized message, frame and culprit match, or one demonstrated
-   failing dependency explains all members. Matching titles alone are insufficient. A wrapper
-   and underlying exception may share a cause; prove that relationship in code/events.
+   failing dependency explains all members. A wrapper and underlying exception may share a
+   cause; prove that relationship in code/events.
 5. Never combine projects/environments. Record covered and rejected IDs, shared cause and
-   restored behavior. Redact identities, request bodies, headers and private breadcrumbs.
+   restored behavior.
 6. Check existing PR/task ownership by exact IDs before creating work. Read source/history to
    distinguish active bugs, already-fixed behavior, stale signal and noise. A merged base-branch
    fix does not prove deployment in the emitting environment.
@@ -83,26 +80,26 @@ For `--inline`, replace only the shared executor's checkout-preparation steps wi
   only after verifying its commits belong to the cluster. Preserve unrelated edits and stop
   on inseparable ownership; never auto-stash or force-switch.
 - Implement locally via the shared APEX mapping and keep its single official QA/delivery owner.
-  Automatic execution remains the canonical default; use `--no-auto` for plan approval.
+  Automatic execution remains the default; use `--no-auto` for plan approval.
 - For `--inline --all`, start each next independent cluster on a separate clean branch from the
   resolved base. Never stack it on the previous unmerged PR. Stop if switching is unsafe.
   An explicitly requested inline pass permits these safe branch switches, not deletion of user work.
 
-With `--all`, record blocked/uncertain clusters and continue only to independent clusters that
-can be prepared safely. Each cluster has its own task state and PR. Do not refetch the inbox
+With `--all`, record blocked/uncertain clusters and continue only with independent clusters
+that can be prepared safely, each with its own task state and PR. Do not refetch the inbox
 or extend the candidate set automatically. Other modes use the shared checkout preparation.
 
 Pass the shared executor IDs/permalinks, sanitized evidence, environment/release, scope,
-criteria, task-state path and modes. Resolvers use APEX inline, preserve regression evidence
-and never call the GlitchTip API.
+criteria, task-state path and modes. Resolvers use APEX inline, keep regression evidence and
+never call the GlitchTip API.
 
 PRs list every covered GlitchTip ID, common cause and validation. Never use GitHub `Closes #N`
 for GlitchTip IDs. QA checks each member; remove uncovered IDs from the claim and keep them open.
 
 ## Finish
 
-Apply the shared service contract after execution. A reviewed PR is `pr_created`, not merged;
-`merged` without verified deployment still leaves GlitchTip unresolved. For
+Apply the contract's resolution gate after execution: `pr_created` or `merged` without verified
+deployment leaves GlitchTip unresolved. For
 `needs_confirmation` or `needs_clarification`, return the plan/decision and resume the same
 worker after an explicit answer; `needs_planning` ends implementation without status writes.
 Report one row per cluster: IDs, PR, code status, deployment evidence, GlitchTip status and

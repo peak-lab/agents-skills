@@ -17,6 +17,4 @@ For each accepted finding:
 4. invalidate review and validation evidence affected by the edit;
 5. run the narrow focused check needed for safe iteration.
 
-Progress, ownership-status, validation metadata, and implementation details that leave the executable intent unchanged do not invalidate approval.
-
-If fixes changed the patch, load `step-04-validate.md`. If no edit was made, record the disposition: load Finish for accepted non-blocking residual risk, or load Finish with blocked status for an unresolved blocking finding. Do not duplicate a full suite here.
+If fixes changed the patch, load `step-04-validate.md`. Otherwise record the disposition and load Finish: as residual risk for accepted non-blocking findings, or with blocked status for an unresolved blocking finding. Do not duplicate a full suite here.

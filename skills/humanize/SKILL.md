@@ -20,7 +20,7 @@ Rewrite inline text or an existing UTF-8 text file so it sounds natural for its 
 </constraints>
 
 <surfaces>
-Pick the surface first. It decides register, markup, and length before any rewrite happens. When the caller does not say, infer it from the source and state the assumption.
+Pick the surface first: it decides register, markup, and length. When the caller does not say, infer it from the source and state the assumption.
 
 | Surface | Register | Markup | Length |
 |---|---|---|---|
@@ -58,7 +58,7 @@ Read [the full tell catalogue](references/ai-tells.md) for long-form prose, or w
 
 <output>
 - Inline input: return only the ready-to-use text, with real newlines and no preamble.
-- Chat: return text ready to paste. Separate multiple messages clearly and say nothing else.
+- Chat: return text ready to paste, multiple messages clearly separated, nothing else.
 - File input: edit in place and report each rewritten unit in at most one line.
 - External handoff: pass actual multiline text, not a shell-escaped one-line payload. When possible, re-read the stored body before posting.
 </output>
@@ -70,7 +70,6 @@ Read [the full tell catalogue](references/ai-tells.md) for long-form prose, or w
 
 <acceptance_criteria>
 - The result is natural for its surface and register, with no confirmed detection hit remaining.
-- Facts and protected content are unchanged.
-- Multiline layout uses real newlines while intentional `\n` remains intact.
+- Facts, protected content, and intentional `\n` are unchanged; layout uses real newlines.
 - The markup dialect matches the target surface.
 </acceptance_criteria>

@@ -8,7 +8,7 @@ next_step: steps/step-09-finish.md
 # Step 4: Validate
 
 <goal>
-Prove the requested behavior works without rerunning valid evidence or claiming unrelated failures as task regressions.
+Prove the requested behavior works without rerunning valid evidence or claiming unrelated failures as regressions.
 </goal>
 
 <scope>
@@ -20,17 +20,17 @@ Reuse an earlier result only when all are true:
 
 - the exact command and tested scope are recorded;
 - it passed;
-- relevant source, tests, dependencies, configuration, toolchain, and required service environment have not changed since its fingerprint;
-- the result is sufficiently broad for the final acceptance criteria.
+- relevant source, tests, dependencies, configuration, toolchain, and service environment are unchanged since its fingerprint;
+- it is broad enough for the final acceptance criteria.
 
 Any review fix or later edit invalidates affected evidence.
 </evidence_reuse>
 
 <procedure>
-1. Discover commands from repository documentation and configuration; do not assume Node, `pnpm`, or script names.
+1. Discover commands from repository documentation and configuration; do not assume a toolchain or script names.
 2. Run missing focused checks for every acceptance criterion. If test mode is disabled, do not create or run automated tests solely for APEX; record the explicit skip and use the remaining project checks and inspection evidence.
-3. Run the smallest final project-native set justified by the patch, typically relevant tests plus typecheck/lint/build where configured. Run a full suite when repository policy, cross-cutting risk, or delivery requirements call for it.
-4. Distinguish regressions caused by the owned patch from pre-existing or unrelated failures. Fix owned regressions. Report unrelated blockers with evidence; do not rewrite unrelated code.
+3. Run the smallest final project-native set justified by the patch (typically relevant tests plus configured typecheck/lint/build); run a full suite when repository policy, cross-cutting risk, or delivery requirements call for it.
+4. Fix regressions caused by the owned patch. Report pre-existing or unrelated failures with evidence; do not rewrite unrelated code.
 5. Inspect the owned diff for accidental files, debug output, secrets, generated attribution, and scope creep.
 6. Record each command, result, and skipped check with its reason.
 </procedure>

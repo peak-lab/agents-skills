@@ -43,17 +43,15 @@ matching is forbidden (`PREFIX-1` must not match `PREFIX-10`). Otherwise return
 `blocked_issue_mismatch`.
 
 Require `headRefOid == reviewed_head` for every state; otherwise return
-`blocked_review_required` with both SHAs. If already merged, confirm `state=MERGED` and verify
-the merged base is permitted by repository policy before syncing Plane using that PR URL.
-Then return. Stop without Plane mutation when closed but unmerged. Stop
-when `isDraft=true`.
+`blocked_review_required` with both SHAs. If already merged, confirm `state=MERGED` and a
+policy-permitted merged base, sync Plane with that PR URL, then return. Stop without Plane
+mutation when closed but unmerged or when `isDraft=true`.
 </step>
 
 <step name="check-base">
 Resolve `BASE_BRANCH` and `HEAD_BRANCH` from that PR's metadata. For local ancestry or policy
-inspection, prepare an external temporary detached checkout of this verified repository and PR
-head. Run every local git command below inside that checkout, never the parent's checkout.
-Fetch the base and head refs there:
+inspection, run every local git command below in an external temporary detached checkout of the
+verified PR head, and fetch the refs there:
 
 ```bash
 git fetch origin
@@ -66,8 +64,7 @@ not a descendant of `origin/$BASE_BRANCH`, return
 parent must review the new SHA. If GitHub reports conflicts, return `blocked_conflict` with
 the affected PR, branches, conflicted paths when available, and `repair_disposition`:
 `worker_safe` only when the conflict is localized and repository rules plus issue intent fully
-determine the resolution; otherwise `product_or_scope_unknown`. Do not attempt a post-review
-resolution.
+determine the resolution; otherwise `product_or_scope_unknown`.
 </step>
 
 <step name="check-policy">
@@ -86,7 +83,7 @@ gh run list --repo "$REPO" --branch "$HEAD_BRANCH" --commit "$REVIEWED_HEAD" --l
   --json databaseId,status,conclusion,workflowName,headSha,url
 ```
 
-When checks for the reviewed SHA are pending, wait in this turn:
+Pending checks are not a terminal result; wait in this turn:
 
 ```bash
 gh pr checks "$PR_NUMBER" --repo "$REPO" --watch --fail-fast
@@ -96,8 +93,7 @@ Re-run the blocking watch if the command timeout expires while checks are still 
 configured CI fails, return `blocked_ci` with failed check/run URLs, relevant logs, and
 `repair_disposition`. Use `worker_safe` only when the evidence attributes the failure to the PR
 and a fix is clearly inside its scope; use `external_or_unknown` for infrastructure, flaky,
-third-party, or ambiguous failures. Code fixes belong to the implementation worker and require a
-new parent review. If workflows or required checks exist but no result is available for the
+third-party, or ambiguous failures. If workflows or required checks exist but no result is available for the
 reviewed SHA, return `blocked_missing_ci`.
 
 When the repository has no workflows, no required checks, and no Actions run for the head,
@@ -120,8 +116,7 @@ Require all of:
 - successful configured CI belongs to that exact SHA, or CI is explicitly not configured;
 - the reviewed head is still current with the base branch.
 
-Any changed head or base returns `blocked_review_required`. Never reuse a verdict after either
-change. A behind-but-unchanged reviewed pair returns `blocked_rebase_required`.
+Any changed head or base returns `blocked_review_required`. A behind-but-unchanged reviewed pair returns `blocked_rebase_required`.
 </step>
 
 <step name="merge">
@@ -180,12 +175,10 @@ Use `--blocked` only for a permanent, evidenced post-PR blocker and include `--r
 head SHA plus GitHub check/conflict URL. Do not transition Plane for a transient wait, review
 invalidation, stale base, unavailable tool, or missing local credentials.
 
-Run the helper from the caller's verified project context so its project `.env` remains the
-intended configuration source, not the credential-less inspection checkout; never copy secrets
-into task evidence or logs.
-
-State IDs and configured terminal names are resolved dynamically by `peaklab.plane-api` from
-one atomic config source. Report the state printed by `finish_issue.py`; never assume `Done`.
+Run the helper from the caller's verified project context (its `.env`), not the credential-less
+inspection checkout; never copy secrets into task evidence or logs. `peaklab.plane-api` resolves
+state IDs and terminal names dynamically; report the state printed by `finish_issue.py`, never
+assume `Done`.
 </step>
 </workflow>
 
@@ -198,8 +191,6 @@ one atomic config source. Report the state printed by `finish_issue.py`; never a
 - `--async-merge`: valid only inside a live session worker that can complete this workflow and
   deliver its result. If that facility is unavailable, do not start; return the reviewed PR and
   the explicit command needed to resume.
-- A pending check is not a terminal result. Keep the current blocking watch active until success,
-  failure, or the current turn's bounded tool timeout.
 </session_contract>
 
 <result>
@@ -209,18 +200,9 @@ Return PR URL, issue, reviewed SHA, CI evidence, merge state, Plane state, and o
 `blocked_merge_queue_wait_exhausted`, or
 `closed_unmerged`. For `blocked_ci` and `blocked_conflict`, also return
 `repair_disposition=worker_safe|external_or_unknown|product_or_scope_unknown` and the concrete
-evidence the parent must pass to the existing implementation worker. The watcher never performs
-the repair itself.
+evidence the parent must pass to the existing implementation worker.
 After delivering the result, stop autonomous tools, messages and report edits. The parent may
 resume this worker for a specific missing proof or authorized next phase; newly discovered
-evidence invalidating the result must still be reported. Do not start report-polishing,
-acknowledgment or unsolicited memory-maintenance loops.
+evidence invalidating the result must still be reported. No report-polishing or acknowledgment
+loops.
 </result>
-
-<acceptance_criteria>
-- Merge is server-pinned to the parent-reviewed head SHA and immediately preceded by a fresh
-  base-SHA check; repositories needing atomic base freshness enforce up-to-date branch protection.
-- A head/base/code change always returns through implementation and parent review.
-- Plane changes only after explicit GitHub evidence and uses an explicit issue identifier.
-- No parent checkout or deferred automation is created.
-</acceptance_criteria>

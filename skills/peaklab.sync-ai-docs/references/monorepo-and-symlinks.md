@@ -2,10 +2,8 @@
 
 ## Ownership and approvals
 
-Project `AGENTS.md` is the canonical instruction source. An authorized sync migrates useful
-content from project `CLAUDE.md` files and removes them; do not create replacement wrappers.
-Shared project Markdown rules live in a real `.agents/rules/` directory.
-Do not assume a user's global layout or a private topology guide exists.
+Project `AGENTS.md` is the canonical instruction source; shared project Markdown rules live in a
+real `.agents/rules/` directory. Do not assume a user's global layout or private topology guide.
 
 | Existing state | Action during sync (audit only reports) |
 |---|---|
@@ -32,8 +30,8 @@ with explicit host labels. Convert relevant `@` imports into explicit read instr
 correct relative links: AGENTS.md does not expand Claude imports. Rebase relative paths when
 moving content, avoid self-imports, and update active project references to deleted files.
 Historical records need not be rewritten. A second sync must not recreate CLAUDE.md or duplicate
-migrated content. This migration is included in sync authorization, including `--no-rules`, and
-does not need a separate routine approval; audit mode never writes or deletes files.
+migrated content. Sync authorization covers this migration without a separate routine approval;
+audit mode never writes or deletes files.
 
 Creating a missing project-local `.claude/rules -> ../.agents/rules` is a normal part of
 authorized Claude rules setup. Do not create it when no rules were generated or Claude was
@@ -41,9 +39,8 @@ not selected. Never write through a link to global configuration. On platforms w
 symlink support, keep explicit rule-reading instructions in `AGENTS.md`;
 report that this does not establish automatic Claude loading or native path scoping.
 
-Codex loads `AGENTS.md` through its instruction discovery mechanism. `.codex/rules` contains
-execution-policy files when configured; a Markdown symlink there is not a loading mechanism.
-Do not change `.codex/config.toml`, `.rules` permission policies or Claude settings here.
+`.codex/rules` holds Codex execution policies; a Markdown symlink there is not a loading
+mechanism. Do not change `.codex/config.toml`, `.rules` permission policies or Claude settings here.
 
 ## Monorepos
 
@@ -69,9 +66,8 @@ Never link generated runtime state, provider settings, hooks or personal secrets
 ## Verification after migration
 
 Check file/link targets and content, root and nested instruction routes, name collisions, and
-stale documentation links. Preserve historical records. Report filesystem validity separately
-from actual host loading. Use Claude's `/memory` or an isolated Codex session to inspect loaded
-instructions when available; do not claim this was tested merely because a link resolves.
+stale documentation links. Report filesystem validity separately from host loading; inspect
+loaded instructions with Claude's `/memory` or an isolated Codex session when available.
 
 Official references (checked 2026-09-11):
 
