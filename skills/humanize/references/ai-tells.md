@@ -1,6 +1,6 @@
 # AI Tells
 
-Detection catalogue for `humanize`. Load it for long-form prose, or when the quick scan flags a real issue and the right rewrite is unclear. A trigger is a signal, not a verdict: rewrite the pattern, not the token.
+Detection catalogue for `humanize`. A trigger is a signal, not a verdict: rewrite the pattern, not the token.
 
 ## Inflated significance
 
@@ -12,7 +12,7 @@ The tell upgrades a fact into a symbol. Delete the upgrade and keep the fact.
 
 Triggers: highlighting, ensuring, showcasing, reflecting, contributing to, fostering, underscoring, demonstrating. French: mettant en avant, garantissant, illustrant, reflétant, contribuant à, soulignant.
 
-Cut a participle clause bolted on to add depth, or make it a sentence with a real subject.
+Cut the bolted-on participle clause, or make it a sentence with a real subject.
 
 ## Promotional register
 

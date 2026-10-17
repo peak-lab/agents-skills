@@ -33,11 +33,9 @@
 
 Update rules:
 
-1. Only update what's wrong — don't rewrite accurate sections
-2. Use concrete examples only when they clarify a non-obvious convention
-3. Document the "why" behind non-obvious rules
-4. Keep it scannable — read at the start of a task
-5. Keep an existing language convention; add the reply-language line only when none exists
+1. Only update what's wrong; don't rewrite accurate sections
+2. Use examples and the "why" only for non-obvious conventions
+3. Keep an existing language convention; add the reply-language line only when none exists
 
 ## Targeted guide candidates
 

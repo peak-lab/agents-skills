@@ -14,15 +14,15 @@ set `status=blocked` and record the missing evidence or decision before continui
 </outcome>
 
 <cleanup>
-This is the single terminal path. Stop or release every worker recorded in canonical state, whether the workflow succeeded, was blocked, or will create a PR. Preserve their useful completion messages before cleanup.
+This is the single terminal path. Stop or release every worker recorded in canonical state on every outcome, after preserving their useful completion messages.
 </cleanup>
 
 <without_pr>
-When `{pr_mode}` is false, or status is `blocked`, `needs_planning`, `needs_clarification`, `needs_confirmation`, or cancelled, do not commit, push, or create a PR. Report the terminal status, owned files, acceptance-criteria status, fresh validation evidence, unresolved issues, and canonical task path. For `needs_planning`, summarize the decision-sized unknowns and recommend `wayfinder`. For `needs_confirmation`, include the plan path and revision awaiting approval. Branch mode alone does not authorize delivery.
+When `{pr_mode}` is false or status is not complete, do not commit, push, or create a PR. Report the terminal status, owned files, acceptance-criteria status, fresh validation evidence, unresolved issues, and canonical task path. For `needs_planning`, summarize the decision-sized unknowns and recommend `wayfinder`. For `needs_confirmation`, include the plan path and revision awaiting approval. Branch mode alone does not authorize delivery.
 </without_pr>
 
 <with_pr>
-Proceed only when status is complete, `-pr`/`--pull-request` was explicitly supplied, every acceptance criterion is satisfied, final validation evidence is current for the recorded environment, and any requested examine review is current with no unresolved blocking finding.
+Proceed only when status is complete (as defined above, with validation current for the recorded environment) and `-pr`/`--pull-request` was explicitly supplied.
 
 1. Verify the branch is not the default branch and inspect the exact owned diff against `{base_sha}`.
 2. Stage only APEX-owned hunks. If a path contains inseparable pre-existing user edits, stop and ask rather than committing them implicitly.
@@ -32,4 +32,4 @@ Proceed only when status is complete, `-pr`/`--pull-request` was explicitly supp
 6. Return the PR URL and final commit SHA. On push conflicts or required history rewrites, stop and request direction; never force push without explicit authorization.
 </with_pr>
 
-Always persist the terminal status and results to the canonical task artifact. When save mode is enabled, include its expanded evidence fields. Exception: when `{resume_lookup_failed}=true`, no canonical task was selected; report the missing or ambiguous candidates without creating or overwriting an artifact. Do not promise deferred monitoring unless the user requested it.
+Always persist the terminal status and results to the canonical task artifact, with save mode's expanded evidence fields when enabled. Exception: when `{resume_lookup_failed}=true`, no canonical task was selected; report the missing or ambiguous candidates without creating or overwriting an artifact. Do not promise deferred monitoring unless the user requested it.

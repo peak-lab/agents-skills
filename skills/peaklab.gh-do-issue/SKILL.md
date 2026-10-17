@@ -35,16 +35,15 @@ A URL must belong to the target repository.
 
 ## Select and understand
 
-1. For explicit IDs, fetch each directly with `gh issue view`, including number, title, body,
-   comments, labels, assignees, state and URL. Do not fetch the whole queue first.
+1. For explicit IDs, fetch each directly; do not fetch the whole queue first.
 
    ```bash
    gh issue view "$ISSUE" --repo "$REPO" \
      --json number,title,body,comments,labels,assignees,state,url
    ```
 
-   Bind `REPO` to the target repository first. Include `comments` in the JSON field list;
-   do not combine the separate display flag `--comments` with `--json`.
+   Bind `REPO` to the target repository first. Do not combine the display flag `--comments`
+   with `--json`.
 
 2. For automatic selection, fetch open candidates with `gh issue list --json`, including
    assignees. Paginate when truncation would exclude eligible work. Prefer issues assigned
@@ -65,12 +64,10 @@ decision. Summarize the selected IDs and outcomes.
 
 ## Mission
 
-Provide the issue context once, base policy, authorized checkout, task directory, modes,
-acceptance criteria, known files and existing analysis. Link long artifacts instead of copying
-them. The worker reads the shared contract and repository instructions.
-
-Use a caller-supplied task directory or the harness task directory. Keep one canonical plan/status
-record; existing analyze/plan/implementation files may be referenced rather than regenerated.
+Provide once: issue context, base policy, authorized checkout, task directory (caller-supplied or
+the harness's), modes, acceptance criteria, known files and existing analysis. Link long artifacts
+and existing analyze/plan files instead of copying or regenerating them; keep one canonical
+plan/status record. The worker reads the shared contract and repository instructions.
 Include `Closes #N` in the PR body for every GitHub issue demonstrably covered, using body files
 for multiline `gh` input. A PR reference alone does not prove its acceptance criteria.
 

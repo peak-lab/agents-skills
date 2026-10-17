@@ -9,27 +9,23 @@ next_step: steps/step-03-execute.md
 
 <goal>
 Produce the minimum plan needed to implement and verify the requested behavior.
-This phase uses deep reasoning intent. For a delegated planning assignment, explicitly select
-the host's configured deep model and effort. Direct execution retains the current session's
-model; do not claim that reading this step switches it.
+This phase uses deep reasoning intent: a delegated planning assignment explicitly selects the
+host's configured deep model and effort. Direct execution keeps the current session's model;
+do not claim that reading this step switches it.
 </goal>
 
 <reuse>
 If the caller supplied a plan, validate it against current files, scope, acceptance criteria, and test commands. Amend gaps in place; do not create an APEX copy.
 </reuse>
 
-The canonical plan is required for every non-trivial APEX run whether save mode is enabled or not. Use the caller's harness task artifact or the fallback selected during initialization.
+The canonical plan selected during initialization is required for every non-trivial APEX run, whether save mode is enabled or not.
 
 <procedure>
 1. Select the simplest approach consistent with repository conventions.
-2. Organize work into vertical, independently verifiable behavior slices rather than one task per file. Each slice names:
-   - the behavior and acceptance criteria it satisfies;
-   - production and test files likely to change;
-   - dependencies or ownership boundaries;
-   - focused verification.
+2. Organize work into vertical, independently verifiable behavior slices, not one task per file. Each slice names its behavior and acceptance criteria, likely production and test files, dependencies or ownership boundaries, and focused verification.
 3. For a tiny change, one slice is enough. Add dependency metadata only when `tasks_mode` or real parallelism makes it useful.
 4. Decide test behavior in this order:
-   - tests disabled (`-T`): do not plan, create, modify, or run tests solely for APEX, and do not enter a TDD or legacy test phase. Record the explicit skip. This does not suppress checks required by repository policy or a higher-priority delivery gate, even when such a command includes tests;
+   - tests disabled (`-T`): do not plan, create, modify, or run tests solely for APEX, and do not enter a TDD or legacy test phase. Record the explicit skip. Checks required by repository policy or a higher-priority delivery gate still run, even when they include tests;
    - forced TDD (`-d`): every meaningful behavior uses observed RED, GREEN, then optional REFACTOR;
    - strict TDD disabled (`-D`): add or update appropriate tests without requiring a RED checkpoint;
    - adaptive (default): use strict TDD for meaningful behavior when a focused test can express it cheaply; otherwise add the smallest regression test alongside the change.
@@ -40,10 +36,10 @@ The canonical plan is required for every non-trivial APEX run whether save mode 
 <approval>
 Ask targeted questions only when a wrong assumption would materially change behavior or scope. If required intent remains unavailable, set `needs_clarification` and load Finish.
 
-After the plan is final, compute `{plan_revision}` from its executable intent, excluding approval, progress, ownership-status, and validation metadata. In non-auto mode, implementation requires explicit approval of that exact revision:
+After the plan is final, compute `{plan_revision}` from its executable intent as defined in initialization. In non-auto mode, implementation requires explicit approval of that exact revision:
 
 - If this actor can ask the user, present the canonical plan once. After approval, record `{approved_plan_revision}={plan_revision}` before routing to execution.
-- If an implementation worker cannot ask, return `needs_confirmation` with the plan path and revision. The parent may resume the same worker only after obtaining approval and passing that approval with the same revision; the worker then records it.
+- If an implementation worker cannot ask, return `needs_confirmation` with the plan path and revision. The parent may resume the same worker only after obtaining approval and passing it with the same revision; the worker then records it.
 - Any plan amendment invalidates approval until the new revision is approved. A caller-supplied plan, prior approval without a matching revision, or `-A` alone is not approval.
 
 Do not add later “ready to continue?” gates after implementation or tests.
