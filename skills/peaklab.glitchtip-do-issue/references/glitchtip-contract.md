@@ -6,8 +6,9 @@ resolve errors.
 
 ## Configuration and transport
 
-Use exported `GLITCHTIP_URL`, `GLITCHTIP_TOKEN`, `GLITCHTIP_ORG`; fill missing values from
-the project's `.env`, then `~/.agents/.env`, without sourcing or printing files. Require real
+Read `GLITCHTIP_URL`, `GLITCHTIP_TOKEN`, `GLITCHTIP_ORG` without sourcing or printing files.
+When `GLITCHTIP_ENV_FILE` names a readable file, its values win, even over exported ones; fill
+the rest from exported values, the project's `.env`, then `~/.agents/.env`. Require real
 values; example domains and organizations are never defaults. API base is `<URL>/api/0`.
 Use Bearer authentication and verify access with read-only `GET /projects/`.
 
