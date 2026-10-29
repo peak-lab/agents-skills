@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -93,6 +94,50 @@ describe("skill synchronization", () => {
 
     expect(plan.items.find(item => item.name === "alpha")?.action).toBe("conflict");
     expect(() => applySyncPlan(value.root, plan)).toThrow("unresolved conflicts");
+  });
+
+  test("ignores Python caches for current packages and updates but detects other resources", () => {
+    const value = fixture();
+    value.skill("alpha", "version one");
+    value.skill("beta", "beta");
+    applySyncPlan(value.root, createSyncPlan(value.root, value.target, { skills: ["alpha"] }));
+    const local = join(value.target, "alpha");
+    mkdirSync(join(local, "__pycache__"));
+    writeFileSync(join(local, "__pycache__", "helper.cpython-313.pyc"), "cache");
+    writeFileSync(join(local, "helper.pyo"), "cache");
+    expect(createSyncPlan(value.root, value.target, { skills: ["alpha"] }).items[0].action).toBe("current");
+    expect(candidateReport(value.root, value.target)).toContain("alpha | current");
+    value.skill("alpha", "version two");
+    expect(createSyncPlan(value.root, value.target, { skills: ["alpha"] }).items[0].action).toBe("update");
+    writeFileSync(join(local, "helper.py"), "local change");
+    expect(createSyncPlan(value.root, value.target, { skills: ["alpha"] }).items[0].action).toBe("conflict");
+  });
+
+  test("accepts an unchanged legacy raw baseline and restores it without weakening conflict checks", () => {
+    const value = fixture();
+    value.skill("alpha", "version one");
+    value.skill("beta", "beta");
+    applySyncPlan(value.root, createSyncPlan(value.root, value.target, { skills: ["alpha"] }));
+    const local = join(value.target, "alpha");
+    writeFileSync(join(local, "cache.pyc"), "old cache");
+    const hash = createHash("sha256");
+    for (const file of ["cache.pyc", "SKILL.md"]) {
+      hash.update(file).update("\0").update(readFileSync(join(local, file))).update("\0");
+    }
+    const statePath = join(value.target, ".peaklab-skill-state.json");
+    const state = JSON.parse(readFileSync(statePath, "utf8"));
+    state.skills.alpha = hash.digest("hex");
+    writeFileSync(statePath, JSON.stringify(state));
+    value.skill("alpha", "version two");
+    const update = createSyncPlan(value.root, value.target, { skills: ["alpha"] });
+    expect(update.items[0].action).toBe("update");
+    const backup = applySyncPlan(value.root, update)!;
+    restoreBackup(value.target, backup);
+    expect(createSyncPlan(value.root, value.target, { skills: ["alpha"] }).items[0].action).toBe("update");
+    writeFileSync(join(local, "cache.pyc"), "changed cache");
+    expect(createSyncPlan(value.root, value.target, { skills: ["alpha"] }).items[0].action).toBe("conflict");
+    writeFileSync(join(local, "SKILL.md"), "local source change");
+    expect(createSyncPlan(value.root, value.target, { skills: ["alpha"] }).items[0].action).toBe("conflict");
   });
 
   test("reports local-only and divergent candidates without writing", () => {

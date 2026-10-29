@@ -393,6 +393,265 @@
   },
 
   {
+    "id": "clean-code-audit-remains-readonly-in-auto-mode",
+    "kind": "behavior",
+    "skill": "clean-code",
+    "prompt": "Audit uniquement src/ready.ts avec -a -e --react. Ne modifie aucun fichier.",
+    "files": {
+      "package.json": "{\"scripts\":{\"test\":\"bun test\"}}\n",
+      "src/ready.ts": "export function ready(value: boolean) { if (value) return true; return false; }\n"
+    },
+    "services": [],
+    "assertions": [
+      {
+        "kind": "status",
+        "values": [
+          "complete",
+          "completed"
+        ]
+      },
+      {
+        "kind": "files_unchanged"
+      },
+      {
+        "kind": "action_count",
+        "type": "write_file",
+        "max": 0
+      },
+      {
+        "kind": "action_count",
+        "type": "read_file",
+        "min": 1,
+        "match": {
+          "path": "src/ready.ts"
+        }
+      }
+    ]
+  },
+  {
+    "id": "clean-code-keeps-working-fetching-without-new-library",
+    "kind": "behavior",
+    "skill": "clean-code",
+    "prompt": "Avec -a -e --query, améliore src/load.ts seulement si un problème concret le justifie. Ce chargement est appelé par une route serveur une fois par requête. Préserve le contrat et les dépendances.",
+    "files": {
+      "package.json": "{\"type\":\"module\",\"dependencies\":{},\"scripts\":{\"test\":\"bun test\"}}\n",
+      "src/load.ts": "export async function load(url: string) {\n  const response = await fetch(url);\n  if (!response.ok) throw new Error(`HTTP ${response.status}`);\n  return response.json();\n}\n"
+    },
+    "services": [],
+    "assertions": [
+      {
+        "kind": "status",
+        "values": [
+          "complete",
+          "completed"
+        ]
+      },
+      {
+        "kind": "files_unchanged"
+      },
+      {
+        "kind": "action_count",
+        "type": "write_file",
+        "max": 0
+      },
+      {
+        "kind": "action_count",
+        "type": "read_file",
+        "min": 1,
+        "match": {
+          "path": "src/load.ts"
+        }
+      }
+    ]
+  },
+  {
+    "id": "debug-code-auto-fixes-one-supported-cause",
+    "kind": "behavior",
+    "skill": "debug-code",
+    "prompt": "Avec -a, corrige la configuration de remise. Le contrat est une remise de 20 %. Le chemin calculateTotal(100) renvoie 20 au lieu de 80 et le test reproduit cet appel. Ne committe pas.",
+    "files": {
+      "package.json": "{\"scripts\":{\"test\":\"bun test\"}}\n",
+      "src/total.ts": "import { discountPercent } from '../config.json';\nexport const calculateTotal = (amount: number) => amount * (1 - discountPercent / 100);\n",
+      "src/total.test.ts": "import { expect, test } from 'bun:test';\nimport { calculateTotal } from './total';\ntest('20 percent discount', () => expect(calculateTotal(100)).toBe(80));\n",
+      "config.json": "{\"discountPercent\":80}\n"
+    },
+    "services": [
+      {
+        "service": "shell",
+        "operation": "run",
+        "target": "bun test src/total.test.ts",
+        "response": {
+          "exitCode": 1,
+          "stdout": "Expected: 80; Received: 20"
+        }
+      },
+      {
+        "service": "shell",
+        "operation": "run",
+        "target": "bun test",
+        "response": {
+          "exitCode": 0,
+          "stdout": "fixture check passed"
+        }
+      }
+    ],
+    "assertions": [
+      {
+        "kind": "status",
+        "values": [
+          "complete",
+          "completed"
+        ]
+      },
+      {
+        "kind": "action_count",
+        "type": "read_file",
+        "min": 1,
+        "match": {
+          "path": "config.json"
+        }
+      },
+      {
+        "kind": "file_json_value",
+        "path": "config.json",
+        "keys": [
+          "discountPercent"
+        ],
+        "value": 20
+      },
+      {
+        "kind": "file_equals",
+        "path": "src/total.ts",
+        "content": "import { discountPercent } from '../config.json';\nexport const calculateTotal = (amount: number) => amount * (1 - discountPercent / 100);\n"
+      },
+      {
+        "kind": "file_equals",
+        "path": "src/total.test.ts",
+        "content": "import { expect, test } from 'bun:test';\nimport { calculateTotal } from './total';\ntest('20 percent discount', () => expect(calculateTotal(100)).toBe(80));\n"
+      },
+      {
+        "kind": "action_count",
+        "type": "service_call",
+        "min": 1,
+        "match": {
+          "service": "shell",
+          "operation": "run",
+          "target": "bun test"
+        }
+      }
+    ]
+  },
+  {
+    "id": "debug-code-auto-stops-for-product-decision",
+    "kind": "behavior",
+    "skill": "debug-code",
+    "prompt": "Avec -a, corrige les commandes quand la banque ne répond pas. On ne sait pas encore si une commande doit être rejetée ou mise en attente ; aucune règle métier ni décision approuvée ne tranche.",
+    "files": {
+      "src/payment.ts": "export const onTimeout = () => { throw new Error('bank timeout'); };\n"
+    },
+    "services": [],
+    "assertions": [
+      {
+        "kind": "status",
+        "values": [
+          "needs_clarification",
+          "blocked"
+        ]
+      },
+      {
+        "kind": "files_unchanged"
+      },
+      {
+        "kind": "action_count",
+        "type": "write_file",
+        "max": 0
+      }
+    ]
+  },
+  {
+    "id": "refactor-uses-python-project-checks",
+    "kind": "behavior",
+    "skill": "refactor",
+    "prompt": "Renomme get_user en fetch_user dans le module et son appelant. Préserve le résultat. Utilise les vérifications de ce dépôt Python, sans commit.",
+    "files": {
+      "AGENTS.md": "Validation obligatoire : python3 -m unittest discover -s tests\n",
+      "users.py": "def get_user():\n    return {\"name\": \"fixture\"}\n",
+      "app.py": "from users import get_user\n\nuser = get_user()\n",
+      "tests/test_users.py": "import unittest\nimport app\n\nclass Users(unittest.TestCase):\n    def test_result(self):\n        self.assertEqual(app.user, {\"name\": \"fixture\"})\n"
+    },
+    "services": [
+      {
+        "service": "shell",
+        "operation": "run",
+        "target": "python3 -m unittest discover -s tests",
+        "response": {
+          "exitCode": 0,
+          "stdout": "fixture check passed"
+        }
+      }
+    ],
+    "assertions": [
+      {
+        "kind": "status",
+        "values": [
+          "complete",
+          "completed"
+        ]
+      },
+      {
+        "kind": "file_equals",
+        "path": "users.py",
+        "content": "def fetch_user():\n    return {\"name\": \"fixture\"}\n"
+      },
+      {
+        "kind": "file_equals",
+        "path": "app.py",
+        "content": "from users import fetch_user\n\nuser = fetch_user()\n"
+      },
+      {
+        "kind": "action_count",
+        "type": "service_call",
+        "min": 1,
+        "match": {
+          "service": "shell",
+          "operation": "run",
+          "target": "python3 -m unittest discover -s tests"
+        }
+      },
+      {
+        "kind": "service_calls_only"
+      }
+    ]
+  },
+  {
+    "id": "refactor-stops-for-unknown-public-contract",
+    "kind": "behavior",
+    "skill": "refactor",
+    "prompt": "Refactorise le nom du champ public customerId dans le contrat JSON, mais je ne sais pas quel nom nous avons retenu. Aucun alias ni période de compatibilité n’a été décidé. Préserve les clients externes.",
+    "files": {
+      "schema.json": "{\"type\":\"object\",\"properties\":{\"customerId\":{\"type\":\"string\"}}}\n"
+    },
+    "services": [],
+    "assertions": [
+      {
+        "kind": "status",
+        "values": [
+          "needs_clarification",
+          "blocked"
+        ]
+      },
+      {
+        "kind": "files_unchanged"
+      },
+      {
+        "kind": "action_count",
+        "type": "write_file",
+        "max": 0
+      }
+    ]
+  },
+
+  {
     "id": "route-apex-feature",
     "kind": "routing",
     "skill": "apex",

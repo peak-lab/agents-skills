@@ -19,9 +19,9 @@ function fake(actions: Action[]): ModelAdapter {
 }
 const finish: Action = { type: "finish", status: "complete", message: "Done" };
 
-test("suite has 17 behavior cases and balanced routing for five workflows", () => {
+test("suite has 23 behavior cases and balanced routing for five workflows", () => {
   const cases = parseScenarios(suite);
-  expect(cases.filter(s => s.kind === "behavior")).toHaveLength(17);
+  expect(cases.filter(s => s.kind === "behavior")).toHaveLength(23);
   const routing = cases.filter(s => s.kind === "routing");
   expect(routing).toHaveLength(20);
   expect(new Set(routing.map(s => s.skill)).size).toBe(5);
@@ -37,6 +37,22 @@ test("a baseline without a skill can genuinely pass the same behavioral oracle",
   expect(result.outcome).toBe("pass");
   expect(result.inputTokens).toBe(4);
   expect(result.outputTokens).toBe(6);
+});
+
+test("debug configuration oracle rejects the original bug despite simulated green tests", async () => {
+  const input = parseScenarios(suite).find(s => s.id === "debug-code-auto-fixes-one-supported-cause")!;
+  for (const discountPercent of [20, 80]) {
+    const actions: Action[] = [
+      { type: "read_file", path: "config.json" },
+      { type: "write_file", path: "config.json", content: JSON.stringify({ discountPercent }) },
+      { type: "service_call", service: "shell", operation: "run", target: "bun test" },
+      finish,
+    ];
+    const result = await runScenario(input, emptyCatalogue(), fake(actions), options);
+    expect(result.outcome).toBe(discountPercent === 20 ? "pass" : "fail");
+    expect(result.files["src/total.ts"]).toBe(input.files["src/total.ts"]);
+    expect(result.files["src/total.test.ts"]).toBe(input.files["src/total.test.ts"]);
+  }
 });
 
 test("shipping budget oracle requires a saved refusal but not unnecessary remote reads", async () => {

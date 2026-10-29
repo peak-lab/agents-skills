@@ -5,59 +5,21 @@ effort: standard
 argument-hint: "[error description or context] [-a for auto mode]"
 ---
 
-<objective>
-Debug an error through a gated workflow: analyze and reproduce, find solutions, let the user choose, implement, then prove the fix by executing the real code path.
-</objective>
+# Debug code
 
-<parameters>
-| Input | Effect |
-|-------|--------|
-| `-a`, `--auto` | `{auto_mode}` = true: skip questions, use the recommended option at each gate |
-| Everything else | `{error_context}`; if empty, ask for symptoms during analysis |
+Reproduce the reported failure, establish its cause, apply a scoped fix and verify the original
+path. Preserve unrelated changes. Analysis-only requests never authorize a fix.
 
-Parse flags before any other action. Do not analyze while parsing.
-</parameters>
+Parse `-a` / `--auto` as auto mode; the rest describes the symptoms. Reuse current caller evidence
+instead of restarting investigation. Keep the cause, selected correction, modified files,
+temporary logs and verification results in the existing task state when one is needed.
 
-<state_variables>
-Persist across steps:
+1. Read [analysis](steps/step-01-analyze.md).
+2. Choose a correction through [solutions](steps/step-02-find-solutions.md) and
+   [selection](steps/step-03-propose.md).
+3. Apply the [fix](steps/step-04-fix.md), then [verify](steps/step-05-verify.md).
 
-| Variable | Set in | Content |
-|----------|--------|---------|
-| `{error_context}` | init | User's description of the error |
-| `{auto_mode}` | init | Skip confirmations, use recommended options |
-| `{error_analysis}` | 1 / 1b | Root cause, reproduction steps, affected files, verification method |
-| `{debug_logs}` | 1b / 4 | Temporary logs to remove (file, line, prefix) |
-| `{solutions}` | 2 | Candidate fixes with trade-offs, one recommended |
-| `{selected_solution}` | 3 | Chosen solution and files to modify |
-| `{files_modified}` | 4 | Files changed by the fix |
-| `{verification_result}` | 5 | Result of each verification layer |
-</state_variables>
-
-<entry_point>
-Parse the parameters above, then load [steps/step-01-analyze.md](./steps/step-01-analyze.md).
-</entry_point>
-
-<step_files>
-| Step | File | Purpose |
-|------|------|---------|
-| 1 | [step-01-analyze.md](./steps/step-01-analyze.md) | Reproduce, test hypotheses, identify root cause |
-| 1b | [step-01b-log-instrumentation.md](./steps/step-01b-log-instrumentation.md) | *Optional*: add debug logs, user runs and shares output |
-| 2 | [step-02-find-solutions.md](./steps/step-02-find-solutions.md) | Find 2+ solutions with trade-offs |
-| 3 | [step-03-propose.md](./steps/step-03-propose.md) | User selects a solution |
-| 4 | [step-04-fix.md](./steps/step-04-fix.md) | Implement the selected solution, remove debug logs |
-| 5 | [step-05-verify.md](./steps/step-05-verify.md) | Multi-layer verification (Static → Automated → Runtime → Regression) |
-</step_files>
-
-<rules>
-- No code changes before step 4, except temporary debug logs in step 1b.
-- Do not implement before the user selects a solution, unless `{auto_mode}`.
-- Tests passing ≠ fix working. Never claim success without executing the original failing code path.
-</rules>
-
-<success_criteria>
-- Error reproduced, or instrumented when reproduction is impossible
-- Root cause backed by tested hypotheses
-- Solution selected by the user (or auto mode) before implementation
-- All debug logs removed
-- Static, automated and runtime verification passed; no regressions
-</success_criteria>
+Load one step at a time. A confirmed cause does not require a quota of hypotheses or alternatives.
+Without auto mode, obtain one selection before editing unless the caller already approved the
+correction; auto mode skips routine selection, never a material product decision or missing access.
+Do not commit, push, deploy or change external state unless requested.

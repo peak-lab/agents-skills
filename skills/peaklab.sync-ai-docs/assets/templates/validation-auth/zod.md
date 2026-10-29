@@ -13,3 +13,5 @@ Scope: TypeScript code using Zod.
 - Derive TypeScript types from the schema when practical so runtime validation and static types stay aligned.
 - Reject or explicitly handle unknown fields for security-sensitive payloads; do not silently pass unvalidated values to persistence or privileged operations.
 - Keep schemas reusable but close enough to their boundary that error messages and authorization context remain clear.
+- Check the installed major before adopting examples. In Zod 4, report errors through `.issues`; distinguish `z.input` from `z.output` when coercion, defaults or transforms change the value type. Use async parsing for async refinements or transforms.
+- Make coercion intentional: JavaScript boolean coercion turns a nonempty string such as `"false"` into `true`. Parse textual flags explicitly, and use strict object validation when unexpected fields must be rejected rather than silently stripped.

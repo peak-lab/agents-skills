@@ -18,6 +18,7 @@ Validate required configuration at startup and inject it into the adapter. Never
 - Send production mail from a domain verified for the active provider and environment.
 - Keep test and production recipients and credentials isolated.
 - Use a stable idempotency key for a retryable logical send when the provider and SDK support it.
+- Respect the provider's retention window: Resend retains idempotency keys for 24 hours. Use durable application-owned deduplication when retries or business guarantees extend beyond that window.
 - Treat API acceptance as `sent`, not proof of inbox delivery; process provider events when product behavior depends on delivery, bounce, or complaint state.
 - Propagate or record provider errors with enough non-secret context to retry or investigate them.
 

@@ -59,6 +59,13 @@ Every replacement is copied to a sibling `.peaklab-skill-backup-*` directory fir
 to overwrite a skill changed locally after its recorded baseline. Inspect that divergence and either
 promote it through Git review or keep the local copy; it never guesses a winner.
 
+Package identity ignores Python `__pycache__` directories and `.pyc`/`.pyo` files. Other files,
+including Python source and resources, remain part of the comparison. Existing version 1 state
+and backup manifests remain valid: an old unfiltered baseline is accepted when the complete local
+tree still matches it. If that baseline included caches that have since changed and the source also
+differs, the tool reports a conflict because it cannot prove the local source is unchanged. Review
+that conflict before adopting the repository copy. A successful apply records the new identity.
+
 Restore one sync backup only after checking its manifest and target:
 
 ```bash

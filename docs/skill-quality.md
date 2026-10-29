@@ -18,7 +18,7 @@ separate provenance in [third-party notices](../THIRD_PARTY_NOTICES.md).
 
 ## Evaluation cases
 
-The [controlled evaluation runner](skill-evaluations.md) now provides 17 behavioral cases and
+The [controlled evaluation runner](skill-evaluations.md) now provides 23 behavioral cases and
 20 routing queries with hidden assertions, action traces and optional baseline comparisons.
 Run `bun run eval:check` without a model; native CLI calls require explicit `--execute`.
 Controlled routing is not native skill discovery, and simulated service success is not live
@@ -43,6 +43,14 @@ Fewer lines alone are not a measured speedup. Static assertions about wording ca
 that a model obeys a workflow.
 
 ## Maintenance gate
+
+The scoped-maintenance revision retains the public names and flags of `clean-code`, `debug-code`
+and `refactor`, while removing fixed agent/hypothesis/batch quotas. Stack flags request analysis,
+not a library migration. Audit-only requests stay read-only even in auto mode. Interactive
+selection remains available, but an explicitly approved correction is reused rather than asked
+again. Checks follow the target repository; unavailable runtime verification stays a limitation.
+These are intentional workflow changes, covered by the scoped-maintenance contract scenarios
+and six controlled fixtures, not measured claims of model quality or speed.
 
 Preserve public names, caller contracts and authorization boundaries. Add a realistic case for
 changed behavior, run the [contributor checks](contributing.md#validation), and inspect relevant callers. CI runs discovery,

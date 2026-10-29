@@ -1,33 +1,16 @@
 ---
 name: step-02-find-solutions
-description: Research and identify potential solutions to the error
+description: Choose the smallest correction supported by the evidence
 prev_step: steps/step-01-analyze.md
 next_step: steps/step-03-propose.md
 ---
 
-# Step 2: Find Solutions
+# Find a correction
 
-## Rules
+Recommend the smallest change that addresses the supported cause and fits existing code patterns.
+Do not modify files yet. Retain `{solutions}` with approach, affected paths, verification and risk.
 
-- Do not modify files or implement anything.
-- Find at least 2 distinct solutions (ideally 3); include a minimal fix and a root-cause fix when they differ.
-- Prefer existing codebase patterns, helpers and tests over new abstractions.
+Present alternatives only when they have meaningful behavior, compatibility or operational
+trade-offs. A single well-supported correction is sufficient; do not invent extra options.
 
-## Output: `{solutions}`
-
-For each solution:
-
-| Field | Value |
-|-------|-------|
-| Name | Short label |
-| Approach | What it changes |
-| Files to modify | List |
-| Effort / Risk | Low, Medium, High |
-| Pros / Cons | Key trade-offs, including backward compatibility |
-| Recommended? | Yes for exactly one |
-
-Recommend one based on root-cause coverage, regression risk, effort and fit with codebase patterns.
-
-## Next
-
-Load [step-03-propose.md](./step-03-propose.md) without asking.
+Continue to [selection](step-03-propose.md).

@@ -32,6 +32,8 @@ Choose relationship loading from the access pattern:
 
 Do not demand eager loading for every relationship. Prevent accidental N+1 queries in loops and avoid implicit I/O in async code.
 
+In SQLAlchemy 2.x, apply `Result.unique()` before consuming ORM results when joined eager loading a collection; the explicit deduplication is required for this loading strategy.
+
 ## Preserve database semantics
 
 Use bound parameters or SQLAlchemy expressions rather than interpolated SQL. Review cascades, delete behavior, server defaults, uniqueness, and transaction isolation when changing persistence logic. Pair mapped-model changes with the project's migration workflow and test both database constraints and application behavior.

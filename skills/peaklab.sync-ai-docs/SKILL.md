@@ -60,6 +60,9 @@ its scope and version-dependent details, and preserve useful project-specific ad
 
 The bundled [renderer](scripts/render-rule.ts) only lists templates or prints one to stdout;
 materialize the result with reviewed file edits. Without Bun, read and adapt the assets manually.
+For an explicit template-refresh request, consult the sources and version limits recorded in
+[template review](references/template-review.md), recheck the relevant official documentation,
+and update that record. A recorded review date alone does not prove current API compatibility.
 
 Do not overwrite a conflicting existing rule blindly. Explain intentional semantic changes;
 remove stale generated rules only with a clear target and user authorization. Never bulk-copy
