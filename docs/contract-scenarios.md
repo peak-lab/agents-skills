@@ -82,6 +82,19 @@ actions and fixture artifacts; it does not run generated source or prove that a 
 | Split API environments | Shell reports credentials present; separate API kernel lacks them | Apply configured precedence inside requesting process and validate locally before networking; do not print secrets |
 | Verified API transport | Current task established Python 403/1010 and successful curl | Reuse working client/transport for subsequent endpoints; generic 403 alone is not a Cloudflare diagnosis |
 
+## Slack report delivery
+
+| Scenario | Initial state/request | Required behavior |
+|---|---|---|
+| Support defect | Delivery requested, thread/code support cause, no existing ticket | Plane creation owner, thread draft, Plane delivery with `--wait-merge`; no direct Slack post |
+| GlitchTip alert | Exact GlitchTip ID, repository confirmed, GitHub issue created | Pass the existing GitHub issue as context to the GlitchTip delivery owner; `Closes` refers to that GitHub issue, not the error ID |
+| Merged without deployment evidence | GlitchTip fix merged, emitting environment unknown | Report merged and unresolved; no deployment chase or error-status write |
+| Existing work | Exact report already covered by a ticket, branch or PR | Draft its current state and stop without another issue or implementation |
+| Missing Slack access | Permalink provided but thread cannot be read | Stop before creating work from an unread report |
+| Draft capability unavailable | Thread readable, no Slack draft tool | Return ready-to-paste text; never use a send tool as fallback |
+| Configuration-only request | Proposed production data write, no explicit write authorization | Draft steps and ask for that authority; no code issue or production mutation |
+| PR-only delivery | Caller explicitly prohibits merge | Pass only `--no-merge`, preserve the caller's narrower limits |
+
 ## Dependency portability
 
 | Scenario | Initial state/request | Required behavior |

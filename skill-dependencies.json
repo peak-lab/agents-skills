@@ -65,5 +65,12 @@
   ],
   "peaklab.uptime-kuma": [
     "peaklab.infra-config"
+  ],
+  "peaklab.slack-do-issue": [
+    "peaklab.plane-api",
+    "peaklab.plane-create-issue",
+    "peaklab.plane-do-issue",
+    "peaklab.gh-create-issue",
+    "peaklab.glitchtip-do-issue"
   ]
 }
