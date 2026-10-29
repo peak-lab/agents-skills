@@ -73,6 +73,21 @@ from the affected environment.
 npx skills add peak-lab/agents-skills --skill apex peaklab.gh-create-issue peaklab.gh-do-issue peaklab.glitchtip-do-issue peaklab.plane-api peaklab.plane-create-issue peaklab.plane-do-issue peaklab.plane-ship-watch peaklab.ship-pr --agent codex
 ```
 
+### Slack reports
+
+Requires access to read Slack threads, the applicable Plane/GitHub/GlitchTip configuration above,
+and the project's development tools. A draft-capable Slack integration is preferred; without it,
+the skill returns ready-to-paste text and never posts automatically. Product-specific admin tools
+are optional. Read-only project evidence is used when available.
+
+```bash
+npx skills add peak-lab/agents-skills --skill apex peaklab.gh-create-issue peaklab.gh-do-issue peaklab.glitchtip-do-issue peaklab.plane-api peaklab.plane-create-issue peaklab.plane-do-issue peaklab.plane-ship-watch peaklab.ship-pr peaklab.slack-do-issue --agent codex
+```
+
+Ask for delivery explicitly to create the issue and merge a reviewed fix. Analysis/draft-only
+requests and PR-only limits remain narrower; production data/configuration writes need separate
+explicit authorization. See [the workflow](../skills/peaklab.slack-do-issue/SKILL.md).
+
 ### Other selections
 
 Browse the [catalogue](catalogue.md) first. For a custom selection, use the

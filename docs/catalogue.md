@@ -30,6 +30,7 @@ Install the linked workflow first; its installation guide lists service prerequi
 | GitHub issue | [GitHub](installation.md#github-issues) | Use peaklab.gh-do-issue for [issue URL]. Stop at a reviewed PR. |
 | Plane issue | [Plane](installation.md#plane-issues) | Use peaklab.plane-do-issue for [issue URL]. Stop at a reviewed PR. |
 | GlitchTip error | [GlitchTip](installation.md#glitchtip-errors) | Use peaklab.glitchtip-do-issue for [error URL]. Stop at a reviewed PR. |
+| Slack support report or GlitchTip alert | [Slack reports](installation.md#slack-reports) | Use peaklab.slack-do-issue for [Slack permalink]. Prepare a thread draft and deliver the supported fix. |
 | Existing PR ready to finalize | [GitHub](installation.md#github-issues) | Use peaklab.ship-pr to review and merge [PR URL] once the required checks pass. |
 | Finished branches and worktrees | [Custom selection](installation.md#other-selections) | Use clean-worktree --all-merged to remove merged worktrees, their branches and Docker resources, or clean-worktree --ship to ship the current branch PR first. |
 

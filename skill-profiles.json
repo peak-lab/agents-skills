@@ -29,6 +29,7 @@
       "peaklab.plane-init",
       "peaklab.plane-intake-ideas",
       "peaklab.plane-status",
+      "peaklab.slack-do-issue",
       "peaklab.track-error",
       "peaklab.update-deps"
     ],
