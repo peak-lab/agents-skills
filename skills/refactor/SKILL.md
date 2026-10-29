@@ -7,84 +7,19 @@ argument-hint: <search-pattern-or-description>
 
 # Refactor
 
-Refactor code matching `$ARGUMENTS` across the codebase. Use host-available implementation agents when useful, or perform the same bounded batches inline.
+Apply the requested transformation without changing observable behavior or unrelated work.
 
-## Process
-
-### Phase 1: Discovery
-
-1. **Parse the refactor request** from `$ARGUMENTS`
-   - Identify: method name, component name, pattern, or code smell
-   - Choose search strategy: Grep for code patterns, Glob for file patterns
-
-2. **Find all affected files**
-   - Use Grep/Glob to search the codebase
-   - Exclude: node_modules, .git, dist, build
-   - If >15 files found, ask user to confirm or narrow scope
-
-### Phase 2: Create Instructions
-
-3. **Create task folder**: a host task directory
-
-4. **Create ONE instruction file** at `instructions.md`:
-
-```markdown
-# Refactor: {title}
-
-## Objective
-{What to refactor - derived from $ARGUMENTS}
-
-## Pattern to Find
-{Exact code pattern or structure to locate}
-
-## Transformation
-{How to transform - be specific and adaptive}
-
-## Examples
-Before:
-{current code}
-
-After:
-{refactored code}
-
-## Constraints
-- Only modify code matching the pattern
-- Preserve all existing functionality
-- Follow codebase conventions
-```
-
-### Phase 3: Execute in Parallel
-
-5. **Group files** into batches of max 3 files each
-
-6. **Execute batches with bounded concurrency.** Use the host's available implementation agents when available; otherwise process the same batches inline. Do not exceed the host's concurrency limit or expand the requested scope.
-
-```
-Using instructions in the task directory's `instructions.md`, refactor:
-- {file_1}
-- {file_2}
-- {file_3}
-
-Read instructions first, then apply the refactor to each file.
-```
-
-### Phase 4: Verification
-
-7. **Validate changes**
-   - Run `pnpm lint` (if available)
-   - Run `pnpm tsc` (if TypeScript)
-
-8. **Report summary**
-   - Files modified
-   - Errors encountered
-   - Next steps if needed
-
-## Example
-
-User: `/refactor rename getUserData to fetchUserProfile`
-
-1. Grep finds 12 files containing "getUserData"
-2. Creates an `instructions.md` file in its task directory
-3. Groups into 4 batches of 3 files
-4. Executes the 4 batches with available agents or inline
-5. Runs lint, reports: "Refactored 12 files"
+1. Locate affected definitions and callers, including tests and public interfaces. Read the
+   repository's instructions and existing changes before editing. Resolve ambiguity about the
+   transformation or compatibility contract; file count alone does not require confirmation.
+2. Define the pattern to replace and the invariants to preserve. Reuse the caller's plan;
+   create a shared instruction artifact only when resumption or delegation needs one.
+3. Apply coherent batches that keep callers and definitions consistent. Delegate only genuinely
+   independent work when it benefits the task and the host supports it; otherwise work directly.
+   Avoid concurrent edits to the same files and preserve unrelated changes.
+4. Search for remaining old references and unintended replacements. Run the affected tests and
+   required checks using the repository's own commands and package manager. Do not substitute a
+   text search or type check for behavior verification where behavior can change.
+5. Report the transformation, affected scope, checks and remaining limitations. Stop on an
+   unresolved compatibility decision or a blocker without broadening the refactor. Do not
+   commit, push or create a PR unless requested.

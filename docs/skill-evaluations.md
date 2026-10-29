@@ -7,7 +7,7 @@ This repository has two distinct gates:
 
 See the [contributor guide](contributing.md) for the full repository checklists.
 
-The suite has 17 behavioral cases and 20 routing queries (two positives and two near-misses for each of five workflows). The scenarios live in `evals/scenarios.json`, outside distributed skills. Runner code lives in `scripts/evals/` and is not part of the npm agent installer.
+The suite has 23 behavioral cases and 20 routing queries (two positives and two near-misses for each of five workflows). The scenarios live in `evals/scenarios.json`, outside distributed skills. Runner code lives in `scripts/evals/` and is not part of the npm agent installer.
 
 ## Run
 

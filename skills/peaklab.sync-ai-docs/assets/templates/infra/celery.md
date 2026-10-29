@@ -21,6 +21,8 @@ Retry only failures classified as transient. Set bounded retry count and backoff
 
 Configure soft and hard execution limits with the option names supported by the installed Celery version. In task declarations these are commonly `soft_time_limit` and `time_limit`; project-wide settings may use different configuration keys. Leave enough time for the soft-limit handler to clean up before the hard limit terminates execution.
 
+Verify time-limit support for the selected worker pool and platform; not all pools support soft limits or interrupt blocking work. Also set timeouts on network clients rather than relying solely on worker termination.
+
 ## Preserve delivery semantics
 
 Review acknowledgements, visibility timeout, prefetch, worker-loss behavior, and broker-specific settings together. Acknowledging late can improve recovery but also increases duplicate execution, so it is safe only for idempotent tasks.

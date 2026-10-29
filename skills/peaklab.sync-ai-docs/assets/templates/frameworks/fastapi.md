@@ -9,6 +9,8 @@ Scope: FastAPI application code.
 
 - Use dependency injection for shared request concerns such as authentication, database sessions, and policy checks. Ensure protected endpoints enforce authorization server-side.
 - Define request and response schemas explicitly and validate input at the boundary. Follow the installed Pydantic version's supported APIs.
+- Do not block the event loop with synchronous I/O inside `async def` endpoints or dependencies. Use an async client or the framework's supported sync/thread offloading at the appropriate boundary.
+- Use `lifespan` for shared startup/shutdown resource ownership in modern FastAPI. Do not combine it with legacy startup/shutdown handlers expecting both mechanisms to execute.
 - Map expected domain failures to consistent HTTP responses; do not leak implementation details in errors.
 - Treat WebSocket and background-job identifiers as untrusted inputs: authenticate or authorize access, constrain subscriptions, and clean up resources on disconnect.
 - Use enums or validated constrained types for stable domain values when that improves correctness; do not introduce ceremony for transient text.

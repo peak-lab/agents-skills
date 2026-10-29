@@ -1,25 +1,16 @@
 ---
 name: step-03-propose
-description: Present solutions to user for selection
+description: Reuse an approved correction or obtain one selection
 prev_step: steps/step-02-find-solutions.md
 next_step: steps/step-04-fix.md
 ---
 
-# Step 3: Propose Solutions
+# Select the correction
 
-## Rules
+Summarize the cause and recommended correction. In auto mode, select it when it stays within the
+authorized scope. Otherwise reuse an explicit caller-approved correction, or present the real
+options once and wait for selection. Do not infer approval from an unapproved plan.
 
-- Do not modify files. Do not implement before a solution is selected.
-
-## Sequence
-
-1. Recap: error, root cause, number of affected files.
-2. Present every solution from `{solutions}`: approach, files, pros/cons, effort, risk. Say why the recommended one is recommended.
-3. Selection gate:
-   - `{auto_mode}`: select the recommended solution.
-   - Otherwise: ask "Which solution should we implement?" with one option per solution, recommended first and labelled "(Recommended)". Wait for the answer.
-4. Store `{selected_solution}`: id, name, approach, files to modify.
-
-## Next
-
-Load [step-04-fix.md](./step-04-fix.md).
+If missing intent would change product behavior or scope, ask for that decision in either mode.
+Store `{selected_solution}`: approach, affected paths and behavior to preserve.
+Then continue to the [fix](step-04-fix.md).

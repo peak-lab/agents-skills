@@ -23,6 +23,8 @@ Return success only after the durable work required by the handler has completed
 
 ## Keep fulfillment server-side
 
+For retryable outbound mutations, reuse a stable idempotency key for the same logical API operation. Check the installed API's key retention and cached-response semantics; a provider key does not replace durable business-level deduplication.
+
 Do not grant access, mark an order paid, or fulfill a purchase solely from a browser redirect. Use verified server-side state and the event types required by the product's payment or subscription model. Consult the installed Stripe API version for current event fields and status values rather than encoding an assumed universal lifecycle.
 
 ## Isolate credentials and modes

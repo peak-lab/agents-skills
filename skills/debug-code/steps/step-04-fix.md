@@ -1,25 +1,19 @@
 ---
 name: step-04-fix
-description: Implement the chosen solution
+description: Implement the selected correction and remove temporary logs
 prev_step: steps/step-03-propose.md
 next_step: steps/step-05-verify.md
 ---
 
-# Step 4: Fix the Problem
+# Fix
 
-## Rules
+Apply the selected behavior and scope; read each file before editing. Adapt routine implementation
+details to current code without another approval. Ask if evidence requires changing the agreed
+behavior, compatibility contract or material scope. Preserve unrelated work; do not add refactors.
 
-- Implement `{selected_solution}` exactly. Ask before deviating from it or touching files outside `{selected_solution.files_to_modify}`; if unavoidable extra changes appear, keep them minimal and record them.
-- No unrequested refactors, features or formatting changes.
-- Read each file before editing it.
-- Temporary logs added here follow the same `[DEBUG:<kind>]` prefix and metadata-only rule as step 1b and are added to `{debug_logs}`.
+Record `{files_modified}`. Temporary logs follow the
+[metadata-only instrumentation rules](step-01b-log-instrumentation.md) and enter `{debug_logs}`.
+Remove every log added by this run before verification, including instrumentation when no fix
+can be completed. Search modified files for its debug markers without removing pre-existing logs.
 
-## Sequence
-
-1. Apply the changes and record each in `{files_modified}` (file, change).
-2. Remove every debug log: all `{debug_logs}` entries from step 1b and any added here.
-3. Confirm none remain: search the modified files for `[DEBUG` (e.g. `grep -rn "\[DEBUG" <paths>`). Leftover debug output blocks step 5.
-
-## Next
-
-Load [step-05-verify.md](./step-05-verify.md) without asking.
+Continue to [verification](step-05-verify.md).

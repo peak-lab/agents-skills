@@ -20,7 +20,7 @@ Each test must be able to run alone and in any order. Do not depend on mutable m
 
 Keep a fixture near the tests that use it. Move it to the nearest `conftest.py` only when it is genuinely shared. Pytest discovers `conftest.py` fixtures without imports; do not import fixtures from sibling test modules.
 
-Choose fixture scope from the resource lifecycle, not merely speed. A wider-scoped mutable fixture needs explicit isolation or reset behavior. Use `yield` or registered finalizers so cleanup also runs after failures.
+Choose fixture scope from the resource lifecycle, not merely speed. A wider-scoped mutable fixture needs explicit isolation or reset behavior. Use `yield` or registered finalizers for cleanup after test failures. Code after `yield` does not run if fixture setup fails before yielding; structure resource acquisition so completed steps still have cleanup, and register finalizers only after the resource exists.
 
 ## Isolate files and process state
 

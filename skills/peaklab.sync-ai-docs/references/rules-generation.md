@@ -15,6 +15,7 @@ JavaScript/TypeScript (from `package.json` deps):
 | `prisma` | `data/prisma.md` | `prisma.md` |
 | `@biomejs/biome` (no eslint) | `patterns/biome.md` | `biome.md` |
 | `next` (App Router) | `frameworks/nextjs-app-router.md` | `nextjs-app-router.md` |
+| `@tanstack/react-start` with React routes/build integration | `frameworks/tanstack-start.md` | `tanstack-start.md` |
 | server actions dir found | `patterns/server-actions.md` | `server-actions.md` |
 | `zod` | `validation-auth/zod.md` | `zod.md` |
 | `@tanstack/react-query` | `frontend/tanstack-query.md` | `tanstack-query.md` |
@@ -56,6 +57,16 @@ Other:
 Read selected templates completely. Skip irrelevant rules and language guidance already covered
 by project instructions. For an unsupported stack, use only evidenced project conventions and
 report the gap; do not force the closest framework template.
+
+TanStack Start is a separate framework boundary: scope its rule to the actual package, routes,
+router, server functions and build configuration. A mixed Next/Start repository does not apply
+the Next template to Start. Confirm validator/middleware and bundler APIs in the lockfile's
+installed version before adopting examples from evolving online documentation.
+
+When refreshing templates themselves, consult current primary documentation and the installed
+API where relevant. Record the review date, sources, decisions and version limits in
+[template review](template-review.md). Latest documentation is not evidence that an existing
+project supports a newer API. Do not turn a documentation refresh into dependency upgrades.
 
 ## Render and regenerate
 

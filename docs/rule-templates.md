@@ -1,6 +1,6 @@
 # Shared rule templates
 
-The 30 reviewed templates live inside
+The 31 reviewed templates live inside
 [`skills/peaklab.sync-ai-docs/assets/templates/`](../skills/peaklab.sync-ai-docs/assets/templates/).
 Installing that skill includes the templates and renderer; no global template directory,
 repository build or extra npm package is required. Existing personal templates are unchanged.
@@ -9,7 +9,7 @@ repository build or extra npm package is required. Existing personal templates a
 
 Install `peaklab.sync-ai-docs`, then ask it to regenerate rules for the current project's actual
 stack. It inspects existing instructions and code, selects relevant templates, proposes changes
-and preserves local adaptations. It does not install all 30 rules or upgrade the project's stack.
+and preserves local adaptations. It does not install all 31 rules or upgrade the project's stack.
 
 From this source checkout, preview a rule with Bun 1.3+:
 
@@ -45,6 +45,15 @@ read each rule. This repository does not maintain a `CLAUDE.md` wrapper or claim
 Claude path-scoping. Other projects can use `.claude/rules` for that behavior.
 Do not place Markdown rules in `.codex/rules` and assume they are discovered: Codex's execution
 permission policies are separate from its `AGENTS.md` instructions.
+
+## Latest template review
+
+The [2026-10-29 review record](../skills/peaklab.sync-ai-docs/references/template-review.md)
+records fourteen updated templates, sixteen retained templates and the new React TanStack Start
+rule. Framework detection selects Start separately from Next.js and preserves installed-version
+limits. The repository's TypeScript and Python outputs remain unchanged because their templates
+were retained. Renderer tests check all 31 bundled assets; API/runtime compatibility remains
+separate evidence, as described in the review record.
 
 ## Audit decisions
 

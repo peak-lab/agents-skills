@@ -16,7 +16,7 @@ describe("bundled rule rendering", () => {
   });
   test("every catalogue asset has valid metadata and renders deterministically", () => {
     const ids = listTemplates();
-    expect(ids).toHaveLength(30);
+    expect(ids).toHaveLength(31);
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of ids) {
       const output = renderRule(id);

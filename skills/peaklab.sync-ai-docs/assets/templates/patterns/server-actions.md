@@ -1,8 +1,8 @@
 # Server Functions and Actions
 
-Scope: server-side functions and action handlers that perform application mutations.
+Scope: server-callable functions and action handlers, including private reads and mutations.
 
-- Treat every Server Function/Action as a public mutation endpoint. Validate its input and authenticate and authorize the specific operation on every invocation.
+- Treat every Server Function/Action as a callable endpoint. Validate untrusted input at runtime; authenticate protected operations and authorize access to the specific resource on every invocation, including private reads. Public operations still need their own input and abuse controls.
 - Do not rely on hidden form fields, client-side role checks, or page-level guards for authorization.
 - Keep mutations small and explicit. Use a transaction when multiple durable changes must be atomic.
 - Revalidate or update only the cache entries affected after a successful mutation.

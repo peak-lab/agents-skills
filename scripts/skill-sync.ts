@@ -23,11 +23,12 @@ function sha256(value: string | Buffer): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function directoryHash(path: string): string {
+function directoryHash(path: string, includePythonCaches = false): string {
   const files: string[] = [];
   const walk = (directory: string): void => {
     for (const entry of readdirSync(directory, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name))) {
       const child = join(directory, entry.name);
+      if (!includePythonCaches && ((entry.isDirectory() && entry.name === "__pycache__") || (entry.isFile() && /\.(pyc|pyo)$/.test(entry.name)))) continue;
       if (entry.isDirectory()) walk(child);
       else if (entry.isFile()) files.push(child);
       else fail(`unsupported filesystem entry in skill: ${child}`);
@@ -137,7 +138,9 @@ export function createSyncPlan(root: string, targetInput: string, options: { pro
     if (baseline === undefined) return options.adoptRepository
       ? { name, action: "replace-unmanaged" as const, sourceHash, targetHash, reason: "explicit repository adoption" }
       : { name, action: "conflict" as const, sourceHash, targetHash, reason: "unmanaged local divergence" };
-    if (targetHash !== baseline) return { name, action: "conflict" as const, sourceHash, targetHash, reason: "local modification since last sync" };
+    // Version 1 states may contain the old, unfiltered hash. Accept it only if
+    // the complete current tree still matches; otherwise require the new hash.
+    if (targetHash !== baseline && directoryHash(destination, true) !== baseline) return { name, action: "conflict" as const, sourceHash, targetHash, reason: "local modification since last sync" };
     return { name, action: "update" as const, sourceHash, targetHash, reason: "unchanged local baseline differs from source" };
   });
   return { target, skills: selected, items };

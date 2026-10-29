@@ -6,7 +6,7 @@ allowed-tools: Bash(python3 :*)
 ---
 
 <overview>
-Manage PeakLab's Uptime Kuma (v2.2.1) via the `uptime-kuma-api` Python library (socket.io). The library is installed on the monitoring server; scripts run locally and are piped to the remote host via SSH stdin. `python3` is the only Bash tool needed — `ssh` is called from within the Python subprocess.
+Manage PeakLab's Uptime Kuma (v2.2.1) via the `uptime-kuma-api` Python library (socket.io). The library is installed on the monitoring server; scripts run locally and are piped to the remote host via SSH stdin. Set `UPTIME_KUMA_PYTHON` to the remote venv interpreter when the library is not installed for the default `python3`. `python3` is the only Bash tool needed — `ssh` is called from within the Python subprocess.
 </overview>
 
 <constraints>
@@ -21,7 +21,7 @@ Manage PeakLab's Uptime Kuma (v2.2.1) via the `uptime-kuma-api` Python library (
 Load credentials once per session, then use `run(script)` for every operation.
 
 ```python
-import json, os, subprocess, sys
+import json, os, shlex, subprocess, sys
 
 for _p in ['.env', os.path.expanduser('~/.agents/.env')]:
     try:
@@ -44,6 +44,7 @@ SSH  = os.environ['UPTIME_KUMA_SSH']       # user@monitoring-host
 URL  = os.environ['UPTIME_KUMA_INTERNAL']  # internal Uptime Kuma URL
 USER = os.environ['UPTIME_KUMA_USER']
 PASS = os.environ['UPTIME_KUMA_PASS']
+PY   = os.environ.get('UPTIME_KUMA_PYTHON', 'python3')
 
 # json.dumps safely escapes quotes, backslashes, and special chars in credentials
 _url  = json.dumps(URL)
@@ -64,7 +65,7 @@ finally:
 def run(script):
     indented = '\n'.join('    ' + line for line in script.strip().splitlines())
     full = HEADER + indented + FOOTER
-    r = subprocess.run(['ssh', SSH, 'python3'], input=full.encode(), capture_output=True)
+    r = subprocess.run(['ssh', SSH, shlex.quote(PY)], input=full.encode(), capture_output=True)
     out = r.stdout.decode().strip()
     err = r.stderr.decode().strip()
     if out: print(out)

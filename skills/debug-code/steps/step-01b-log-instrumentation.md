@@ -21,11 +21,9 @@ Used only when step 1 cannot reproduce the error. Not available in `{auto_mode}`
 
 1. From `{error_analysis}`, choose checkpoints at entry/exit, decision points, data transformations and async boundaries of the suspected area. State the placement plan before editing.
 2. Add the logs, then re-read each one against the metadata-only rule.
-3. Summarize the logs added and ask the user to run the app, reproduce the error and paste the output. Options: run now (recommended) / logs are in the wrong place / cannot run now.
-   - Wrong place: ask where, move or add logs, repeat.
-   - Cannot run: continue to step 2 with the current analysis; `{debug_logs}` still must be cleaned in step 4.
+3. Execute the instrumented path with available tools. Ask the user to reproduce and share output only when that environment is inaccessible. If reproduction remains unavailable, remove this run's logs and continue with the limitation recorded.
 4. Analyze the output: execution order, missing checkpoints, unexpected branches or counts. Update `{error_analysis}` with findings and remaining unknowns.
-5. Ask: proceed to solutions (recommended) / add more logs / look at a different area. Iterate from 1 until the root cause is clear or the user proceeds.
+5. Continue to solutions once the evidence supports a correction. Add instrumentation only for a specific unresolved hypothesis; stop and remove this run's logs if no useful next observation is available.
 
 ## Next
 
