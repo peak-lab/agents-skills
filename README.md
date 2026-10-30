@@ -56,7 +56,7 @@ Each package lives in [skills/](skills/); its `SKILL.md` describes usage and pre
 |---|---|
 | Implementation | `apex`, `debug-code`, `refactor`, `clean-code`, `tdd`, `optimize-prisma-query` |
 | Review and QA | `review-code`, `qa-session`, `peaklab.fix-qa-bug` |
-| Planning | `domain-modeling`, `to-spec`, `to-tickets`, `wayfinder`, `grilling`, `ultrathink`, `peaklab.client-audit` |
+| Planning | `domain-modeling`, `to-spec`, `to-tickets`, `wayfinder`, `grilling`, `peaklab.client-audit` |
 | GitHub delivery | `peaklab.gh-create-issue`, `peaklab.gh-do-issue`, `peaklab.ship-pr`, `peaklab.update-deps`, `clean-worktree` |
 | Slack reports | `peaklab.slack-do-issue` |
 | Plane | `peaklab.plane-api`, `peaklab.plane-create-issue`, `peaklab.plane-do-issue`, `peaklab.plane-init`, `peaklab.plane-status`, `peaklab.plane-archive`, `peaklab.plane-ship-watch`, `peaklab.plane-intake-ideas` |

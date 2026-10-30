@@ -92,8 +92,8 @@ frontmatter value. Codex uses standalone TOML files with `name`, `description`,
 
 ## Limits
 
-Thinking, planning, and review assignments use deep routing, including `ultrathink`,
-`to-spec`, `to-tickets`, `wayfinder`, and the planning and review phases of APEX.
+Thinking, planning, and review assignments use deep routing, including `to-spec`,
+`to-tickets`, `wayfinder`, and the planning and review phases of APEX.
 On Codex, the bundled deep agents select `gpt-6-astra` with `high` reasoning.
 On Claude Code, the bundled deep agents select `fable` with `high` effort. The host must
 resolve the `fable` model identifier; static catalogue validation does not verify runtime availability.
