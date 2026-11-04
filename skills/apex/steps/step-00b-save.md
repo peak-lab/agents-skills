@@ -21,7 +21,7 @@ Use the canonical task artifact selected during initialization; do not create a 
 </modern_state>
 
 <legacy_compatibility>
-For `-r`, accept directories produced by `scripts/setup-templates.sh` as read-only inputs. Read `00-context.md` first and consult numbered phase files only to recover missing state into the canonical artifact; do not update or copy their phase logs. Ordinary modern runs do not load `templates/` or invoke the scripts.
+For `-r`, accept directories in the former template layout (`00-context.md` plus numbered phase files under `.claude/output/apex/`) as read-only inputs. Read `00-context.md` first and consult numbered phase files only to recover missing state into the canonical artifact; do not update or copy their phase logs.
 </legacy_compatibility>
 
 Set `{output_dir}` to the canonical task artifact's parent directory for caller compatibility, then return to `step-00-init.md`.

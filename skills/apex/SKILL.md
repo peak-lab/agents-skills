@@ -48,5 +48,5 @@ Reject conflicting enable/disable pairs. `-d` implies tests and conflicts with `
 </workflow>
 
 <compatibility>
-Legacy step filenames, flags, templates, scripts, and `.claude/output/apex/` resume directories remain supported as read-only compatibility surfaces, not mandatory work.
+Legacy step filenames, flags, and `.claude/output/apex/` resume directories remain supported as read-only compatibility surfaces, not mandatory work.
 </compatibility>
