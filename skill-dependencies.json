@@ -36,7 +36,8 @@
   ],
   "peaklab.plane-ship-watch": [
     "peaklab.plane-do-issue",
-    "peaklab.plane-api"
+    "peaklab.plane-api",
+    "peaklab.ship-pr"
   ],
   "peaklab.plane-status": [
     "peaklab.plane-api"
