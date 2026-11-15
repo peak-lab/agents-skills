@@ -127,6 +127,16 @@ class PrTest(unittest.TestCase):
         self.assertEqual(verdict["failed_checks"][0]["name"], "a")
         self.assertIn("boom", out.getvalue())
 
+    def test_waits_while_checks_are_not_registered_yet(self) -> None:
+        fake = FakeGh([
+            (("pr", "checks"), [RuntimeError("gh pr checks: no checks reported on the 'x' branch"),
+                                [self.check("a", "pass")]]),
+        ])
+        w, _ = waiter(fake)
+        code, verdict = w.pr("12", "o/r", False, None, 600)
+        self.assertEqual(code, gh_wait.OK)
+        self.assertEqual(verdict["checks"], 1)
+
     def queue(self, state: str, queued: bool, auto: bool = True) -> dict:
         pr = {"state": state, "isInMergeQueue": queued, "headRefOid": "h",
               "autoMergeRequest": {"enabledAt": "t"} if auto else None, "mergeQueueEntry": None}

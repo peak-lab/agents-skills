@@ -153,7 +153,12 @@ class Waiter:
 
     def wait_checks(self, pr: str, timeout: float) -> tuple[int, dict]:
         def fetch() -> list | None:
-            checks = self.json(["pr", "checks", pr, "--json", "name,state,bucket,link,workflow"]) or []
+            try:
+                checks = self.json(["pr", "checks", pr, "--json", "name,state,bucket,link,workflow"]) or []
+            except RuntimeError as error:
+                if "no checks reported" not in str(error):
+                    raise
+                checks = []
             pending = [c for c in checks if c["bucket"] == "pending"]
             if checks and not pending:
                 return checks
