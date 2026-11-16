@@ -89,6 +89,14 @@ Pending checks are not a terminal result; wait in this turn:
 gh pr checks "$PR_NUMBER" --repo "$REPO" --watch --fail-fast
 ```
 
+[`gh_wait.py`](../peaklab.ship-pr/scripts/gh_wait.py) is the bounded alternative: one blocking
+call that prints only the failed jobs' log tail and ends with a JSON verdict line (exit 0 success,
+1 failure, 2 timeout):
+
+```bash
+python3 ../peaklab.ship-pr/scripts/gh_wait.py --timeout 3600 pr "$PR_NUMBER" --repo "$REPO"
+```
+
 Re-run the blocking watch if the command timeout expires while checks are still pending. If
 configured CI fails, return `blocked_ci` with failed check/run URLs, relevant logs, and
 `repair_disposition`. Use `worker_safe` only when the evidence attributes the failure to the PR
@@ -144,7 +152,8 @@ gh api graphql -f query='query($o:String!,$r:String!,$b:String!){repository(owne
 A non-empty URL means queued delivery. The squash subject comes from the single commit's subject or,
 with several commits, the PR title; confirm the required ticket suffix is there before enqueueing.
 After `gh pr merge`, poll with a bounded, blocking wait (20 s interval, at most 60 min, no deferred
-monitor):
+monitor); `gh_wait.py pr "$PR_NUMBER" --repo "$REPO" --enqueue --head "$REVIEWED_HEAD" --strategy <squash|merge|rebase>` runs the
+whole wait and reports the failing `merge_group` jobs when the queue drops the PR:
 
 ```bash
 gh api graphql -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){state isInMergeQueue mergeQueueEntry{state position}}}}' \

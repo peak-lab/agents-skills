@@ -184,6 +184,16 @@ that CI is unconfigured by deleting or disabling the base workflow.
 Unknown protection settings are not evidence of absence.
 
 For pending runs poll in this turn with waits of at most 60 seconds and progress updates.
+[`scripts/gh_wait.py`](scripts/gh_wait.py) does that poll in one blocking call and, on failure,
+prints only the failed jobs and their failed-step log tail; its last stdout line is a JSON verdict
+(exit 0 success, 1 failure, 2 timeout, 3 not found). Pass the remaining allowance as `--timeout` and
+add its elapsed time to `ci_wait_seconds`:
+
+```bash
+python3 scripts/gh_wait.py --timeout "$REMAINING_SECONDS" pr "$PR_NUMBER" --repo "$REPO"
+```
+
+Name a required job that only aggregates the others with `--aggregator "<job name>"`.
 Accumulate elapsed pending wait in `ci_wait_seconds` across runs, pushes and resumptions.
 At the allowance return `blocked: ci_wait_exhausted`, `CI: pending`, with run URLs.
 Pending state is not a defect: do not edit or rerun jobs merely because it is unchanged.
@@ -221,7 +231,9 @@ gh api graphql -f query='query($o:String!,$r:String!,$b:String!){repository(owne
 A non-empty URL means queued delivery. The squash subject comes from the single commit's subject or,
 with several commits, the PR title; confirm the required ticket suffix is there before enqueueing.
 After `gh pr merge`, poll with a bounded, blocking wait (20 s interval, at most 60 min, no deferred
-monitor):
+monitor). `gh_wait.py pr "$PR_NUMBER" --repo "$REPO" --enqueue --head "$HEAD_SHA" --strategy squash` enqueues
+with `--match-head-commit` and runs this whole wait, and reports the failing `merge_group` jobs when
+the queue drops the PR; the manual poll is:
 
 ```bash
 gh api graphql -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){state isInMergeQueue mergeQueueEntry{state position}}}}' \
